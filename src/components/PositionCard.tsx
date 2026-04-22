@@ -84,9 +84,9 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
     HOLD: { 
       label: tFn('holding'), 
       desc: tFn('holding_desc'),
-      color: 'text-status-obs', 
-      bg: 'bg-[#1A1A1A]', 
-      border: 'border-[#1A1A1A]' 
+      color: 'text-text-muted', 
+      bg: 'bg-text-main/5', 
+      border: 'border-text-main/10' 
     },
     BREAKEVEN: { 
       label: tFn('protected'), 
@@ -98,7 +98,7 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
     TAKE_PROFIT: { 
       label: tFn('take_profit_zone'), 
       desc: tFn('take_profit_desc'),
-      color: 'text-status-safe opacity-80', 
+      color: 'text-status-safe', 
       bg: 'bg-status-safe/5', 
       border: 'border-status-safe/20' 
     },
@@ -121,13 +121,12 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
   const display = statusMap[status as keyof typeof statusMap] || statusMap.HOLD;
 
   return (
-    <motion.div 
-      layout
+    <div 
       className={`bg-card-bg border ${display.border} p-0 relative overflow-hidden transition-all duration-300`}
     >
       <div className="flex flex-col md:flex-row items-stretch">
         {/* SIDE BAR STATUS INDICATOR */}
-        <div className={`w-full md:w-1.5 shrink-0 ${status === 'HOLD' ? 'bg-[#1A1A1A]' : display.color.replace('text-', 'bg-').split(' ')[0]}`}></div>
+        <div className={`w-full md:w-1.5 shrink-0 ${status === 'HOLD' ? 'bg-text-main/10' : display.color.replace('text-', 'bg-').split(' ')[0]}`}></div>
         
         <div className="flex-1 p-8 grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
           {/* COIN INFO */}
@@ -138,11 +137,11 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
             <div className="text-5xl font-black tracking-tight leading-none text-text-main">
               {position.coin.replace('KRW-', '')}
             </div>
-            <div className="text-[8px] font-mono text-text-muted/20 tracking-widest uppercase">ID_{position.id.slice(-6)}</div>
+            <div className="text-[8px] font-mono text-text-muted/10 tracking-widest uppercase">ID_{position.id.slice(-6)}</div>
           </div>
 
           {/* STATUS - DOMINANT FOCUS */}
-          <div className="md:col-span-5 flex flex-col justify-center border-l border-[#1A1A1A] md:pl-10">
+          <div className="md:col-span-5 flex flex-col justify-center border-l border-text-main/5 md:pl-10">
             <div className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-3 ${display.color} opacity-60`}>{tFn('status_label')}</div>
             <div className={`text-4xl md:text-5xl font-black uppercase tracking-tight leading-none transition-colors duration-500 mb-4 ${display.color}`}>
               {display.label}
@@ -152,7 +151,7 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
               {display.desc}
             </div>
             {!position.isLocked && (
-              <div className="mt-8 flex gap-8 text-[9px] font-mono font-bold tracking-widest text-[#444] uppercase">
+              <div className="mt-8 flex gap-8 text-[9px] font-mono font-bold tracking-widest text-text-muted/30 uppercase">
                 <span className="flex items-center gap-1.5">
                   {tFn('stop_label')} <span className="text-status-danger/60">{formatPrice(position.stopLossPrice)}</span>
                 </span>
@@ -167,14 +166,14 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
           <div className="md:col-span-4 flex flex-col gap-6 md:pl-8">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <div className="text-[9px] font-bold text-[#333] uppercase tracking-widest mb-1">{tFn('current_price')}</div>
+                <div className="text-[9px] font-bold text-text-muted/30 uppercase tracking-widest mb-1">{tFn('current_price')}</div>
                 <div className="text-lg font-black tabular-nums tracking-tight text-text-main/90">
                   {loading ? '---' : formatPrice(currentPrice!)}
                 </div>
               </div>
               {!position.isLocked && (
                 <div>
-                  <div className="text-[9px] font-bold text-[#333] uppercase tracking-widest mb-1">{tFn('pnl_return')}</div>
+                  <div className="text-[9px] font-bold text-text-muted/30 uppercase tracking-widest mb-1">{tFn('pnl_return')}</div>
                   <div className={`text-lg font-black tabular-nums tracking-tight ${pnlPercent >= 0 ? 'text-status-safe' : 'text-status-danger'}`}>
                     {loading ? '---' : formatPercent(pnlPercent)}
                   </div>
@@ -182,9 +181,9 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
               )}
             </div>
             
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mt-2 pt-6 border-t border-[#1A1A1A]">
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6 mt-2 pt-6 border-t border-text-main/5">
               <div className="text-right md:text-left">
-                <div className="text-[9px] font-bold text-[#333] uppercase tracking-widest mb-1">{tFn('net_pnl')}</div>
+                <div className="text-[9px] font-bold text-text-muted/30 uppercase tracking-widest mb-1">{tFn('net_pnl')}</div>
                 <div className={`text-xl font-black tabular-nums tracking-tighter leading-none ${pnlAmount >= 0 ? 'text-status-safe' : 'text-status-danger'} ${position.isLocked ? 'blur-[3px]' : ''}`}>
                   {loading ? '---' : formatCurrency(pnlAmount)}
                 </div>
@@ -193,13 +192,13 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
               <div className="flex gap-2 w-full md:w-auto">
                 <button 
                   onClick={handleClose}
-                  className="flex-1 md:flex-none px-6 py-3 bg-aux-bg border border-[#222] text-[#666] hover:text-text-main hover:bg-[#1A1A1A] text-[10px] font-black uppercase tracking-widest transition-all"
+                  className="flex-1 md:flex-none px-6 py-3 bg-aux-bg border border-text-main/5 text-text-muted/60 hover:text-text-main hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all"
                 >
                   {tFn('close')}
                 </button>
                 <button 
                   onClick={() => confirm('Wipe data? (No history recorded)') && deletePosition(position.id)}
-                  className="px-4 bg-aux-bg border border-[#222] text-[#333] hover:text-status-danger hover:bg-status-danger/5 transition-all"
+                  className="px-4 bg-aux-bg border border-text-main/5 text-text-muted/20 hover:text-status-danger hover:bg-status-danger/5 transition-all"
                 >
                   <X size={14} />
                 </button>
@@ -208,6 +207,6 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };

@@ -1,25 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
+:root {
+  --background: #F8F9FA;
+  --card: #FFFFFF;
+  --text-primary: #222222;
+  --text-secondary: #666666;
+  
+  --status-safe: #2ECC71;
+  --status-danger: #E74C3C;
+  --status-warn: #F1C40F;
+}
+
+[data-theme='dark'] {
+  --background: #121212;
+  --card: #1E1E1E;
+  --text-primary: #EAEAEA;
+  --text-secondary: #B0B0B0;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
-  --color-main-bg: #0B0B0B;
-  --color-card-bg: #111111;
-  --color-aux-bg: #151515;
+  --color-main-bg: var(--background);
+  --color-card-bg: var(--card);
+  --color-aux-bg: color-mix(in srgb, var(--background), var(--text-primary) 5%);
   
-  --color-text-main: #EAEAEA;
-  --color-text-muted: #B0B0B0;
+  --color-text-main: var(--text-primary);
+  --color-text-muted: var(--text-secondary);
   
-  --color-status-safe: #2ECC71;
-  --color-status-danger: #E74C3C;
-  --color-status-warn: #F1C40F;
+  --color-status-safe: var(--status-safe);
+  --color-status-danger: var(--status-danger);
+  --color-status-warn: var(--status-warn);
   --color-status-obs: #888888;
 }
 
 body {
-  @apply antialiased text-text-main bg-main-bg selection:bg-white selection:text-black;
+  @apply antialiased text-text-main bg-main-bg transition-colors duration-200 selection:bg-blue-500 selection:text-white;
 }
 
 @layer base {

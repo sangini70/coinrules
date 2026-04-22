@@ -118,29 +118,29 @@ export function PositionForm() {
       return {
         label: t('signal_strong_observe'),
         desc: '(돌파 신호 감지 / Breakout Detected)',
-        color: 'text-[#F1C40F]',
-        border: 'border-[#F1C40F]/30',
-        bg: 'bg-[#F1C40F]/5',
-        dot: 'bg-[#F1C40F]'
+        color: 'text-status-warn',
+        border: 'border-status-warn/30',
+        bg: 'bg-status-warn/5',
+        dot: 'bg-status-warn'
       };
     }
     if (signal?.state === 'observe') {
       return {
         label: t('signal_observe'),
         desc: '(추세 상승 · 거래량 증가 / Upward Trend · Volume Spike)',
-        color: 'text-[#888888]',
-        border: 'border-[#888888]/30',
-        bg: 'bg-[#888888]/5',
-        dot: 'bg-[#888888]'
+        color: 'text-text-muted',
+        border: 'border-text-muted/30',
+        bg: 'bg-text-muted/5',
+        dot: 'bg-text-muted'
       };
     }
     return {
       label: t('signal_neutral'),
       desc: '(특이 사항 없음 / Neutral)',
       color: 'text-text-muted/20',
-      border: 'border-[#1A1A1A]',
+      border: 'border-text-main/10',
       bg: 'bg-aux-bg',
-      dot: 'bg-[#333]'
+      dot: 'bg-text-muted/20'
     };
   };
 
@@ -184,81 +184,75 @@ export function PositionForm() {
       </div>
 
       {/* OBSERVATION SIGNAL / COOLDOWN WATCHER */}
-      <AnimatePresence mode="wait">
-        <motion.div 
-          key={formData.coin + statusInfo.label}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          className={`p-5 border transition-colors duration-500 min-h-[140px] flex flex-col justify-between ${statusInfo.border} ${statusInfo.bg}`}
-        >
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/30">{t('current_status')}</span>
-              <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></div>
-            </div>
-            
-            <div className="mb-2">
-              <div className={`text-base font-black uppercase tracking-tight ${statusInfo.color}`}>
-                {statusInfo.label}
-              </div>
-              <div className="text-[9px] font-bold text-text-muted/40 uppercase tracking-widest mt-1">
-                {statusInfo.desc}
-              </div>
-            </div>
+      <div 
+        className={`p-5 border transition-all duration-300 min-h-[140px] flex flex-col justify-between ${statusInfo.border} ${statusInfo.bg}`}
+      >
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/30">{t('current_status')}</span>
+            <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></div>
           </div>
           
-          {/* Signal Detail (Only if not blocked and has signal) */}
-          {!isCoinBlocked && signals[formData.coin] && signals[formData.coin].state !== 'none' ? (
-            <div className="grid grid-cols-3 gap-2 border-y border-[#1A1A1A] py-3 my-3">
-              <div className="space-y-1">
-                <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Trend</p>
-                <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                  {signals[formData.coin].trend}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Volume</p>
-                <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                  {signals[formData.coin].volume}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Breakout</p>
-                <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                  {signals[formData.coin].breakout === 'bullish_breakout' ? 'detect' : 'none'}
-                </p>
-              </div>
+          <div className="mb-2">
+            <div className={`text-base font-black uppercase tracking-tight ${statusInfo.color}`}>
+              {statusInfo.label}
             </div>
-          ) : (
-            <div className="my-3 h-[1px] bg-[#1A1A1A]"></div>
-          )}
-
-          {/* WARNING MESSAGE */}
-          <div className="flex gap-2 items-start">
-            <Info size={10} className="text-text-muted/20 mt-0.5 shrink-0" />
-            <p className="text-[9px] text-text-muted/30 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
-              {t('signal_warning')}
-            </p>
+            <div className="text-[9px] font-bold text-text-muted/40 uppercase tracking-widest mt-1">
+              {statusInfo.desc}
+            </div>
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+        
+        {/* Signal Detail (Only if not blocked and has signal) */}
+        {!isCoinBlocked && signals[formData.coin] && signals[formData.coin].state !== 'none' ? (
+          <div className="grid grid-cols-3 gap-2 border-y border-text-main/5 py-3 my-3">
+            <div className="space-y-1">
+              <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Trend</p>
+              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {signals[formData.coin].trend}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Volume</p>
+              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {signals[formData.coin].volume}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Breakout</p>
+              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {signals[formData.coin].breakout === 'bullish_breakout' ? 'detect' : 'none'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="my-3 h-[1px] bg-text-main/5"></div>
+        )}
+
+        {/* WARNING MESSAGE */}
+        <div className="flex gap-2 items-start">
+          <Info size={10} className="text-text-muted/20 mt-0.5 shrink-0" />
+          <p className="text-[9px] text-text-muted/30 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
+            {t('signal_warning')}
+          </p>
+        </div>
+      </div>
 
       {/* STRATEGY TYPE */}
       <div className="space-y-2">
         <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('select_strategy')}</label>
-        <div className="grid grid-cols-2 gap-1 bg-aux-bg p-1 border border-[#1A1A1A]">
+        <div className="grid grid-cols-2 gap-1 bg-aux-bg p-1 border border-text-main/5">
           <button
             type="button"
             onClick={() => setFormData({ ...formData, type: 'short_term' })}
-            className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'short_term' ? 'bg-status-safe text-black' : 'text-text-muted/40 hover:text-text-muted'}`}
+            className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'short_term' ? 'bg-status-safe text-white' : 'text-text-muted/40 hover:text-text-main'}`}
           >
             {t('shortTerm')}
           </button>
           <button
             type="button"
             onClick={() => setFormData({ ...formData, type: 'long_term' })}
-            className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'long_term' ? 'bg-purple-900/80 text-white' : 'text-text-muted/40 hover:text-text-muted'}`}
+            className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'long_term' ? 'bg-purple-600 text-white' : 'text-text-muted/40 hover:text-text-main'}`}
           >
             {t('longTerm')}
           </button>
@@ -274,12 +268,12 @@ export function PositionForm() {
             value={formData.buyPrice || ''}
             onChange={(e) => handlePriceChange(Number(e.target.value))}
             placeholder="0.00"
-            className="w-full bg-aux-bg border border-[#1A1A1A] p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-muted/50 pr-20"
+            className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-muted/20 pr-20"
           />
           <button
             type="button"
             onClick={loadCurrentPrice}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#222] border border-[#333] text-[9px] font-black uppercase tracking-widest text-text-muted hover:bg-text-main hover:text-black transition-all"
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-text-main/5 border border-text-main/10 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-main transition-all"
           >
             {loadingPrice ? <Loader2 size={10} className="animate-spin" /> : t('auto_price')}
           </button>
@@ -294,22 +288,22 @@ export function PositionForm() {
           value={formData.amount || ''}
           onChange={(e) => handleAmountChange(Number(e.target.value))}
           placeholder="1000000"
-          className="w-full bg-aux-bg border border-[#1A1A1A] p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-muted/50"
+          className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-muted/20"
         />
       </div>
 
       {/* RULE SUMMARY */}
-      <div className="p-5 bg-card-bg border border-[#1A1A1A] space-y-4">
+      <div className="p-5 bg-card-bg border border-text-main/5 space-y-4">
         <div className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/30 mb-1 flex justify-between">
           <span>{t('rule_summary')}</span>
           <CheckCircle2 size={12} className={formData.buyPrice > 0 ? 'text-status-safe' : 'text-text-muted/10'} />
         </div>
         <div className="space-y-2 font-mono text-[11px] font-bold">
-          <div className="flex justify-between items-center pb-2 border-b border-[#1A1A1A]">
+          <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
             <span className="text-text-muted/40">{t('stop_loss_val')}</span>
             <span className="text-status-danger/40 text-[9px]">({formatPrice(slPreview)})</span>
           </div>
-          <div className="flex justify-between items-center pb-2 border-b border-[#1A1A1A]">
+          <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
             <span className="text-text-muted/40">{t('take_profit_val')}</span>
             <span className="text-status-safe/40 text-[9px]">({formatPrice(tpPreview)})</span>
           </div>
@@ -323,7 +317,7 @@ export function PositionForm() {
       <button
         type="submit"
         disabled={formData.buyPrice <= 0 || isBlocked}
-        className={`w-full py-5 font-black uppercase text-xs tracking-[0.3em] transition-all relative overflow-hidden group ${formData.buyPrice > 0 && !isBlocked ? 'bg-text-main text-black hover:bg-white' : 'bg-aux-bg text-text-muted/20 cursor-not-allowed border border-[#1A1A1A]'}`}
+        className={`w-full py-5 font-black uppercase text-xs tracking-[0.3em] transition-all relative overflow-hidden group ${formData.buyPrice > 0 && !isBlocked ? 'bg-text-main text-main-bg hover:opacity-90' : 'bg-aux-bg text-text-muted/20 cursor-not-allowed border border-text-main/5'}`}
       >
         <span className="relative z-10">{t('confirm_button')}</span>
       </button>

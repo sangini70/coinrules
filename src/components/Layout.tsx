@@ -2,7 +2,7 @@ import * as React from 'react';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-[#F5F5F5] font-sans selection:bg-[#00FF41] selection:text-black">
+    <div className="min-h-screen bg-main-bg text-text-main font-sans selection:bg-blue-500 selection:text-white">
       {children}
     </div>
   );

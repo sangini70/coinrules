@@ -15,6 +15,7 @@ export interface AppSettings {
   notifyCooldown: boolean;
   volume: number; // 0-100
   masterMute: boolean;
+  theme: 'light' | 'dark';
 }
 
 export interface Position {

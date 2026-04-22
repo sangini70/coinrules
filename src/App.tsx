@@ -19,6 +19,10 @@ export default function App() {
     return () => clearInterval(interval);
   }, [checkControlReset]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', settings.theme);
+  }, [settings.theme]);
+
   const isBlocked = control.isInputDisabled;
 
   const handleExport = () => {
@@ -54,7 +58,7 @@ export default function App() {
 
   return (
     <Layout>
-      <header className="p-8 border-b border-[#1A1A1A] bg-main-bg relative">
+      <header className="p-8 border-b border-text-main/10 bg-main-bg relative">
         <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 relative z-10">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none text-text-main uppercase border-l-4 border-text-main pl-4">{t('app_name')}</h1>
@@ -63,22 +67,22 @@ export default function App() {
                 <span className={`w-2 h-2 rounded-full ${isBlocked ? 'bg-status-danger' : 'bg-status-safe'}`}></span>
                 {t('system_operational')}
               </span>
-              <span className="text-[#1A1A1A]">|</span>
+              <span className="text-text-muted/10">|</span>
               <span className={isBlocked ? 'text-status-danger font-bold' : 'text-status-safe opacity-80'}>
                 {isBlocked ? t('input_blocked') : t('input_active')}
               </span>
-              <span className="text-[#1A1A1A]">|</span>
+              <span className="text-text-muted/10">|</span>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setLanguage('ko')}
-                  className={`hover:text-text-main transition-colors px-1 ${language === 'ko' ? 'text-text-main font-bold underline underline-offset-4' : 'text-[#333]'}`}
+                  className={`hover:text-text-main transition-colors px-1 ${language === 'ko' ? 'text-text-main font-bold underline underline-offset-4' : 'text-text-muted opacity-40'}`}
                 >
                   KO
                 </button>
-                <span className="text-[#1A1A1A]">/</span>
+                <span className="text-text-muted/10">/</span>
                 <button 
                   onClick={() => setLanguage('en')}
-                  className={`hover:text-text-main transition-colors px-1 ${language === 'en' ? 'text-text-main font-bold underline underline-offset-4' : 'text-[#333]'}`}
+                  className={`hover:text-text-main transition-colors px-1 ${language === 'en' ? 'text-text-main font-bold underline underline-offset-4' : 'text-text-muted opacity-40'}`}
                 >
                   EN
                 </button>
@@ -89,19 +93,19 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-8 md:gap-16">
             <div className="space-y-1">
               <div className="text-[9px] uppercase font-bold text-text-muted tracking-[0.2em]">{t('daily_trades')}</div>
-              <div className="text-3xl font-black tabular-nums tracking-tighter leading-none text-text-muted/50">
+              <div className="text-3xl font-black tabular-nums tracking-tighter leading-none text-text-muted/20">
                 {String(control.todayTradeCount).padStart(2, '0')}
-                <span className="text-[#1A1A1A] mx-2">/</span>
+                <span className="text-text-muted/10 mx-2">/</span>
                 <span className="text-text-main">{String(settings.maxDailyTrades).padStart(2, '0')}</span>
               </div>
             </div>
             <div className="space-y-1">
               <div className="text-[9px] uppercase font-bold text-text-muted tracking-[0.2em]">{t('consecutive_losses')}</div>
-              <div className="text-3xl font-black tabular-nums tracking-tighter leading-none text-text-muted/50">
-                <span className={control.consecutiveLossCount > 0 ? 'text-status-danger' : 'text-text-muted/30'}>
+              <div className="text-3xl font-black tabular-nums tracking-tighter leading-none text-text-muted/20">
+                <span className={control.consecutiveLossCount > 0 ? 'text-status-danger' : 'text-text-muted/10'}>
                   {String(control.consecutiveLossCount).padStart(2, '0')}
                 </span>
-                <span className="text-[#1A1A1A] mx-2">/</span>
+                <span className="text-text-muted/10 mx-2">/</span>
                 <span className="text-text-main">{String(settings.maxConsecutiveLosses).padStart(2, '0')}</span>
               </div>
             </div>
@@ -113,7 +117,7 @@ export default function App() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* LEFT: EXECUTION AREA */}
           <aside className="lg:col-span-4 xl:col-span-3 space-y-8">
-            <div className="bg-card-bg border border-[#1A1A1A] p-8 space-y-6">
+            <div className="bg-card-bg border border-text-main/5 p-8 space-y-6">
               <div className="flex items-center gap-2 mb-2">
                 <ShieldCheck size={16} className="text-status-safe" />
                 <h2 className="text-xl font-black tracking-tighter uppercase">{t('new_execution')}</h2>
@@ -125,7 +129,7 @@ export default function App() {
             <div className="grid grid-cols-1 gap-2">
               <button 
                 onClick={handleExport}
-                className="w-full px-4 py-3 bg-aux-bg border border-[#1A1A1A] text-text-muted/60 hover:text-text-main hover:bg-[#222] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-aux-bg border border-text-main/5 text-text-muted/60 hover:text-text-main hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
                 <Download size={14} />
                  {t('backup')}
@@ -137,14 +141,14 @@ export default function App() {
                   onChange={handleImport} 
                   className="absolute inset-0 opacity-0 cursor-pointer"
                 />
-                <button className="w-full px-4 py-3 bg-aux-bg border border-[#1A1A1A] text-text-muted/60 hover:text-text-main hover:bg-[#222] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 pointer-events-none">
+                <button className="w-full px-4 py-3 bg-aux-bg border border-text-main/5 text-text-muted/60 hover:text-text-main hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 pointer-events-none">
                   <Upload size={14} />
                   {t('restore')}
                 </button>
               </div>
               <button 
                 onClick={handleWipe}
-                className="w-full px-4 py-3 bg-aux-bg border border-[#1A1A1A] text-[#333] hover:text-status-danger hover:bg-[#222] text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-aux-bg border border-text-main/5 text-text-muted/20 hover:text-status-danger hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
                 <Trash2 size={14} />
                 {t('wipe')}
@@ -154,7 +158,7 @@ export default function App() {
 
           {/* RIGHT: TABS AND CONTENT */}
           <main className="lg:col-span-8 xl:col-span-9 space-y-8">
-            <nav className="flex items-center gap-8 border-b border-[#1A1A1A] overflow-x-auto pb-px no-scrollbar">
+            <nav className="flex items-center gap-8 border-b border-text-main/10 overflow-x-auto pb-px no-scrollbar">
               <button 
                 onClick={() => setActiveTab('positions')}
                 className={`pb-4 text-2xl font-black uppercase tracking-tight transition-all whitespace-nowrap relative ${activeTab === 'positions' ? 'text-text-main' : 'text-text-muted/20 hover:text-text-muted/40'}`}
@@ -193,7 +197,7 @@ export default function App() {
             </div>
 
             {/* PHILOSOPHY FOOTER */}
-            <footer className="mt-20 pt-10 border-t border-[#1A1A1A] pb-20">
+            <footer className="mt-20 pt-10 border-t border-text-main/10 pb-20">
               <div className="max-w-2xl">
                 <p className="text-sm font-black uppercase tracking-tight text-text-muted/60 mb-2">{t('philosophy_title')}</p>
                 <p className="text-xs text-text-muted/30 font-medium leading-relaxed">{t('philosophy_desc')}</p>
@@ -212,7 +216,7 @@ function TradeHistoryView() {
 
   return (
     <div className="space-y-10">
-      <div className="flex items-end justify-between border-b border-[#1A1A1A] pb-6">
+      <div className="flex items-end justify-between border-b border-text-main/10 pb-6">
         <h2 className="text-4xl font-black tracking-tight uppercase text-text-main">{translator('history')}</h2>
         <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-[0.2em] font-bold">{history.length} {translator('records_found')}</span>
       </div>
@@ -222,27 +226,27 @@ function TradeHistoryView() {
           <p className="text-text-muted/10 font-black uppercase tracking-[0.4em] text-3xl">{translator('no_records')}</p>
         </div>
       ) : (
-        <div className="grid gap-px bg-[#1A1A1A] border border-[#1A1A1A]">
+        <div className="grid gap-px bg-text-main/5 border border-text-main/5">
           {/* TABLE HEADER */}
-          <div className="bg-[#0B0B0B] p-4 grid grid-cols-3 md:grid-cols-4 text-[9px] font-black uppercase tracking-widest text-text-muted/30">
+          <div className="bg-aux-bg p-4 grid grid-cols-3 md:grid-cols-4 text-[9px] font-black uppercase tracking-widest text-text-muted/30">
             <div>{translator('date')}</div>
             <div>{translator('coin')}</div>
             <div className="md:col-span-2">{translator('result')}</div>
           </div>
 
           {history.map((item) => (
-            <div key={item.id} className="bg-card-bg p-8 relative overflow-hidden group border-t border-[#1A1A1A]">
+            <div key={item.id} className="bg-card-bg p-8 relative overflow-hidden group border-t border-text-main/5">
                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
                 item.resultType === 'take_profit' ? 'bg-status-safe' :
                 item.resultType === 'stop_loss' ? 'bg-status-danger' : 
-                'bg-[#1A1A1A]'
+                'bg-text-main/5'
               }`}></div>
 
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
                 <div>
                   <div className="flex items-center gap-4 mb-2">
                     <span className="text-4xl font-black tracking-tight text-text-main">{item.coin.replace('KRW-', '')}</span>
-                    <span className={`text-[9px] px-3 py-1 font-black uppercase tracking-widest border ${item.type === 'short_term' ? 'border-[#3b82f6]/20 text-[#3b82f6]/60' : 'border-purple-600/20 text-purple-600/60'}`}>
+                    <span className={`text-[9px] px-3 py-1 font-black uppercase tracking-widest border ${item.type === 'short_term' ? 'border-status-safe/20 text-status-safe' : 'border-purple-600/20 text-purple-600'}`}>
                       {item.type === 'short_term' ? translator('shortTerm') : translator('longTerm')}
                     </span>
                   </div>
@@ -252,7 +256,7 @@ function TradeHistoryView() {
                 <div className={`px-6 py-2 border text-[10px] font-black uppercase tracking-[0.2em] ${
                   item.resultType === 'take_profit' ? 'border-status-safe/30 text-status-safe bg-status-safe/5' :
                   item.resultType === 'stop_loss' ? 'border-status-danger/30 text-status-danger bg-status-danger/5' : 
-                  'border-[#1A1A1A] text-text-muted/40'
+                  'border-text-main/5 text-text-muted/40'
                 }`}>
                   {item.resultType === 'take_profit' ? translator('result_profit') :
                    item.resultType === 'stop_loss' ? translator('result_loss') : 
@@ -260,7 +264,7 @@ function TradeHistoryView() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-6 border-y border-[#1A1A1A]">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-6 border-y border-text-main/5">
                 <div>
                   <p className="text-[9px] text-text-muted/30 uppercase font-black tracking-widest mb-2">{translator('buy_price')}</p>
                   <p className="font-bold text-lg tabular-nums tracking-tight text-text-main/80">{formatPrice(item.buyPrice)}</p>

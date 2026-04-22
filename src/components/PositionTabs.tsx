@@ -11,7 +11,7 @@ export function PositionTabs() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6">
         {shortPositions.length === 0 ? (
-          <div className="bg-aux-bg border border-[#1A1A1A] p-24 text-center">
+          <div className="bg-aux-bg border border-text-main/5 p-24 text-center">
             <p className="text-text-muted/30 font-black uppercase tracking-[0.2em] text-xl leading-snug max-w-md mx-auto mb-4">
               {t('noActivePositions')}
             </p>
@@ -35,9 +35,9 @@ export function LongTermView() {
   return (
     <div className="space-y-12">
       {longPositions.length > 0 && (
-        <div className="p-8 border border-purple-900/20 bg-purple-900/5 space-y-2">
-           <h3 className="text-xs font-black uppercase tracking-widest text-purple-400">{t('long_term')}</h3>
-           <p className="text-[10px] text-purple-400/40 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
+        <div className="p-8 border border-purple-600/20 bg-purple-600/5 space-y-2">
+           <h3 className="text-xs font-black uppercase tracking-widest text-purple-600">{t('long_term')}</h3>
+           <p className="text-[10px] text-purple-600/40 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
              {t('long_term_desc')}
            </p>
         </div>
@@ -45,7 +45,7 @@ export function LongTermView() {
 
       <div className="grid grid-cols-1 gap-6">
         {longPositions.length === 0 ? (
-          <div className="bg-aux-bg border border-[#1A1A1A] p-24 text-center">
+          <div className="bg-aux-bg border border-text-main/5 p-24 text-center">
              <p className="text-text-muted/30 font-black uppercase tracking-[0.2em] text-xl leading-snug max-w-md mx-auto mb-4">
               {t('noActivePositions')}
             </p>

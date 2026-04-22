@@ -51,6 +51,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   notifyCooldown: false,
   volume: 30,
   masterMute: false,
+  theme: 'light',
 };
 
 const DEFAULT_CONTROL: TradeControlState = {
