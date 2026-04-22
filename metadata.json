@@ -1,0 +1,6 @@
+{
+  "name": "CoinRules",
+  "description": "Rule-based position management tool for crypto traders to enforce discipline and automate SL/TP logic.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
