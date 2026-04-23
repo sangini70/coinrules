@@ -4,25 +4,28 @@ export const config = {
 
 const UPBIT_BASE_URL = 'https://api.upbit.com/v1';
 
-export default async function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
+export default async function handler(req: Request) {
   if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
   }
 
-  const market = Array.isArray(req.query?.market) ? req.query.market[0] : req.query?.market;
+  const url = new URL(req.url);
+  const market = url.searchParams.get('market')?.trim();
 
-  if (typeof market !== 'string' || market.trim() === '') {
-    res.status(400).json({ error: 'market is required' });
-    return;
+  if (!market) {
+    return new Response(JSON.stringify({ error: 'market is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
   }
 
   try {
     const response = await fetch(
       `${UPBIT_BASE_URL}/ticker?markets=${encodeURIComponent(market)}`,
-      { headers: { Accept: 'application/json' } },
+      { headers: { Accept: 'application/json' } }
     );
 
     if (!response.ok) {
@@ -31,13 +34,19 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    res.status(200).json({
-      data,
-      source: 'real',
+    return new Response(JSON.stringify({ data, source: 'real' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
     });
   } catch (error) {
-    res.status(502).json({
-      error: error instanceof Error ? error.message : 'Upbit API failed',
-    });
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : 'Upbit API failed',
+      }),
+      {
+        status: 502,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      }
+    );
   }
 }
