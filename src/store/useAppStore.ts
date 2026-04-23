@@ -6,6 +6,7 @@ import { ko } from '../i18n/ko';
 import { en } from '../i18n/en';
 import { Translation } from '../i18n/types';
 import { analyzeSignal } from '../lib/signals';
+import { fetchCandles } from '../services/upbitService';
 
 interface AppStore {
   settings: AppSettings;
@@ -82,9 +83,7 @@ export const useAppStore = create<AppStore>()(
 
       fetchSignals: async (coin) => {
         try {
-          const response = await fetch(`https://api.upbit.com/v1/candles/minutes/15?market=${coin}&count=100`);
-          if (!response.ok) throw new Error('Signals fetch failed');
-          const candles = await response.json();
+          const candles = await fetchCandles(coin, 100, 15);
           if (Array.isArray(candles) && candles.length > 50) {
             const rawSignal = analyzeSignal(candles);
             const { signalBuffer, signals } = get();

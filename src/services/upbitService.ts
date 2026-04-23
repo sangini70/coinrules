@@ -11,6 +11,23 @@ const getMockTicker = (market: string): TickerData => {
   return MOCK_TICKERS[market] || { market, trade_price: 100000, signed_change_rate: 0 };
 };
 
+type UpbitPayload<T> = {
+  data: T | null;
+  source?: 'real' | 'cache' | 'fallback';
+};
+
+const parsePayload = async <T>(response: Response): Promise<UpbitPayload<T>> => {
+  try {
+    const payload = await response.json();
+    return {
+      data: payload?.data ?? null,
+      source: payload?.source,
+    };
+  } catch {
+    return { data: null, source: 'fallback' };
+  }
+};
+
 // Simple check for production
 const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('dev');
 
@@ -19,14 +36,14 @@ export const fetchTicker = async (market: string): Promise<TickerData | null> =>
   const targetMarket = market === 'SOL' ? 'KRW-SOL' : market;
   
   try {
-    const response = await fetch(`https://api.upbit.com/v1/ticker?markets=${targetMarket}`);
-    if (!response.ok) throw new Error('API fetch failed');
-    const data = await response.json();
-    const ticker = data[0] as TickerData;
+    const response = await fetch(`http://localhost:4000/api/upbit/ticker?market=${encodeURIComponent(targetMarket)}`);
+    const payload = await parsePayload<TickerData[]>(response);
+    const ticker = Array.isArray(payload.data) ? payload.data[0] as TickerData | undefined : undefined;
+    if (!ticker?.trade_price) throw new Error('API fetch failed');
     
     console.log("market:", targetMarket);
     console.log("ticker price:", ticker.trade_price);
-    console.log("source:", "real");
+    console.log("source:", payload.source ?? "real");
     
     return ticker;
   } catch (error) {
@@ -50,21 +67,20 @@ export const fetchTicker = async (market: string): Promise<TickerData | null> =>
 export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => {
   if (markets.length === 0) return [];
   try {
-    const response = await fetch(`https://api.upbit.com/v1/ticker?markets=${markets.join(',')}`);
-    if (!response.ok) throw new Error('API fetch failed');
-    const data = await response.json();
-    return data as TickerData[];
+    const response = await fetch(`/api/upbit/ticker?market=${encodeURIComponent(markets.join(','))}`);
+    const payload = await parsePayload<TickerData[]>(response);
+    return Array.isArray(payload.data) ? payload.data : markets.map(getMockTicker);
   } catch (error) {
     console.warn(`Upbit API fetch failed for multiple markets, using mock values. (Reason: ${error instanceof Error ? error.message : 'Unknown'})`);
     return markets.map(getMockTicker);
   }
 };
 
-export const fetchCandles = async (market: string, count: number = 20): Promise<any[] | null> => {
+export const fetchCandles = async (market: string, count: number = 20, unit: number = 5): Promise<any[] | null> => {
   try {
-    const response = await fetch(`https://api.upbit.com/v1/candles/minutes/5?market=${market}&count=${count}`);
-    if (!response.ok) throw new Error('Candle API fetch failed');
-    return await response.json();
+    const response = await fetch(`/api/upbit/candles?market=${encodeURIComponent(market)}&unit=${unit}&count=${count}`);
+    const payload = await parsePayload<any[]>(response);
+    return Array.isArray(payload.data) ? payload.data : null;
   } catch (error) {
     console.warn(`Upbit Candle API fetch failed for ${market}: ${error}`);
     return null;
