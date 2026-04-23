@@ -28,15 +28,22 @@ const parsePayload = async <T>(response: Response): Promise<UpbitPayload<T>> => 
   }
 };
 
-// Simple check for production
-const isProduction = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && !window.location.hostname.includes('dev');
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+const API_BASE = isLocalhost ? 'http://localhost:4000' : '';
+
+const isProduction = !isLocalhost;
 
 export const fetchTicker = async (market: string): Promise<TickerData | null> => {
   // Enforce KRW-SOL for SOL
   const targetMarket = market === 'SOL' ? 'KRW-SOL' : market;
   
   try {
-    const response = await fetch(`http://localhost:4000/api/upbit/ticker?market=${encodeURIComponent(targetMarket)}`);
+    const response = await fetch(
+      `${API_BASE}/api/upbit/ticker?market=${encodeURIComponent(targetMarket)}`,
+    );
     const payload = await parsePayload<TickerData[]>(response);
     const ticker = Array.isArray(payload.data) ? payload.data[0] as TickerData | undefined : undefined;
     if (!ticker?.trade_price) throw new Error('API fetch failed');
@@ -67,7 +74,9 @@ export const fetchTicker = async (market: string): Promise<TickerData | null> =>
 export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => {
   if (markets.length === 0) return [];
   try {
-    const response = await fetch(`/api/upbit/ticker?market=${encodeURIComponent(markets.join(','))}`);
+    const response = await fetch(
+      `${API_BASE}/api/upbit/ticker?market=${encodeURIComponent(markets.join(','))}`,
+    );
     const payload = await parsePayload<TickerData[]>(response);
     return Array.isArray(payload.data) ? payload.data : markets.map(getMockTicker);
   } catch (error) {
@@ -78,7 +87,9 @@ export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => 
 
 export const fetchCandles = async (market: string, count: number = 20, unit: number = 5): Promise<any[] | null> => {
   try {
-    const response = await fetch(`/api/upbit/candles?market=${encodeURIComponent(market)}&unit=${unit}&count=${count}`);
+    const response = await fetch(
+      `${API_BASE}/api/upbit/candles?market=${encodeURIComponent(market)}&unit=${unit}&count=${count}`,
+    );
     const payload = await parsePayload<any[]>(response);
     return Array.isArray(payload.data) ? payload.data : null;
   } catch (error) {
