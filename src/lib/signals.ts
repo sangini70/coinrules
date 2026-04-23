@@ -58,9 +58,23 @@ export function analyzeSignal(candles: Candle[]): ObservationSignal {
   const resistance = Math.max(...prevHighs);
   const isBreakout = currentPrice > resistance && currentPrice > openPrice;
   
-  let state: ObservationSignal['state'] = 'none';
-  if (isTrendUp && isVolumeSpike) {
-    state = isBreakout ? 'strong_observe' : 'observe';
+  let state: ObservationSignal['state'] = 'RISK';
+
+  // State Logic:
+  // trend down -> WAIT
+  // trend up + volume up -> OBSERVE
+  // volume spike + rebound -> CAUTION
+  // strong trend + volume + breakout -> PREPARE
+  if (isTrendUp) {
+    if (isBreakout && isVolumeSpike) {
+      state = 'PREPARE';
+    } else if (isVolumeSpike) {
+      state = 'CAUTION';
+    } else {
+      state = 'OBSERVE';
+    }
+  } else {
+    state = 'WAIT';
   }
 
   return {

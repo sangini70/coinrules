@@ -114,7 +114,7 @@ export const useAppStore = create<AppStore>()(
             trend: 'up',
             volume: 'normal',
             breakout: 'none',
-            state: 'observe',
+            state: 'RISK',
             updatedAt: new Date().toISOString()
           };
           

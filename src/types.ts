@@ -60,7 +60,7 @@ export interface TradeControlState {
 
 export type PositionStatus = 'WATCH' | 'HOLD' | 'BREAKEVEN' | 'TAKE_PROFIT' | 'STOP_LOSS';
 
-export type ObservationState = 'none' | 'observe' | 'strong_observe';
+export type ObservationState = 'none' | 'WAIT' | 'OBSERVE' | 'CAUTION' | 'PREPARE' | 'RISK';
 
 export interface ObservationSignal {
   trend: 'up' | 'neutral';

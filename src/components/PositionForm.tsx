@@ -1,9 +1,10 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { fetchTicker } from '../services/upbitService';
+import { fetchTicker, fetchCandles } from '../services/upbitService';
 import { formatPrice } from '../lib/utils';
-import { Loader2, Info, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, Info, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Translation } from '../i18n/types';
 
 const COIN_OPTIONS = ['KRW-BTC', 'KRW-ETH', 'KRW-SOL', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE', 'KRW-AVAX', 'KRW-DOT'];
 
@@ -11,6 +12,8 @@ export function PositionForm() {
   const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals, fetchSignals } = useAppStore();
   const t = useAppStore((state) => state.t)();
   
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [marketAnalysis, setMarketAnalysis] = useState<any>(null);
   const [formData, setFormData] = useState({
     coin: 'KRW-BTC',
     type: 'short_term' as 'short_term' | 'long_term',
@@ -20,13 +23,95 @@ export function PositionForm() {
     memo: '',
   });
 
-  const [loadingPrice, setLoadingPrice] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isPriceHighlighted, setIsPriceHighlighted] = useState(false);
+  const [coinInput, setCoinInput] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchSignals(formData.coin);
-    const interval = setInterval(() => fetchSignals(formData.coin), 60000); // refresh every min
-    return () => clearInterval(interval);
+    let active = true; // For race condition prevention
+    
+    // Force KRW code if it's just the coin name
+    const market = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+    
+    // Fetch only ticker for current price display
+    const fetchMarketData = async () => {
+      // [1] State: fetch current ticker price
+      const ticker = await fetchTicker(market);
+      const candles = await fetchCandles(market, 20);
+      
+      // [2] Race condition prevention
+      if (!active) return;
+      
+      if (ticker) {
+        setCurrentPrice(ticker.trade_price);
+        
+        // Analyze candles
+        if (candles && candles.length >= 20) {
+          const highs = candles.map(c => c.high_price);
+          const lows = candles.map(c => c.low_price);
+          const volumes = candles.map(c => c.candle_acc_trade_volume);
+          
+          // 1. Trend Analysis (5+ same direction, 3+ highs/lows)
+          let trend = 'sideways';
+          let upHighs = 0, upLows = 0, downHighs = 0, downLows = 0;
+          for (let i = 0; i < 5; i++) {
+            if (highs[i] > highs[i+1]) upHighs++;
+            if (lows[i] > lows[i+1]) upLows++;
+            if (highs[i] < highs[i+1]) downHighs++;
+            if (lows[i] < lows[i+1]) downLows++;
+          }
+          
+          const range = Math.max(...highs.slice(0, 5)) / Math.min(...lows.slice(0, 5)) - 1;
+          if (range > 0.05) {
+            if (upHighs >= 3 && upLows >= 3 && (upHighs + upLows) >= 5) trend = 'up';
+            else if (downHighs >= 3 && downLows >= 3 && (downHighs + downLows) >= 5) trend = 'down';
+          }
+
+          // 2. Volume Analysis (Recent 3 avg / Prev 10 avg > 1.3)
+          const recentVol = volumes.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
+          const prevVol = volumes.slice(3, 13).reduce((a, b) => a + b, 0) / 10;
+          let volume = recentVol > prevVol * 1.3 ? 'high' : 'normal';
+
+        const candleData = candles.map(c => ({
+          open: c.opening_price,
+          close: c.trade_price,
+          high: c.high_price,
+          low: c.low_price,
+          volume: c.candle_acc_trade_volume,
+          upperWickRatio: (c.high_price - Math.max(c.opening_price, c.trade_price)) / (c.high_price - c.low_price + 0.0000000001)
+        }));
+
+        const highs20 = candleData.map(c => c.high);
+        const recentHigh = Math.max(...highs20.slice(0, 20));
+        const avgVol3 = candleData.slice(0, 3).reduce((a, b) => a + b.volume, 0) / 3;
+        const avgVol10 = candleData.slice(3, 13).reduce((a, b) => a + b.volume, 0) / 10;
+        
+        const isUpTrend = candleData[0].close > candleData[3].close && candleData[0].low > candleData[3].low;
+        const isBreakout = candleData[0].close > recentHigh;
+        const isSustained = candleData.slice(0, 3).every(c => c.close > recentHigh);
+        const isVolumeSpike = avgVol3 > avgVol10 * 1.5;
+        const isFakeout = (isBreakout && avgVol3 < avgVol10) || 
+                          (candleData[0].upperWickRatio > 0.4) ||
+                          (isBreakout && candleData[1].close < recentHigh);
+        
+        setMarketAnalysis({ isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh });
+        }
+      }
+    };
+    
+    fetchSignals(market);
+    fetchMarketData();
+    const interval = setInterval(() => {
+      fetchSignals(market);
+      fetchMarketData();
+    }, 60000);
+    
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [formData.coin, fetchSignals]);
 
   useEffect(() => {
@@ -38,18 +123,49 @@ export function PositionForm() {
     return () => clearInterval(interval);
   }, [formData.coin, getCooldownRemaining]);
 
-  const loadCurrentPrice = async () => {
-    setLoadingPrice(true);
-    const ticker = await fetchTicker(formData.coin);
-    if (ticker) {
-      const price = ticker.trade_price;
-      setFormData(prev => ({ 
-        ...prev, 
-        buyPrice: price,
-        quantity: prev.amount / price
-      }));
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredCoins = COIN_OPTIONS.filter(c => c.replace('KRW-', '').toLowerCase().includes(coinInput.toLowerCase()));
+  const isCustomCoin = coinInput.length >= 2 && !COIN_OPTIONS.includes(`KRW-${coinInput.toUpperCase()}`);
+  const customMarket = `KRW-${coinInput.toUpperCase()}`;
+
+  const handleSelectCoin = (coin: string) => {
+    setFormData({ ...formData, coin });
+    setCoinInput('');
+    setIsDropdownOpen(false);
+  };
+
+  const handleFetchPrice = async () => {
+    const market = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+    console.log("FETCH START:", market);
+
+    try {
+      const ticker = await fetchTicker(market);
+      console.log("FETCH RESULT:", ticker?.trade_price);
+      
+      if (ticker && ticker.trade_price > 0) {
+        setFormData(prev => ({
+          ...prev,
+          buyPrice: ticker.trade_price,
+          quantity: prev.amount / ticker.trade_price
+        }));
+        // Trigger highlight
+        setIsPriceHighlighted(true);
+        setTimeout(() => setIsPriceHighlighted(false), 800);
+      } else {
+        console.error("INVALID PRICE: No valid trade price received");
+      }
+    } catch (e) {
+      console.error("PRICE FETCH ERROR:", e);
     }
-    setLoadingPrice(false);
   };
 
   const handlePriceChange = (value: number) => {
@@ -102,7 +218,12 @@ export function PositionForm() {
   const tpPreview = formData.buyPrice > 0 ? formData.buyPrice * (1 + settings.takeProfitPercent / 100) : 0;
 
   // Status Priority for form
+  useEffect(() => {
+    console.log("SIGNAL:", signals[formData.coin]);
+  }, [signals, formData.coin]);
+  
   const getFormStatus = () => {
+    // [1] COOLDOWN CHECK
     if (isCoinBlocked) {
       return {
         label: t('waiting_reentry'),
@@ -113,30 +234,33 @@ export function PositionForm() {
         dot: 'bg-status-warn'
       };
     }
+    
+    // [2] MARKET INTERPRETATION
     const signal = signals[formData.coin];
-    if (signal?.state === 'strong_observe') {
+    if (signal && signal.state !== 'none') {
+      const stateKey = `state_${signal.state}` as keyof Translation;
+      const descKey = `desc_${signal.state}` as keyof Translation;
+      
+      const statusMap: Record<string, any> = {
+        'WAIT': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
+        'OBSERVE': { color: 'text-text-muted', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
+        'CAUTION': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
+        'PREPARE': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
+        'RISK': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
+      };
+      
+      const base = statusMap[signal.state] || statusMap['RISK'];
+      
       return {
-        label: t('signal_strong_observe'),
-        desc: '(돌파 신호 감지 / Breakout Detected)',
-        color: 'text-status-warn',
-        border: 'border-status-warn/30',
-        bg: 'bg-status-warn/5',
-        dot: 'bg-status-warn'
+        label: t(stateKey),
+        desc: t(descKey),
+        ...base
       };
     }
-    if (signal?.state === 'observe') {
-      return {
-        label: t('signal_observe'),
-        desc: '(추세 상승 · 거래량 증가 / Upward Trend · Volume Spike)',
-        color: 'text-text-muted',
-        border: 'border-text-muted/30',
-        bg: 'bg-text-muted/5',
-        dot: 'bg-text-muted'
-      };
-    }
+    
     return {
-      label: t('signal_neutral'),
-      desc: '(특이 사항 없음 / Neutral)',
+      label: t('state_RISK'),
+      desc: t('desc_RISK'),
       color: 'text-text-muted/20',
       border: 'border-text-main/10',
       bg: 'bg-aux-bg',
@@ -170,20 +294,55 @@ export function PositionForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* MARKET SELECT */}
-      <div className="space-y-2">
+      <div className="space-y-2 relative" ref={dropdownRef}>
         <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('select_coin')}</label>
-        <select 
-          value={formData.coin}
-          onChange={(e) => setFormData({ ...formData, coin: e.target.value })}
-          className="w-full bg-aux-bg border border-[#1A1A1A] p-4 text-text-main font-black uppercase tracking-tight outline-none focus:border-text-muted/50 transition-colors appearance-none"
-        >
-          {COIN_OPTIONS.map(opt => (
-            <option key={opt} value={opt}>{opt.replace('KRW-', '')}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <input
+            type="text"
+            value={coinInput}
+            onChange={(e) => setCoinInput(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
+            onFocus={() => setIsDropdownOpen(true)}
+            placeholder={formData.coin.replace('KRW-', '')}
+            className="w-full bg-aux-bg border border-text-main/10 p-4 text-xl font-black uppercase tracking-tight text-text-main outline-none focus:border-text-muted/30 transition-all"
+          />
+          <ChevronDown size={16} className={`absolute right-4 top-1/2 -translate-y-1/2 text-text-muted/40 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+        </div>
+        
+        <AnimatePresence>
+          {isDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              className="absolute z-50 left-0 right-0 top-full mt-1 bg-card-bg border border-text-main/10 shadow-2xl overflow-hidden"
+            >
+              <div className="max-h-48 overflow-y-auto overscroll-contain scrollbar-hide">
+                {filteredCoins.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => handleSelectCoin(opt)}
+                    className={`w-full p-4 text-left font-black uppercase tracking-tight text-sm hover:bg-text-main/5 transition-colors border-b border-text-main/5 last:border-0 ${formData.coin === opt ? 'text-text-main bg-text-main/5' : 'text-text-muted'}`}
+                  >
+                    {opt.replace('KRW-', '')}
+                  </button>
+                ))}
+                {isCustomCoin && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectCoin(customMarket)}
+                    className="w-full p-4 text-left font-black uppercase tracking-tight text-sm bg-status-safe/10 text-status-safe hover:bg-status-safe/20 transition-colors"
+                  >
+                    직접 입력: {coinInput.toUpperCase()}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* OBSERVATION SIGNAL / COOLDOWN WATCHER */}
+      {/* MARKET INTERPRETATION */}
       <div 
         className={`p-5 border transition-all duration-300 min-h-[140px] flex flex-col justify-between ${statusInfo.border} ${statusInfo.bg}`}
       >
@@ -197,46 +356,106 @@ export function PositionForm() {
             <div className={`text-base font-black uppercase tracking-tight ${statusInfo.color}`}>
               {statusInfo.label}
             </div>
-            <div className="text-[9px] font-bold text-text-muted/40 uppercase tracking-widest mt-1">
+            <div className="text-[9px] font-bold text-text-muted/60 uppercase tracking-widest mt-1">
               {statusInfo.desc}
             </div>
           </div>
         </div>
         
-        {/* Signal Detail (Only if not blocked and has signal) */}
-        {!isCoinBlocked && signals[formData.coin] && signals[formData.coin].state !== 'none' ? (
-          <div className="grid grid-cols-3 gap-2 border-y border-text-main/5 py-3 my-3">
+        {/* Evidence */}
+        <div className="grid grid-cols-3 gap-2 border-y border-text-main/5 py-3 my-3">
             <div className="space-y-1">
               <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Trend</p>
-              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {signals[formData.coin].trend}
+              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin]?.trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {signals[formData.coin]?.trend || '-'}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Volume</p>
-              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {signals[formData.coin].volume}
+              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin]?.volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {signals[formData.coin]?.volume || '-'}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Breakout</p>
-              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin].breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {signals[formData.coin].breakout === 'bullish_breakout' ? 'detect' : 'none'}
+              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin]?.breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {signals[formData.coin]?.breakout === 'bullish_breakout' ? 'detect' : 'none'}
               </p>
             </div>
-          </div>
-        ) : (
-          <div className="my-3 h-[1px] bg-text-main/5"></div>
-        )}
+        </div>
 
         {/* WARNING MESSAGE */}
-        <div className="flex gap-2 items-start">
+        <div className="flex gap-2 items-start mt-2">
           <Info size={10} className="text-text-muted/20 mt-0.5 shrink-0" />
-          <p className="text-[9px] text-text-muted/30 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
-            {t('signal_warning')}
+          <p className="text-[9px] text-text-muted/40 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
+            이 신호는 진입을 의미하지 않습니다.
+            충분히 관찰한 후 판단하세요.
           </p>
         </div>
       </div>
+
+        {/* 시장 상태 확인 UI */}
+        {(() => {
+        if (!marketAnalysis) {
+          return (
+            <div className="mt-3 p-4 border rounded-lg bg-gray-50 border-text-main/10">
+              <div className="text-sm font-semibold text-gray-700">시장 상태 확인</div>
+              <div className="mt-2 text-sm text-gray-600">충족 정도: -</div>
+              <div className="mt-1 text-sm text-gray-600">결론: 대기 중</div>
+            </div>
+          );
+        }
+
+        // 1. 상태 및 데이터 추출
+        const { isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh } = marketAnalysis;
+        
+        // 2. 점수 계산 (조건 충족 정도)
+        let score = 0;
+        if (isUpTrend) score += 35;
+        if (isVolumeSpike) score += 25;
+        if (isBreakout) score += 25;
+        if (isSustained) score += 15;
+        score = Math.min(100, Math.max(0, score));
+
+        // 3. 결론 및 근거
+        let conclusion = "대기";
+        const reasons: string[] = [];
+        const price = currentPrice || 0;
+        
+        let scoreLabel = score >= 75 ? "많음" : (score >= 60 ? "보통" : "낮음");
+        const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
+
+        if (isFakeout) {
+            conclusion = "가짜 돌파 가능성";
+            reasons.push("돌파 후 매물 출회", "거래량 부족 또는 윗꼬리");
+        } else if (score >= 75 && isUpTrend && isVolumeSpike && isBreakout && isSustained) {
+            conclusion = "조건 일부 충족 (확인 필요)";
+            reasons.push("상승 추세 전환", "거래량 유입", "돌파 유지");
+        } else if (isBreakout === false && price < recentHigh * 0.95 && isVolumeSpike) {
+            conclusion = "현재 시장 상태 (하락 진행)";
+            reasons.push("하락 추세 확인", "지지선 이탈", "매도 거래량 증가");
+        } else if (price >= recentHigh * 0.95 && !isBreakout && isVolumeSpike) {
+            conclusion = "관찰 구간 (진입 금지)";
+            reasons.push("최근 고점 근접", "거래량 변화 발생");
+        }
+        
+        return (
+          <div className="mt-3 p-4 border rounded-lg bg-gray-50 border-text-main/10">
+            <div className="text-sm font-semibold text-gray-700 mb-2">시장 상태 확인</div>
+            <div className="text-sm font-bold mb-1">
+              조건 충족 정도: <span className={`text-base ${scoreColor}`}>{score} ({scoreLabel})</span> / 100
+            </div>
+            <div className="text-base font-bold text-gray-900 mb-2">결론: {conclusion}</div>
+            <div className="text-[10px] text-text-muted/60 mb-3 font-bold italic">
+              * 조건 충족 여부만 표시합니다. 결정은 사용자 책임입니다.
+            </div>
+            <div className="text-sm font-semibold text-gray-700 mb-1">근거</div>
+            <ul className="text-xs text-gray-600 space-y-0.5 list-disc list-inside">
+              {reasons.map((r, i) => <li key={i}>{r}</li>)}
+            </ul>
+          </div>
+        );
+      })()}
 
       {/* STRATEGY TYPE */}
       <div className="space-y-2">
@@ -262,34 +481,40 @@ export function PositionForm() {
       {/* BUY PRICE */}
       <div className="space-y-2">
         <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('buy_price')}</label>
-        <div className="relative">
-          <input 
-            type="number"
-            value={formData.buyPrice || ''}
-            onChange={(e) => handlePriceChange(Number(e.target.value))}
-            placeholder="0.00"
-            className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-muted/20 pr-20"
-          />
-          <button
-            type="button"
-            onClick={loadCurrentPrice}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-text-main/5 border border-text-main/10 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-main transition-all"
-          >
-            {loadingPrice ? <Loader2 size={10} className="animate-spin" /> : t('auto_price')}
-          </button>
-        </div>
+        <input 
+          type="text"
+          inputMode="numeric"
+          value={formData.buyPrice || ''}
+          onChange={(e) => {
+            const val = e.target.value.replace(/[^0-9]/g, '');
+            handlePriceChange(Number(val));
+          }}
+          placeholder={t('placeholder_buy_price')}
+          className="w-full h-14 bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-main/30 transition-all"
+        />
+        <button
+          type="button"
+          onClick={handleFetchPrice}
+          className="w-full h-11 bg-text-main/5 border border-text-main/10 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-main hover:bg-text-main/10 transition-all"
+        >
+          {t('auto_price')}
+        </button>
       </div>
 
       {/* AMOUNT */}
       <div className="space-y-2">
         <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('investment')}</label>
-        <input 
-          type="number"
-          value={formData.amount || ''}
-          onChange={(e) => handleAmountChange(Number(e.target.value))}
-          placeholder="1000000"
-          className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-muted/20"
-        />
+        <div className="relative group">
+          <input 
+            type="number"
+            value={formData.amount || ''}
+            onChange={(e) => handleAmountChange(Number(e.target.value))}
+            placeholder={t('placeholder_amount')}
+            className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-main/30 transition-all"
+          />
+          {/* Visual Focus Ring */}
+          <div className="absolute inset-0 border-2 border-text-main opacity-0 pointer-events-none focus-within:opacity-5 transition-opacity"></div>
+        </div>
       </div>
 
       {/* RULE SUMMARY */}
@@ -301,11 +526,11 @@ export function PositionForm() {
         <div className="space-y-2 font-mono text-[11px] font-bold">
           <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
             <span className="text-text-muted/40">{t('stop_loss_val')}</span>
-            <span className="text-status-danger/40 text-[9px]">({formatPrice(slPreview)})</span>
+            <span className="text-status-danger/40 text-[9px]">({slPreview ? formatPrice(slPreview) : "-"})</span>
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
             <span className="text-text-muted/40">{t('take_profit_val')}</span>
-            <span className="text-status-safe/40 text-[9px]">({formatPrice(tpPreview)})</span>
+            <span className="text-status-safe/40 text-[9px]">({tpPreview ? formatPrice(tpPreview) : "-"})</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-text-muted/40">{t('cooldown_min')}</span>

@@ -130,6 +130,21 @@ export interface Translation {
   signal_neutral: string;
   signal_warning: string;
   waiting_reentry: string;
+  placeholder_buy_price: string;
+  placeholder_amount: string;
+  state_WAIT: string;
+  desc_WAIT: string;
+  state_OBSERVE: string;
+  desc_OBSERVE: string;
+  state_CAUTION: string;
+  desc_CAUTION: string;
+  state_PREPARE: string;
+  desc_PREPARE: string;
+  state_RISK: string;
+  desc_RISK: string;
+  evidence_trend_up: string;
+  evidence_volume_spike: string;
+  evidence_breakout: string;
 }
 
 export type TranslationKey = keyof Translation;
