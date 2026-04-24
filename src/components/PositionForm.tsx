@@ -298,45 +298,66 @@ export function PositionForm() {
     if (isBreakout && !isSustained) score -= 10;
     score = Math.max(0, Math.min(100, score));
 
-    let conclusion = '관망';
-    const reasons: string[] = [];
-    const hasAnySignal = isUpTrend || isVolumeSpike || isBreakout || isSustained;
-    const hasNormalVolume = !isVolumeSpike;
+    const interpretation =
+      isFakeout
+        ? 'fakeout'
+        : isBreakout
+          ? (isSustained ? 'breakout_sustained' : 'breakout_attempt')
+          : isUpTrend && isVolumeSpike
+            ? 'trend_volume'
+            : isVolumeSpike
+              ? 'volume_only'
+              : isUpTrend
+                ? 'trend_only'
+                : 'fallback';
 
-    if (isFakeout) reasons.push('가짜 돌파 가능성');
-    if (isBreakout && !isSustained) reasons.push('돌파 유지 실패');
-    if (isUpTrend && isVolumeSpike) reasons.push('거래량 동반 상승');
-    else if (isUpTrend) reasons.push('상승 흐름');
-    else if (isVolumeSpike) reasons.push('거래량 유입 확대');
-    if (isBreakout && isSustained) reasons.push('돌파 유지');
-    else if (isBreakout) reasons.push('돌파 시도');
-    if (!isUpTrend && hasNormalVolume && !isBreakout) reasons.push('횡보 구간');
-    if (!hasAnySignal) reasons.push('관망');
+    const interpretationMeta = (() => {
+      switch (interpretation) {
+        case 'fakeout':
+          return {
+            conclusion: '가짜 돌파 가능성',
+            reasons: ['돌파 실패 흔적', '지지선 확인 필요', '추가 확인 필요'],
+          };
+        case 'breakout_sustained':
+          return {
+            conclusion: '돌파 유지',
+            reasons: isVolumeSpike
+              ? ['거래량 증가', '돌파 이후 지지 확인', '추세 유지 중']
+              : ['돌파 유지 중', '지지선 확인 필요', '추가 확인 필요'],
+          };
+        case 'breakout_attempt':
+          return {
+            conclusion: '돌파 시도',
+            reasons: ['직전 고점 재시험', '종가 안착 확인 필요', '추가 확인 필요'],
+          };
+        case 'trend_volume':
+          return {
+            conclusion: '상승 흐름 강화',
+            reasons: ['추세 유지 중', '거래량 증가', '추가 확인 필요'],
+          };
+        case 'volume_only':
+          return {
+            conclusion: '거래량 유입 확대',
+            reasons: ['거래량 증가', '방향성 확인 필요', '추가 확인 필요'],
+          };
+        case 'trend_only':
+          return {
+            conclusion: '관망 구간',
+            reasons: ['추세 유지 중', '거래량 확인 필요', '지지선 확인 필요'],
+          };
+        default:
+          return {
+            conclusion: '관망 구간',
+            reasons: ['신호 부족', '방향성 확인 필요'],
+          };
+      }
+    })();
+
+    const conclusion = interpretationMeta.conclusion;
+    const reasons = interpretationMeta.reasons;
 
     const scoreLabel = score >= 75 ? '높음' : (score >= 60 ? '보통' : '낮음');
     const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
-
-    if (isFakeout) {
-      conclusion = '가짜 돌파 가능성';
-    } else if (isBreakout && !isSustained) {
-      conclusion = '돌파 유지 실패';
-    } else if (isBreakout && isSustained) {
-      conclusion = '돌파 유지';
-    } else if (isBreakout) {
-      conclusion = '돌파 시도';
-    } else if (isUpTrend && isVolumeSpike) {
-      conclusion = '거래량 동반 상승';
-    } else if (isUpTrend) {
-      conclusion = '상승 흐름';
-    } else if (isVolumeSpike) {
-      conclusion = '거래량 유입 확대';
-    } else if (!isUpTrend && hasNormalVolume && !isBreakout) {
-      conclusion = '횡보 구간';
-    } else if (!hasAnySignal) {
-      conclusion = '관망';
-    } else {
-      conclusion = score >= 35 || isSustained ? '관망' : '횡보 구간';
-    }
 
     let entryState = '관망';
     if (isFakeout || (isBreakout && !isSustained)) entryState = '진입 금지';
