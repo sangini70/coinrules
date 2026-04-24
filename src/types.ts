@@ -28,7 +28,8 @@ export interface Position {
   stopLossPercent: number;
   takeProfitPercent: number;
   stopLossPrice: number;
-  takeProfitPrice: number;
+  takeProfitPrice1: number;
+  takeProfitPrice2: number;
   createdAt: string;
   memo: string;
   isLocked: boolean;

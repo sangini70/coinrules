@@ -6,6 +6,10 @@ import { ko } from '../i18n/ko';
 import { en } from '../i18n/en';
 import { Translation } from '../i18n/types';
 import { analyzeSignal } from '../lib/signals';
+import {
+  DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
+  DEFAULT_SHORT_TERM_TAKE_PROFIT_PERCENT,
+} from '../lib/tradingRules';
 import { fetchCandles } from '../services/upbitService';
 
 interface AppStore {
@@ -40,8 +44,8 @@ interface AppStore {
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
-  stopLossPercent: -3,
-  takeProfitPercent: 5,
+  stopLossPercent: DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
+  takeProfitPercent: DEFAULT_SHORT_TERM_TAKE_PROFIT_PERCENT,
   breakevenTriggerPercent: 3,
   maxDailyTrades: 3,
   maxConsecutiveLosses: 2,

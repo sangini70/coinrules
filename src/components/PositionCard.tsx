@@ -39,7 +39,7 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
     if (currentPrice <= slThreshold) return 'STOP_LOSS';
     
     // User priority: SL Imminent > TP Zone > Breakeven > Hold
-    if (currentPrice >= position.takeProfitPrice * 0.99) return 'TAKE_PROFIT';
+    if (currentPrice >= position.takeProfitPrice1 * 0.99) return 'TAKE_PROFIT';
     
     if (pnlPercent >= settings.breakevenTriggerPercent) return 'BREAKEVEN';
     
@@ -66,7 +66,7 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
     if (currentPrice <= position.stopLossPrice) {
       resultType = 'stop_loss';
       reason = '손절가 터치 (규칙 준수)';
-    } else if (currentPrice >= position.takeProfitPrice) {
+    } else if (currentPrice >= position.takeProfitPrice1) {
       resultType = 'take_profit';
       reason = '익절가 터치 (규칙 준수)';
     }
@@ -156,7 +156,10 @@ export const PositionCard: React.FC<{ position: Position }> = ({ position }) => 
                   {tFn('stop_label')} <span className="text-status-danger/60">{formatPrice(position.stopLossPrice)}</span>
                 </span>
                 <span className="flex items-center gap-1.5">
-                  {tFn('target_label')} <span className="text-status-safe/60">{formatPrice(position.takeProfitPrice)}</span>
+                  TP1 <span className="text-status-safe/60">{formatPrice(position.takeProfitPrice1)}</span>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  TP2 <span className="text-status-safe/60">{formatPrice(position.takeProfitPrice2)}</span>
                 </span>
               </div>
             )}

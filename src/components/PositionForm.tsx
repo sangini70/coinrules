@@ -2,18 +2,50 @@ import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { fetchTicker, fetchCandles } from '../services/upbitService';
 import { formatPrice } from '../lib/utils';
+import {
+  SHORT_TERM_STOP_LOSS_PERCENT,
+  SHORT_TERM_TAKE_PROFIT_1_PERCENT,
+  SHORT_TERM_TAKE_PROFIT_2_PERCENT,
+} from '../lib/tradingRules';
 import { Loader2, Info, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Translation } from '../i18n/types';
 
 const COIN_OPTIONS = ['KRW-BTC', 'KRW-ETH', 'KRW-SOL', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE', 'KRW-AVAX', 'KRW-DOT'];
+const MARKET_ANALYSIS_CANDLE_COUNT = 24;
+const TREND_LOOKBACK = 5;
+const BREAKOUT_LOOKBACK = 20;
+const RECENT_VOLUME_WINDOW = 3;
+const BASELINE_VOLUME_WINDOW = 10;
+const VOLUME_SPIKE_MULTIPLIER = 1.3;
+const SUSTAIN_LOOKBACK = 3;
+
+type CandleSnapshot = {
+  open: number;
+  close: number;
+  high: number;
+  low: number;
+  volume: number;
+  upperWickRatio: number;
+};
+
+type MarketAnalysis = {
+  isUpTrend: boolean;
+  isVolumeSpike: boolean;
+  isBreakout: boolean;
+  isSustained: boolean;
+  isFakeout: boolean;
+  recentHigh: number;
+};
+
+const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
 export function PositionForm() {
   const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals, fetchSignals } = useAppStore();
   const t = useAppStore((state) => state.t)();
   
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [marketAnalysis, setMarketAnalysis] = useState<any>(null);
+  const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
   const [formData, setFormData] = useState({
     coin: 'KRW-BTC',
     type: 'short_term' as 'short_term' | 'long_term',
@@ -34,12 +66,13 @@ export function PositionForm() {
     
     // Force KRW code if it's just the coin name
     const market = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+    setMarketAnalysis(null);
     
     // Fetch only ticker for current price display
     const fetchMarketData = async () => {
       // [1] State: fetch current ticker price
       const ticker = await fetchTicker(market);
-      const candles = await fetchCandles(market, 20);
+      const candles = await fetchCandles(market, MARKET_ANALYSIS_CANDLE_COUNT);
       
       // [2] Race condition prevention
       if (!active) return;
@@ -48,55 +81,76 @@ export function PositionForm() {
         setCurrentPrice(ticker.trade_price);
         
         // Analyze candles
-        if (candles && candles.length >= 20) {
-          const highs = candles.map(c => c.high_price);
-          const lows = candles.map(c => c.low_price);
-          const volumes = candles.map(c => c.candle_acc_trade_volume);
-          
-          // 1. Trend Analysis (5+ same direction, 3+ highs/lows)
-          let trend = 'sideways';
-          let upHighs = 0, upLows = 0, downHighs = 0, downLows = 0;
-          for (let i = 0; i < 5; i++) {
-            if (highs[i] > highs[i+1]) upHighs++;
-            if (lows[i] > lows[i+1]) upLows++;
-            if (highs[i] < highs[i+1]) downHighs++;
-            if (lows[i] < lows[i+1]) downLows++;
+        if (candles && candles.length >= MARKET_ANALYSIS_CANDLE_COUNT) {
+          const candleData: CandleSnapshot[] = candles.map((c) => ({
+            open: c.opening_price,
+            close: c.trade_price,
+            high: c.high_price,
+            low: c.low_price,
+            volume: c.candle_acc_trade_volume,
+            upperWickRatio:
+              (c.high_price - Math.max(c.opening_price, c.trade_price)) /
+              (c.high_price - c.low_price + Number.EPSILON),
+          }));
+          const completedCandles = candleData.slice(1);
+
+          if (completedCandles.length >= BREAKOUT_LOOKBACK + SUSTAIN_LOOKBACK) {
+            const latestCompleted = completedCandles[0];
+            const trendCandles = completedCandles.slice(0, TREND_LOOKBACK);
+            const recentVolumeCandles = completedCandles.slice(0, RECENT_VOLUME_WINDOW);
+            const baselineVolumeCandles = completedCandles.slice(
+              RECENT_VOLUME_WINDOW,
+              RECENT_VOLUME_WINDOW + BASELINE_VOLUME_WINDOW,
+            );
+            const breakoutReferenceCandles = completedCandles.slice(1, BREAKOUT_LOOKBACK + 1);
+            const sustainReferenceCandles = completedCandles.slice(
+              SUSTAIN_LOOKBACK,
+              SUSTAIN_LOOKBACK + BREAKOUT_LOOKBACK,
+            );
+            const recentThreeCandles = completedCandles.slice(0, SUSTAIN_LOOKBACK);
+
+            const higherHighCount = trendCandles
+              .slice(0, -1)
+              .reduce(
+                (count, candle, index) => count + (candle.high > trendCandles[index + 1].high ? 1 : 0),
+                0,
+              );
+            const higherLowCount = trendCandles
+              .slice(0, -1)
+              .reduce(
+                (count, candle, index) => count + (candle.low > trendCandles[index + 1].low ? 1 : 0),
+                0,
+              );
+            const higherCloseCount = trendCandles
+              .slice(0, -1)
+              .reduce(
+                (count, candle, index) => count + (candle.close > trendCandles[index + 1].close ? 1 : 0),
+                0,
+              );
+
+            const recentHigh = Math.max(...breakoutReferenceCandles.map((c) => c.high));
+            const sustainedLevel = Math.max(...sustainReferenceCandles.map((c) => c.high));
+            const avgVol3 = average(recentVolumeCandles.map((c) => c.volume));
+            const avgVol10 = average(baselineVolumeCandles.map((c) => c.volume));
+
+            const isUpTrend =
+              higherHighCount >= 3 &&
+              higherLowCount >= 3 &&
+              higherCloseCount >= 3 &&
+              latestCompleted.close > trendCandles[TREND_LOOKBACK - 1].close;
+            const isBreakout = latestCompleted.close > recentHigh;
+            const isSustained = recentThreeCandles.every((c) => c.close > sustainedLevel);
+            const isVolumeSpike = avgVol3 >= avgVol10 * VOLUME_SPIKE_MULTIPLIER;
+
+            const attemptedBreakout = latestCompleted.high > recentHigh;
+            const breakoutRejected = attemptedBreakout && latestCompleted.close <= recentHigh;
+            const isFakeout =
+              breakoutRejected ||
+              (isBreakout && !isVolumeSpike && latestCompleted.upperWickRatio >= 0.45) ||
+              (attemptedBreakout && latestCompleted.upperWickRatio >= 0.55 && latestCompleted.close < latestCompleted.open);
+
+            setMarketAnalysis({ isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh });
           }
-          
-          const range = Math.max(...highs.slice(0, 5)) / Math.min(...lows.slice(0, 5)) - 1;
-          if (range > 0.05) {
-            if (upHighs >= 3 && upLows >= 3 && (upHighs + upLows) >= 5) trend = 'up';
-            else if (downHighs >= 3 && downLows >= 3 && (downHighs + downLows) >= 5) trend = 'down';
-          }
-
-          // 2. Volume Analysis (Recent 3 avg / Prev 10 avg > 1.3)
-          const recentVol = volumes.slice(0, 3).reduce((a, b) => a + b, 0) / 3;
-          const prevVol = volumes.slice(3, 13).reduce((a, b) => a + b, 0) / 10;
-          let volume = recentVol > prevVol * 1.3 ? 'high' : 'normal';
-
-        const candleData = candles.map(c => ({
-          open: c.opening_price,
-          close: c.trade_price,
-          high: c.high_price,
-          low: c.low_price,
-          volume: c.candle_acc_trade_volume,
-          upperWickRatio: (c.high_price - Math.max(c.opening_price, c.trade_price)) / (c.high_price - c.low_price + 0.0000000001)
-        }));
-
-        const highs20 = candleData.map(c => c.high);
-        const recentHigh = Math.max(...highs20.slice(0, 20));
-        const avgVol3 = candleData.slice(0, 3).reduce((a, b) => a + b.volume, 0) / 3;
-        const avgVol10 = candleData.slice(3, 13).reduce((a, b) => a + b.volume, 0) / 10;
-        
-        const isUpTrend = candleData[0].close > candleData[3].close && candleData[0].low > candleData[3].low;
-        const isBreakout = candleData[0].close > recentHigh;
-        const isSustained = candleData.slice(0, 3).every(c => c.close > recentHigh);
-        const isVolumeSpike = avgVol3 > avgVol10 * 1.5;
-        const isFakeout = (isBreakout && avgVol3 < avgVol10) || 
-                          (candleData[0].upperWickRatio > 0.4) ||
-                          (isBreakout && candleData[1].close < recentHigh);
-        
-        setMarketAnalysis({ isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh });
         }
       }
     };
@@ -188,8 +242,9 @@ export function PositionForm() {
     e.preventDefault();
     if (formData.buyPrice <= 0 || formData.amount <= 0 || control.isInputDisabled || cooldownTime > 0) return;
 
-    const slPrice = formData.buyPrice * (1 + settings.stopLossPercent / 100);
-    const tpPrice = formData.buyPrice * (1 + settings.takeProfitPercent / 100);
+    const slPrice = formData.buyPrice * (1 + SHORT_TERM_STOP_LOSS_PERCENT / 100);
+    const tp1Price = formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_1_PERCENT / 100);
+    const tp2Price = formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_2_PERCENT / 100);
 
     addPosition({
       coin: formData.coin,
@@ -197,10 +252,11 @@ export function PositionForm() {
       buyPrice: formData.buyPrice,
       quantity: formData.quantity,
       entryAmount: formData.amount,
-      stopLossPercent: formData.type === 'short_term' ? settings.stopLossPercent : 0,
+      stopLossPercent: formData.type === 'short_term' ? SHORT_TERM_STOP_LOSS_PERCENT : 0,
       takeProfitPercent: formData.type === 'short_term' ? settings.takeProfitPercent : 0,
       stopLossPrice: formData.type === 'short_term' ? slPrice : 0,
-      takeProfitPrice: formData.type === 'short_term' ? tpPrice : 0,
+      takeProfitPrice1: formData.type === 'short_term' ? tp1Price : 0,
+      takeProfitPrice2: formData.type === 'short_term' ? tp2Price : 0,
       memo: formData.memo,
       isLocked: formData.type === 'long_term',
     });
@@ -214,8 +270,73 @@ export function PositionForm() {
   const isBlocked = isInputBlocked || isCoinBlocked;
 
   // Rule Summary Preview
-  const slPreview = formData.buyPrice > 0 ? formData.buyPrice * (1 + settings.stopLossPercent / 100) : 0;
-  const tpPreview = formData.buyPrice > 0 ? formData.buyPrice * (1 + settings.takeProfitPercent / 100) : 0;
+  const slPreview = formData.buyPrice > 0 ? formData.buyPrice * (1 + SHORT_TERM_STOP_LOSS_PERCENT / 100) : 0;
+  const tp1Preview = formData.buyPrice > 0 ? formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_1_PERCENT / 100) : 0;
+  const tp2Preview = formData.buyPrice > 0 ? formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_2_PERCENT / 100) : 0;
+
+  const entryAnalysis = (() => {
+    if (!marketAnalysis) {
+      return {
+        score: 0,
+        scoreLabel: '-',
+        scoreColor: 'text-text-muted/40',
+        conclusion: '데이터 확인 중',
+        reasons: ['시장 데이터 수집 중'],
+        entryState: '상태 확인 중',
+      };
+    }
+
+    const { isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout } = marketAnalysis;
+
+    let score = 0;
+    if (isUpTrend) score += 30;
+    if (isVolumeSpike) score += 20;
+    if (isBreakout) score += 25;
+    if (isSustained) score += 15;
+    if (isBreakout && isVolumeSpike) score += 10;
+    if (isBreakout && isSustained) score += 10;
+    if (isBreakout && !isSustained) score -= 10;
+    score = Math.max(0, Math.min(100, score));
+
+    let conclusion = '방향성 없음';
+    const reasons: string[] = [];
+    if (isUpTrend) reasons.push('단기 상승 흐름');
+    if (isVolumeSpike) reasons.push('거래량 유입 확대');
+    if (isBreakout) reasons.push('직전 고점 돌파 확인');
+    if (isSustained) reasons.push('돌파 가격대 유지');
+    if (!isUpTrend && !isVolumeSpike && !isBreakout) reasons.push('뚜렷한 신호 부족');
+
+    const scoreLabel = score >= 75 ? '높음' : (score >= 60 ? '보통' : '낮음');
+    const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
+
+    if (isFakeout) {
+      conclusion = '가짜 돌파 가능성';
+    } else if (isBreakout && !isSustained) {
+      conclusion = '돌파 유지 실패';
+    } else if (isUpTrend && (isBreakout || isSustained)) {
+      conclusion = '추세 형성 중';
+    } else if (score >= 35 || isVolumeSpike || isBreakout) {
+      conclusion = '조건 일부 충족';
+    } else {
+      conclusion = '방향성 없음';
+    }
+
+    let entryState = '대기';
+    if (isFakeout) entryState = '진입 금지';
+    else if (isBreakout && !isSustained) entryState = '대기';
+    else if (score >= 75 && isBreakout && isSustained) entryState = '진입 신호';
+    else if (score >= 60) entryState = '진입 준비';
+    else if (score >= 35) entryState = '관망';
+
+    return {
+      score,
+      scoreLabel,
+      scoreColor,
+      conclusion,
+      reasons: Array.from(new Set(reasons)),
+      entryState,
+    };
+  })();
 
   // Status Priority for form
   useEffect(() => {
@@ -354,10 +475,10 @@ export function PositionForm() {
           
           <div className="mb-2">
             <div className={`text-base font-black uppercase tracking-tight ${statusInfo.color}`}>
-              {statusInfo.label}
+              {entryAnalysis.entryState}
             </div>
             <div className="text-[9px] font-bold text-text-muted/60 uppercase tracking-widest mt-1">
-              {statusInfo.desc}
+              {entryAnalysis.reasons[0]}
             </div>
           </div>
         </div>
@@ -394,68 +515,29 @@ export function PositionForm() {
         </div>
       </div>
 
-        {/* 시장 상태 확인 UI */}
-        {(() => {
-        if (!marketAnalysis) {
-          return (
-            <div className="mt-3 p-4 border rounded-lg bg-gray-50 border-text-main/10">
-              <div className="text-sm font-semibold text-gray-700">시장 상태 확인</div>
-              <div className="mt-2 text-sm text-gray-600">충족 정도: -</div>
-              <div className="mt-1 text-sm text-gray-600">결론: 대기 중</div>
-            </div>
-          );
-        }
-
-        // 1. 상태 및 데이터 추출
-        const { isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh } = marketAnalysis;
-        
-        // 2. 점수 계산 (조건 충족 정도)
-        let score = 0;
-        if (isUpTrend) score += 35;
-        if (isVolumeSpike) score += 25;
-        if (isBreakout) score += 25;
-        if (isSustained) score += 15;
-        score = Math.min(100, Math.max(0, score));
-
-        // 3. 결론 및 근거
-        let conclusion = "대기";
-        const reasons: string[] = [];
-        const price = currentPrice || 0;
-        
-        let scoreLabel = score >= 75 ? "많음" : (score >= 60 ? "보통" : "낮음");
-        const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
-
-        if (isFakeout) {
-            conclusion = "가짜 돌파 가능성";
-            reasons.push("돌파 후 매물 출회", "거래량 부족 또는 윗꼬리");
-        } else if (score >= 75 && isUpTrend && isVolumeSpike && isBreakout && isSustained) {
-            conclusion = "조건 일부 충족 (확인 필요)";
-            reasons.push("상승 추세 전환", "거래량 유입", "돌파 유지");
-        } else if (isBreakout === false && price < recentHigh * 0.95 && isVolumeSpike) {
-            conclusion = "현재 시장 상태 (하락 진행)";
-            reasons.push("하락 추세 확인", "지지선 이탈", "매도 거래량 증가");
-        } else if (price >= recentHigh * 0.95 && !isBreakout && isVolumeSpike) {
-            conclusion = "관찰 구간 (진입 금지)";
-            reasons.push("최근 고점 근접", "거래량 변화 발생");
-        }
-        
-        return (
-          <div className="mt-3 p-4 border rounded-lg bg-gray-50 border-text-main/10">
-            <div className="text-sm font-semibold text-gray-700 mb-2">시장 상태 확인</div>
-            <div className="text-sm font-bold mb-1">
-              조건 충족 정도: <span className={`text-base ${scoreColor}`}>{score} ({scoreLabel})</span> / 100
-            </div>
-            <div className="text-base font-bold text-gray-900 mb-2">결론: {conclusion}</div>
-            <div className="text-[10px] text-text-muted/60 mb-3 font-bold italic">
-              * 조건 충족 여부만 표시합니다. 결정은 사용자 책임입니다.
-            </div>
-            <div className="text-sm font-semibold text-gray-700 mb-1">근거</div>
-            <ul className="text-xs text-gray-600 space-y-0.5 list-disc list-inside">
-              {reasons.map((r, i) => <li key={i}>{r}</li>)}
-            </ul>
-          </div>
-        );
-      })()}
+      {/* 시장 상태 확인 UI */}
+      <div className="mt-3 p-4 border rounded-lg bg-gray-50 border-text-main/10">
+        <div className="text-sm font-semibold text-gray-700 mb-2">단기 흐름 요약</div>
+        <div className="text-sm font-bold mb-1">
+          조건 충족 정도:{' '}
+          {marketAnalysis ? (
+            <span className={`text-base ${entryAnalysis.scoreColor}`}>
+              {entryAnalysis.score} ({entryAnalysis.scoreLabel})
+            </span>
+          ) : (
+            <span className="text-base text-text-muted/40">-</span>
+          )}{' '}
+          / 100
+        </div>
+        <div className="text-base font-bold text-gray-900 mb-2">상태 해석: {entryAnalysis.conclusion}</div>
+        <div className="text-[10px] text-text-muted/60 mb-3 font-bold italic">
+          * 참고용 상태 요약입니다. 실제 판단 전 추가 확인이 필요할 수 있습니다.
+        </div>
+        <div className="text-sm font-semibold text-gray-700 mb-1">확인된 신호</div>
+        <ul className="text-xs text-gray-600 space-y-0.5 list-disc list-inside">
+          {entryAnalysis.reasons.map((r, i) => <li key={i}>{r}</li>)}
+        </ul>
+      </div>
 
       {/* STRATEGY TYPE */}
       <div className="space-y-2">
@@ -525,15 +607,16 @@ export function PositionForm() {
         </div>
         <div className="space-y-2 font-mono text-[11px] font-bold">
           <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
-            <span className="text-text-muted/40">{t('stop_loss_val')}</span>
+            <span className="text-text-muted/40">SL ({settings.stopLossPercent}%)</span>
             <span className="text-status-danger/40 text-[9px]">({slPreview ? formatPrice(slPreview) : "-"})</span>
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
-            <span className="text-text-muted/40">{t('take_profit_val')}</span>
-            <span className="text-status-safe/40 text-[9px]">({tpPreview ? formatPrice(tpPreview) : "-"})</span>
+            <span className="text-text-muted/40">TP1 (+{SHORT_TERM_TAKE_PROFIT_1_PERCENT}%)</span>
+            <span className="text-status-safe/40 text-[9px]">({tp1Preview ? formatPrice(tp1Preview) : "-"})</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-text-muted/40">{t('cooldown_min')}</span>
+            <span className="text-text-muted/40">TP2 (+{SHORT_TERM_TAKE_PROFIT_2_PERCENT}%)</span>
+            <span className="text-status-safe/40 text-[9px]">({tp2Preview ? formatPrice(tp2Preview) : "-"})</span>
           </div>
         </div>
       </div>
