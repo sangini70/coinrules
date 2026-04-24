@@ -190,6 +190,15 @@ export function PositionForm() {
   const filteredCoins = COIN_OPTIONS.filter(c => c.replace('KRW-', '').toLowerCase().includes(coinInput.toLowerCase()));
   const isCustomCoin = coinInput.length >= 2 && !COIN_OPTIONS.includes(`KRW-${coinInput.toUpperCase()}`);
   const customMarket = `KRW-${coinInput.toUpperCase()}`;
+  // [CHANGED] Normalize the current selection so the UI always reads the same Zustand key.
+  const selectedCoin = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+  // [CHANGED] Bind the UI to the live store signal, with a minimal fallback only for first render.
+  const safeSignal = signals[selectedCoin] ?? {
+    breakout: 'none' as const,
+    state: 'WAIT' as const,
+    trend: 'neutral' as const,
+    volume: 'normal' as const,
+  };
 
   const handleSelectCoin = (coin: string) => {
     setFormData({ ...formData, coin });
@@ -376,8 +385,8 @@ export function PositionForm() {
 
   // Status Priority for form
   useEffect(() => {
-    console.log("SIGNAL:", signals[formData.coin]);
-  }, [signals, formData.coin]);
+    console.log('UI SIGNAL:', selectedCoin, safeSignal);
+  }, [selectedCoin, safeSignal]);
   
   const getFormStatus = () => {
     // [1] COOLDOWN CHECK
@@ -393,35 +402,21 @@ export function PositionForm() {
     }
     
     // [2] MARKET INTERPRETATION
-    const signal = signals[formData.coin];
-    if (signal && signal.state !== 'none') {
-      const stateKey = `state_${signal.state}` as keyof Translation;
-      const descKey = `desc_${signal.state}` as keyof Translation;
-      
-      const statusMap: Record<string, any> = {
-        'WAIT': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
-        'OBSERVE': { color: 'text-text-muted', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
-        'CAUTION': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
-        'PREPARE': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
-        'RISK': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
-      };
-      
-      const base = statusMap[signal.state] || statusMap['RISK'];
-      
-      return {
-        label: t(stateKey),
-        desc: t(descKey),
-        ...base
-      };
-    }
-    
+    const stateKey = `state_${safeSignal.state}` as keyof Translation;
+    const descKey = `desc_${safeSignal.state}` as keyof Translation;
+    const statusMap: Record<string, any> = {
+      'WAIT': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
+      'OBSERVE': { color: 'text-text-muted', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
+      'CAUTION': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
+      'PREPARE': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
+      'RISK': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
+    };
+    const base = statusMap[safeSignal.state] || statusMap.RISK;
+
     return {
-      label: t('state_RISK'),
-      desc: t('desc_RISK'),
-      color: 'text-text-muted/20',
-      border: 'border-text-main/10',
-      bg: 'bg-aux-bg',
-      dot: 'bg-text-muted/20'
+      label: t(stateKey),
+      desc: t(descKey),
+      ...base,
     };
   };
 
@@ -511,10 +506,10 @@ export function PositionForm() {
           
           <div className="mb-2">
             <div className={`text-base font-black uppercase tracking-tight ${statusInfo.color}`}>
-              {entryAnalysis.entryState}
+              {statusInfo.label}
             </div>
             <div className="text-[9px] font-bold text-text-muted/60 uppercase tracking-widest mt-1">
-              {entryAnalysis.reasons[0]}
+              {statusInfo.desc}
             </div>
           </div>
         </div>
@@ -523,20 +518,20 @@ export function PositionForm() {
         <div className="grid grid-cols-3 gap-2 border-y border-text-main/5 py-3 my-3">
             <div className="space-y-1">
               <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Trend</p>
-              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin]?.trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {signals[formData.coin]?.trend || '-'}
+              <p className={`text-[8px] font-bold uppercase ${safeSignal.trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {safeSignal.trend}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Volume</p>
-              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin]?.volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {signals[formData.coin]?.volume || '-'}
+              <p className={`text-[8px] font-bold uppercase ${safeSignal.volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {safeSignal.volume}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Breakout</p>
-              <p className={`text-[8px] font-bold uppercase ${signals[formData.coin]?.breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {signals[formData.coin]?.breakout === 'bullish_breakout' ? 'detect' : 'none'}
+              <p className={`text-[8px] font-bold uppercase ${safeSignal.breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
+                {safeSignal.breakout === 'bullish_breakout' ? 'detect' : 'none'}
               </p>
             </div>
         </div>
