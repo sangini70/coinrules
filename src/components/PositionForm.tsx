@@ -298,13 +298,22 @@ export function PositionForm() {
     if (isBreakout && !isSustained) score -= 10;
     score = Math.max(0, Math.min(100, score));
 
-    let conclusion = '방향성 없음';
+    let conclusion = '뚜렷한 신호 부족';
     const reasons: string[] = [];
+    const hasAnySignal = isUpTrend || isVolumeSpike || isBreakout || isSustained;
+    const strongCandidate = isUpTrend && isVolumeSpike && isBreakout;
+    const trendVolumeCandidate = isUpTrend && isVolumeSpike;
+    const breakoutVolumeCandidate = isBreakout && isVolumeSpike;
+    const breakoutTrendCandidate = isUpTrend && isBreakout;
+
+    if (isFakeout) reasons.push('가짜 돌파 가능성');
+    if (isBreakout && !isSustained) reasons.push('돌파 유지 실패');
     if (isUpTrend) reasons.push('단기 상승 흐름');
     if (isVolumeSpike) reasons.push('거래량 유입 확대');
-    if (isBreakout) reasons.push('직전 고점 돌파 확인');
-    if (isSustained) reasons.push('돌파 가격대 유지');
-    if (!isUpTrend && !isVolumeSpike && !isBreakout) reasons.push('뚜렷한 신호 부족');
+    if (!isVolumeSpike && (isUpTrend || isBreakout || isSustained)) reasons.push('거래량은 보통 수준');
+    if (isBreakout && isSustained) reasons.push('돌파 가격대 유지');
+    else if (isBreakout) reasons.push('직전 고점 돌파 시도');
+    if (!isUpTrend && !isVolumeSpike && !isBreakout && !isSustained) reasons.push('뚜렷한 신호 부족');
 
     const scoreLabel = score >= 75 ? '높음' : (score >= 60 ? '보통' : '낮음');
     const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
@@ -313,20 +322,26 @@ export function PositionForm() {
       conclusion = '가짜 돌파 가능성';
     } else if (isBreakout && !isSustained) {
       conclusion = '돌파 유지 실패';
-    } else if (isUpTrend && (isBreakout || isSustained)) {
-      conclusion = '추세 형성 중';
-    } else if (score >= 35 || isVolumeSpike || isBreakout) {
+    } else if (strongCandidate) {
+      conclusion = '조건 일부 충족';
+    } else if (trendVolumeCandidate || breakoutVolumeCandidate) {
+      conclusion = '거래량 유입 확대';
+    } else if (breakoutTrendCandidate || isUpTrend) {
+      conclusion = '단기 상승 흐름';
+    } else if (isVolumeSpike) {
+      conclusion = '거래량 유입 확대';
+    } else if (isBreakout || isSustained || score >= 35) {
       conclusion = '조건 일부 충족';
     } else {
-      conclusion = '방향성 없음';
+      conclusion = '뚜렷한 신호 부족';
     }
 
     let entryState = '대기';
     if (isFakeout) entryState = '진입 금지';
-    else if (isBreakout && !isSustained) entryState = '대기';
+    else if (isBreakout && !isSustained) entryState = '위험';
     else if (score >= 75 && isBreakout && isSustained) entryState = '진입 신호';
-    else if (score >= 60) entryState = '진입 준비';
-    else if (score >= 35) entryState = '관망';
+    else if (score >= 60 && hasAnySignal) entryState = '진입 준비';
+    else if (score >= 35 || isUpTrend || isVolumeSpike || isBreakout) entryState = '관망';
 
     return {
       score,
