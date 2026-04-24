@@ -301,15 +301,16 @@ export function PositionForm() {
     let conclusion = '관망';
     const reasons: string[] = [];
     const hasAnySignal = isUpTrend || isVolumeSpike || isBreakout || isSustained;
-    const strongCandidate = isUpTrend && isVolumeSpike && isBreakout;
     const hasNormalVolume = !isVolumeSpike;
 
     if (isFakeout) reasons.push('가짜 돌파 가능성');
+    if (isBreakout && !isSustained) reasons.push('돌파 유지 실패');
     if (isUpTrend && isVolumeSpike) reasons.push('거래량 동반 상승');
     else if (isUpTrend) reasons.push('상승 흐름');
+    else if (isVolumeSpike) reasons.push('거래량 유입 확대');
     if (isBreakout && isSustained) reasons.push('돌파 유지');
     else if (isBreakout) reasons.push('돌파 시도');
-    if (!isUpTrend && hasNormalVolume) reasons.push('횡보 구간');
+    if (!isUpTrend && hasNormalVolume && !isBreakout) reasons.push('횡보 구간');
     if (!hasAnySignal) reasons.push('관망');
 
     const scoreLabel = score >= 75 ? '높음' : (score >= 60 ? '보통' : '낮음');
@@ -317,6 +318,8 @@ export function PositionForm() {
 
     if (isFakeout) {
       conclusion = '가짜 돌파 가능성';
+    } else if (isBreakout && !isSustained) {
+      conclusion = '돌파 유지 실패';
     } else if (isBreakout && isSustained) {
       conclusion = '돌파 유지';
     } else if (isBreakout) {
@@ -325,12 +328,14 @@ export function PositionForm() {
       conclusion = '거래량 동반 상승';
     } else if (isUpTrend) {
       conclusion = '상승 흐름';
+    } else if (isVolumeSpike) {
+      conclusion = '거래량 유입 확대';
     } else if (!isUpTrend && hasNormalVolume && !isBreakout) {
       conclusion = '횡보 구간';
     } else if (!hasAnySignal) {
       conclusion = '관망';
     } else {
-      conclusion = strongCandidate || score >= 35 ? '관망' : '횡보 구간';
+      conclusion = score >= 35 || isSustained ? '관망' : '횡보 구간';
     }
 
     let entryState = '관망';
