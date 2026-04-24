@@ -208,11 +208,9 @@ export function PositionForm() {
 
   const handleFetchPrice = async () => {
     const market = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
-    console.log("FETCH START:", market);
 
     try {
       const ticker = await fetchTicker(market);
-      console.log("FETCH RESULT:", ticker?.trade_price);
       
       if (ticker && ticker.trade_price > 0) {
         setFormData(prev => ({
@@ -284,18 +282,49 @@ export function PositionForm() {
   const tp2Preview = formData.buyPrice > 0 ? formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_2_PERCENT / 100) : 0;
 
   const entryAnalysis = (() => {
+    const signalTrendUp = safeSignal.trend === 'up';
+    const signalVolumeSpike = safeSignal.volume === 'spike';
+    const signalBreakout = safeSignal.breakout === 'bullish_breakout';
+
     if (!marketAnalysis) {
       return {
         score: 0,
         scoreLabel: '-',
         scoreColor: 'text-text-muted/40',
-        conclusion: '데이터 확인 중',
-        reasons: ['시장 데이터 수집 중'],
-        entryState: '상태 확인 중',
+        conclusion: signalBreakout
+          ? '돌파 시도'
+          : signalTrendUp && signalVolumeSpike
+            ? '상승 흐름 강화'
+            : signalTrendUp
+              ? '상승 흐름 강화'
+            : signalVolumeSpike
+              ? '거래량 유입 확대'
+              : '관망 구간',
+        reasons: signalBreakout
+          ? ['직전 고점 재시험', '종가 안착 확인 필요']
+          : signalTrendUp && signalVolumeSpike
+            ? ['추세 유지 중', '거래량 증가']
+            : signalTrendUp
+              ? ['추세 유지 중', '거래량 확인 필요']
+            : signalVolumeSpike
+              ? ['거래량 증가', '방향성 확인 필요']
+              : ['시장 데이터 수집 중'],
+        entryState: signalBreakout
+          ? '돌파 시도'
+          : signalTrendUp && signalVolumeSpike
+            ? '관망'
+            : signalTrendUp
+              ? '상승 시작'
+              : signalVolumeSpike
+                ? '거래량 유입 확대'
+                : '대기',
       };
     }
 
     const { isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout } = marketAnalysis;
+    const trendActive = isUpTrend || signalTrendUp;
+    const volumeActive = isVolumeSpike || signalVolumeSpike;
+    const breakoutActive = isBreakout || signalBreakout;
 
     let score = 0;
     if (isUpTrend) score += 30;
@@ -310,13 +339,13 @@ export function PositionForm() {
     const interpretation =
       isFakeout
         ? 'fakeout'
-        : isBreakout
+        : breakoutActive
           ? (isSustained ? 'breakout_sustained' : 'breakout_attempt')
-          : isUpTrend && isVolumeSpike
+          : trendActive && volumeActive
             ? 'trend_volume'
-            : isVolumeSpike
+            : volumeActive
               ? 'volume_only'
-              : isUpTrend
+              : trendActive
                 ? 'trend_only'
                 : 'fallback';
 
@@ -351,7 +380,7 @@ export function PositionForm() {
           };
         case 'trend_only':
           return {
-            conclusion: '관망 구간',
+            conclusion: '상승 흐름 강화',
             reasons: ['추세 유지 중', '거래량 확인 필요', '지지선 확인 필요'],
           };
         default:
@@ -368,10 +397,15 @@ export function PositionForm() {
     const scoreLabel = score >= 75 ? '높음' : (score >= 60 ? '보통' : '낮음');
     const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
 
-    let entryState = '관망';
-    if (isFakeout || (isBreakout && !isSustained)) entryState = '진입 금지';
-    else if (score >= 75 && isBreakout && isSustained) entryState = '진입 신호';
-    else if (score >= 60) entryState = '관찰';
+    let entryState = '대기';
+    if (isFakeout) entryState = '진입 금지';
+    else if (breakoutActive && isSustained) entryState = score >= 75 && isBreakout ? '진입 신호' : '상승 지속';
+    else if (breakoutActive && !isSustained) entryState = '위험';
+    else if (trendActive && volumeActive) entryState = score >= 60 ? '진입 준비' : '관망';
+    else if (trendActive) entryState = '상승 시작';
+    else if (volumeActive) entryState = '거래량 유입 확대';
+    else if (score >= 60) entryState = '진입 준비';
+    else if (score >= 35) entryState = '관망';
 
     return {
       score,
@@ -384,10 +418,6 @@ export function PositionForm() {
   })();
 
   // Status Priority for form
-  useEffect(() => {
-    console.log('UI SIGNAL:', selectedCoin, safeSignal);
-  }, [selectedCoin, safeSignal]);
-  
   const getFormStatus = () => {
     // [1] COOLDOWN CHECK
     if (isCoinBlocked) {
@@ -401,21 +431,33 @@ export function PositionForm() {
       };
     }
     
-    // [2] MARKET INTERPRETATION
-    const stateKey = `state_${safeSignal.state}` as keyof Translation;
-    const descKey = `desc_${safeSignal.state}` as keyof Translation;
+    // [CHANGED] marketAnalysis가 있으면 entryAnalysis.entryState를 최종 표시 상태로 사용하고,
+    // safeSignal은 fallback 스타일 결정에만 사용합니다.
+    const displayState = marketAnalysis ? entryAnalysis.entryState : safeSignal.state;
+    const displayDesc = marketAnalysis ? entryAnalysis.conclusion : entryAnalysis.conclusion;
     const statusMap: Record<string, any> = {
+      '진입 금지': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
+      '위험': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
+      '진입 신호': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
+      '진입 준비': { color: 'text-blue-500', border: 'border-blue-500/30', bg: 'bg-blue-500/5', dot: 'bg-blue-500' },
+      '상승 지속': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
+      '상승 시작': { color: 'text-text-main', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-main' },
+      '거래량 유입 확대': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
+      '돌파 시도': { color: 'text-blue-500', border: 'border-blue-500/30', bg: 'bg-blue-500/5', dot: 'bg-blue-500' },
+      '관망': { color: 'text-text-main', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
+      '대기': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
+      '상태 확인 중': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
       'WAIT': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
       'OBSERVE': { color: 'text-text-muted', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
       'CAUTION': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
       'PREPARE': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
       'RISK': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
     };
-    const base = statusMap[safeSignal.state] || statusMap.RISK;
+    const base = statusMap[displayState] || statusMap[safeSignal.state] || statusMap.RISK;
 
     return {
-      label: t(stateKey),
-      desc: t(descKey),
+      label: displayState,
+      desc: displayDesc,
       ...base,
     };
   };
