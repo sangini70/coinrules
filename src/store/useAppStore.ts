@@ -67,6 +67,16 @@ const DEFAULT_CONTROL: TradeControlState = {
   lastTradeDate: new Date().toISOString().split('T')[0],
 };
 
+const MONITORED_COINS = ['KRW-BTC', 'KRW-ETH', 'KRW-SOL', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE', 'KRW-AVAX'];
+
+const createSafeSignal = (signal?: Partial<ObservationSignal>): ObservationSignal => ({
+  breakout: signal?.breakout ?? 'none',
+  state: signal?.state ?? 'WAIT',
+  trend: signal?.trend ?? 'neutral',
+  volume: signal?.volume ?? 'normal',
+  updatedAt: signal?.updatedAt ?? new Date().toISOString(),
+});
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -86,44 +96,42 @@ export const useAppStore = create<AppStore>()(
       },
 
       fetchSignals: async (coin) => {
-        try {
-          const candles = await fetchCandles(coin, 100, 15);
-          if (Array.isArray(candles) && candles.length > 50) {
-            const rawSignal = analyzeSignal(candles);
-            const { signalBuffer, signals } = get();
-            
-            const buffer = signalBuffer[coin] || [];
-            const newBuffer = [...buffer, rawSignal].slice(-3); // Keep last 3
-            
-            set((state) => ({
-              signalBuffer: { ...state.signalBuffer, [coin]: newBuffer }
-            }));
+        const targetCoins = Array.from(new Set([...MONITORED_COINS, coin]));
 
-            // Debounce: all 3 must be same
-            if (newBuffer.length === 3 && newBuffer.every(s => s.state === rawSignal.state)) {
-              set((state) => ({
-                signals: { 
-                  ...state.signals, 
-                  [coin]: { ...rawSignal, updatedAt: new Date().toISOString() } 
+        try {
+          await Promise.all(
+            targetCoins.map(async (targetCoin) => {
+              let rawSignal: ObservationSignal | undefined;
+
+              try {
+                const candles = await fetchCandles(targetCoin, 100, 15);
+                if (Array.isArray(candles) && candles.length > 50) {
+                  rawSignal = analyzeSignal(candles);
                 }
+              } catch (e) {
+                console.warn(
+                  `Signals fetch failed for ${targetCoin}, using safe fallback. (Reason: ${e instanceof Error ? e.message : 'Unknown'})`,
+                );
+              }
+
+              const safeSignal = createSafeSignal(rawSignal);
+              const { signalBuffer } = get();
+              const buffer = signalBuffer[targetCoin] || [];
+              const newBuffer = [...buffer, safeSignal].slice(-3);
+
+              console.log('COIN:', targetCoin);
+              console.log('SIGNAL RAW:', rawSignal);
+              console.log('SIGNAL FINAL:', safeSignal);
+
+              set((state) => ({
+                signalBuffer: { ...state.signalBuffer, [targetCoin]: newBuffer },
+                signals: {
+                  ...state.signals,
+                  [targetCoin]: safeSignal,
+                },
               }));
-            }
-          }
-        } catch (e) {
-          console.warn(`Signals fetch failed for ${coin}, using safe fallback. (Reason: ${e instanceof Error ? e.message : 'Unknown'})`);
-          
-          // Basic Mock Detection for preview stability
-          const mockSignal: ObservationSignal = {
-            trend: 'up',
-            volume: 'normal',
-            breakout: 'none',
-            state: 'RISK',
-            updatedAt: new Date().toISOString()
-          };
-          
-          set((state) => ({
-            signals: { ...state.signals, [coin]: mockSignal }
-          }));
+            }),
+          );
         } finally {
           // TTL Cleanup for all signals
           const { signals } = get();
