@@ -39,7 +39,14 @@ type MarketAnalysis = {
   recentHigh: number;
 };
 
+type LiquiditySnapshot = {
+  avgVolume5m: number;
+  volume1m: number;
+};
+
 const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+const formatMetric = (value: number, fractionDigits: number = 2) =>
+  Number.isFinite(value) ? value.toLocaleString('ko-KR', { maximumFractionDigits: fractionDigits }) : '-';
 
 export function PositionForm() {
   const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals } = useAppStore();
@@ -51,6 +58,10 @@ export function PositionForm() {
   
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
+  const [liquiditySnapshot, setLiquiditySnapshot] = useState<LiquiditySnapshot>({
+    avgVolume5m: 0,
+    volume1m: 0,
+  });
   const [formData, setFormData] = useState({
     coin: 'KRW-BTC',
     type: 'short_term' as 'short_term' | 'long_term',
@@ -74,7 +85,10 @@ export function PositionForm() {
 
     const fetchMarketData = async () => {
       const ticker = await fetchTicker(market);
-      const candles = await fetchCandles(market, MARKET_ANALYSIS_CANDLE_COUNT);
+      const [candles, oneMinuteCandles] = await Promise.all([
+        fetchCandles(market, MARKET_ANALYSIS_CANDLE_COUNT, 5),
+        fetchCandles(market, 2, 1),
+      ]);
 
       if (!active) return;
       
@@ -94,6 +108,22 @@ export function PositionForm() {
               (c.high_price - c.low_price + Number.EPSILON),
           }));
           const completedCandles = candleData.slice(1);
+
+          const avgVolume5m = average(
+            completedCandles
+              .slice(0, 5)
+              .map((c) => c.volume)
+              .filter((volume) => Number.isFinite(volume) && volume > 0),
+          );
+          const volume1m = Array.isArray(oneMinuteCandles) && oneMinuteCandles.length > 0
+            ? Math.max(0, Number(oneMinuteCandles[0]?.candle_acc_trade_volume ?? 0))
+            : 0;
+
+          setLiquiditySnapshot((prevSnapshot) => (
+            prevSnapshot.avgVolume5m === avgVolume5m && prevSnapshot.volume1m === volume1m
+              ? prevSnapshot
+              : { avgVolume5m, volume1m }
+          ));
 
           if (completedCandles.length >= BREAKOUT_LOOKBACK + SUSTAIN_LOOKBACK) {
             const latestCompleted = completedCandles[0];
@@ -246,9 +276,38 @@ export function PositionForm() {
     }));
   };
 
+  const estimatedQuantity = formData.buyPrice > 0 ? formData.amount / formData.buyPrice : 0;
+  const avgVolume5m = liquiditySnapshot.avgVolume5m;
+  const volume1m = liquiditySnapshot.volume1m;
+  const positionVolumeRatio5m = avgVolume5m > 0 ? estimatedQuantity / avgVolume5m : Number.POSITIVE_INFINITY;
+  const positionVolumeRatio1m = volume1m > 0 ? estimatedQuantity / volume1m : Number.POSITIVE_INFINITY;
+  const liquidityRisk =
+    positionVolumeRatio5m > 0.5 || positionVolumeRatio1m > 1.0 ? 'NO_ENTRY' : 'OK';
+  const liquidityBlockMessage =
+    '?쒖옣 嫄곕옒???鍮??덉긽 蹂댁쑀 ?섎웾??怨쇰룄?⑸땲??\n媛寃⑹씠 ?щ씪??留ㅻ룄 泥닿껐???대졄嫄곕굹 ???먯떎??諛쒖깮?????덉뼱 吏꾩엯??李⑤떒?⑸땲??';
+
+  const blockEntry = (message: string) => {
+    window.alert(message);
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (formData.buyPrice <= 0 || formData.amount <= 0 || safeControl.isInputDisabled || cooldownTime > 0) return;
+
+    // ENTRY PRE-CHECK: liquidity exit risk
+    const estimatedQuantity = formData.amount / formData.buyPrice;
+    const avgVolume5m = liquiditySnapshot.avgVolume5m;
+    const volume1m = liquiditySnapshot.volume1m;
+    const positionVolumeRatio5m = avgVolume5m > 0 ? estimatedQuantity / avgVolume5m : Number.POSITIVE_INFINITY;
+    const positionVolumeRatio1m = volume1m > 0 ? estimatedQuantity / volume1m : Number.POSITIVE_INFINITY;
+    const liquidityRisk =
+      positionVolumeRatio5m > 0.5 || positionVolumeRatio1m > 1.0 ? 'NO_ENTRY' : 'OK';
+
+    if (liquidityRisk === 'NO_ENTRY') {
+      return blockEntry(
+        '시장 거래량 대비 예상 보유 수량이 과도합니다.\n가격이 올라도 매도 체결이 어렵거나 큰 손실이 발생할 수 있어 진입을 차단합니다.',
+      );
+    }
 
     const slPrice = formData.buyPrice * (1 + SHORT_TERM_STOP_LOSS_PERCENT / 100);
     const tp1Price = formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_1_PERCENT / 100);
@@ -611,6 +670,43 @@ export function PositionForm() {
         <ul className="text-xs text-gray-600 space-y-0.5 list-disc list-inside">
           {entryAnalysis.reasons.map((r, i) => <li key={i}>{r}</li>)}
         </ul>
+      </div>
+
+      <div className={`mt-3 p-4 border rounded-lg ${liquidityRisk === 'NO_ENTRY' ? 'bg-status-danger/5 border-status-danger/20' : 'bg-gray-50 border-text-main/10'}`}>
+        <div className="text-sm font-semibold text-gray-700 mb-2">진입 전 유동성 체크</div>
+        <div className="grid grid-cols-2 gap-3 text-xs text-gray-700">
+          <div className="space-y-1">
+            <div className="text-text-muted/60">예상 보유 수량</div>
+            <div className="font-semibold">{formatMetric(estimatedQuantity, 6)}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-text-muted/60">5분 평균 거래량</div>
+            <div className="font-semibold">{formatMetric(avgVolume5m, 6)}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-text-muted/60">1분 거래량</div>
+            <div className="font-semibold">{formatMetric(volume1m, 6)}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-text-muted/60">최종 판정</div>
+            <div className={`font-semibold ${liquidityRisk === 'NO_ENTRY' ? 'text-status-danger' : 'text-status-safe'}`}>
+              {liquidityRisk === 'NO_ENTRY' ? '진입 차단' : '진입 가능'}
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-text-muted/60">5분 대비 내 물량 비율</div>
+            <div className="font-semibold">{formatMetric(positionVolumeRatio5m, 4)}</div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-text-muted/60">1분 대비 내 물량 비율</div>
+            <div className="font-semibold">{formatMetric(positionVolumeRatio1m, 4)}</div>
+          </div>
+        </div>
+        {liquidityRisk === 'NO_ENTRY' && (
+          <p className="mt-3 text-xs leading-relaxed text-status-danger whitespace-pre-line">
+            {liquidityBlockMessage}
+          </p>
+        )}
       </div>
 
       {/* STRATEGY TYPE */}
