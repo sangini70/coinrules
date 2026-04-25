@@ -19,6 +19,11 @@ export function TradePerformanceDashboard() {
 
   const safeTrades = Array.isArray(trades) ? trades : [];
   const safeTradeAnalysis = tradeAnalysis ?? EMPTY_TRADE_ANALYSIS;
+  const safeTotal = Number.isFinite(safeTradeAnalysis.total) ? Number(safeTradeAnalysis.total) : 0;
+  const safeWinRate = Number.isFinite(safeTradeAnalysis.winRate) ? Number(safeTradeAnalysis.winRate) : 0;
+  const safeAvgWin = Number.isFinite(safeTradeAnalysis.avgWin) ? Number(safeTradeAnalysis.avgWin) : 0;
+  const safeAvgLoss = Number.isFinite(safeTradeAnalysis.avgLoss) ? Number(safeTradeAnalysis.avgLoss) : 0;
+  const safeRr = Number.isFinite(safeTradeAnalysis.rr) ? Number(safeTradeAnalysis.rr) : 0;
 
   const recentResults = useMemo(
     () => safeTrades.filter(isClosedTrade).slice(0, 10),
@@ -26,11 +31,11 @@ export function TradePerformanceDashboard() {
   );
 
   const cards = [
-    { label: '총 거래 수', value: String(safeTradeAnalysis.total ?? 0).padStart(2, '0') },
-    { label: '승률 (%)', value: `${(safeTradeAnalysis.winRate ?? 0).toFixed(1)}%` },
-    { label: '평균 수익 (%)', value: formatPercent(safeTradeAnalysis.avgWin ?? 0) },
-    { label: '평균 손실 (%)', value: formatPercent(safeTradeAnalysis.avgLoss ?? 0) },
-    { label: '손익비 (RR)', value: (safeTradeAnalysis.rr ?? 0).toFixed(2) },
+    { label: '총 거래 수', value: String(safeTotal).padStart(2, '0') },
+    { label: '승률 (%)', value: `${safeWinRate.toFixed(1)}%` },
+    { label: '평균 수익 (%)', value: formatPercent(safeAvgWin) },
+    { label: '평균 손실 (%)', value: formatPercent(safeAvgLoss) },
+    { label: '손익비 (RR)', value: safeRr.toFixed(2) },
   ];
 
   return (

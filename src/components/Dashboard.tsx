@@ -9,20 +9,23 @@ export function Dashboard() {
   const safeControl = control ?? DEFAULT_CONTROL;
   const safeSettings = settings ?? DEFAULT_SETTINGS;
   const cooldowns = safeControl.cooldowns ?? {};
+  const cooldownEntries = Object.entries(cooldowns ?? {}).filter(
+    (entry): entry is [string, string] => typeof entry[0] === 'string' && typeof entry[1] === 'string',
+  );
   const [activeCooldowns, setActiveCooldowns] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     const now = new Date();
-    const active = Object.entries(cooldowns)
+    const active = cooldownEntries
       .filter(([_, endStr]) => new Date(endStr) > now)
       .map(([coin]) => coin);
     setActiveCooldowns(active);
-  }, [cooldowns]);
+  }, [cooldownEntries]);
 
   React.useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const currentlyActive = Object.entries(cooldowns)
+      const currentlyActive = cooldownEntries
         .filter(([_, endStr]) => new Date(endStr) > now)
         .map(([coin]) => coin);
       
@@ -38,7 +41,7 @@ export function Dashboard() {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [cooldowns, activeCooldowns, playSound]);
+  }, [cooldownEntries, activeCooldowns, playSound]);
 
   const isTradeLocked = Boolean(safeControl.isInputDisabled);
   const tradeCountPercent = safeSettings.maxDailyTrades > 0

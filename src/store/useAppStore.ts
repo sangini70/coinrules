@@ -338,12 +338,14 @@ export const useAppStore = create<AppStore>()(
           activePositions: [...state.activePositions, newPosition],
         }));
 
+        const entrySignal = get().signals?.[newPosition.coin] ?? DEFAULT_SIGNAL;
+
         void get().addTrade(newPosition.id, {
           coin: newPosition.coin,
           strategy: 'EMA_PULLBACK',
           entryPrice: newPosition.buyPrice,
           entryTime: Date.now(),
-          market: getTradeMarket(get().signals[newPosition.coin]),
+          market: getTradeMarket(entrySignal),
         });
       },
 
@@ -351,6 +353,8 @@ export const useAppStore = create<AppStore>()(
         const { activePositions, control, settings, history, signals } = get();
         const pos = activePositions.find((p) => p.id === id);
         if (!pos) return;
+
+        const signalSnapshot = signals?.[pos.coin] ?? DEFAULT_SIGNAL;
 
         const newHistory: TradeHistory = {
           id: `hist-${Math.random().toString(36).substr(2, 9)}`,
@@ -365,7 +369,7 @@ export const useAppStore = create<AppStore>()(
           reasonSell,
           resultType,
           date: new Date().toISOString(),
-          signalSnapshot: signals[pos.coin],
+          signalSnapshot,
         };
 
         // Update control state
