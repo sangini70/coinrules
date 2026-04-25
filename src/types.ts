@@ -8,6 +8,7 @@ export interface AppSettings {
   maxDailyTrades: number;
   maxConsecutiveLosses: number;
   cooldownMinutes: number;
+  alertEnabled: boolean;
   // Sound UX Control
   enableSound: boolean;
   enableVibration: boolean;

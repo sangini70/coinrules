@@ -19,6 +19,7 @@ import { en } from '../i18n/en';
 import { Translation } from '../i18n/types';
 import { analyzeSignal } from '../lib/signals';
 import { analyzeTrades, isClosedTrade } from '../lib/tradeAnalytics';
+import { triggerAlert } from '../lib/alerts';
 import {
   DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
   DEFAULT_SHORT_TERM_TAKE_PROFIT_PERCENT,
@@ -84,6 +85,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxDailyTrades: 3,
   maxConsecutiveLosses: 2,
   cooldownMinutes: 15,
+  alertEnabled: true,
   enableSound: false,
   enableVibration: false,
   notifyStopLoss: false,
@@ -203,6 +205,22 @@ export const useAppStore = create<AppStore>()(
               const { signalBuffer } = get();
               const buffer = signalBuffer[targetCoin] || [];
               const newBuffer = [...buffer, safeSignal].slice(-3);
+              const alertScore =
+                (safeSignal.trend === 'up' ? 30 : 0) +
+                (safeSignal.volume === 'spike' ? 20 : 0) +
+                (safeSignal.breakout === 'bullish_breakout' ? 25 : 0) +
+                (safeSignal.state === 'PREPARE' ? 25 : 0);
+
+              triggerAlert(
+                targetCoin,
+                {
+                  isBreakout: safeSignal.breakout === 'bullish_breakout',
+                  isVolumeSpike: safeSignal.volume === 'spike',
+                  isFakeout: safeSignal.state === 'RISK',
+                  score: Math.max(0, Math.min(100, alertScore)),
+                },
+                get().settings,
+              );
 
               set((state) => ({
                 signalBuffer: { ...state.signalBuffer, [targetCoin]: newBuffer },
