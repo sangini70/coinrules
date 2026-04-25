@@ -8,6 +8,7 @@ import { Layout } from './components/Layout';
 import { PositionTabs, LongTermView } from './components/PositionTabs';
 import { SettingsPanel } from './components/SettingsPanel';
 import { PositionForm } from './components/PositionForm';
+import { TradePerformanceDashboard } from './components/TradePerformanceDashboard';
 import {
   ShieldCheck,
   Download,
@@ -89,6 +90,8 @@ export default function App() {
     importData,
     resetAll,
     applyAppStateSnapshot,
+    loadTrades,
+    clearTrades,
   } = useAppStore();
   const t = useAppStore((state) => state.t)();
   const persistedSnapshot = useAppStore(
@@ -175,6 +178,7 @@ export default function App() {
         setAuthUser(null);
         setCloudStatus('idle');
         lastSyncedSnapshotRef.current = '';
+        clearTrades();
         setAuthLoading(false);
         return;
       }
@@ -197,6 +201,7 @@ export default function App() {
           }
         }
 
+        await loadTrades();
         lastSyncedSnapshotRef.current = serializeSnapshot(useAppStore.getState().getAppStateSnapshot());
         setCloudStatus('synced');
       } catch (error) {
@@ -210,7 +215,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [applyAppStateSnapshot]);
+  }, [applyAppStateSnapshot, loadTrades, clearTrades]);
 
   useEffect(() => {
     if (!authUser || !cloudReady || authLoading) return;
@@ -460,6 +465,8 @@ export default function App() {
                   {authError === 'auth' ? authText.authError : authText.syncError}
                 </div>
               )}
+
+              <TradePerformanceDashboard />
 
               <nav className="flex items-center gap-8 border-b border-text-main/10 overflow-x-auto pb-px no-scrollbar">
                 <button

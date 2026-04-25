@@ -51,6 +51,34 @@ export interface TradeHistory {
   signalSnapshot?: ObservationSignal;
 }
 
+export type TradeStrategy = 'EMA_PULLBACK';
+export type TradeMarket = 'bull' | 'range' | 'bear';
+export type TradeResult = 'win' | 'loss';
+
+export interface Trade {
+  coin: string;
+  strategy: TradeStrategy;
+  entryPrice: number;
+  exitPrice?: number;
+  entryTime: number;
+  exitTime?: number;
+  result?: TradeResult;
+  pnlPercent?: number;
+  market: TradeMarket;
+}
+
+export interface StoredTrade extends Trade {
+  id: string;
+}
+
+export interface TradeAnalysis {
+  total: number;
+  winRate: number;
+  avgWin: number;
+  avgLoss: number;
+  rr: number;
+}
+
 export interface TradeControlState {
   todayTradeCount: number;
   consecutiveLossCount: number;

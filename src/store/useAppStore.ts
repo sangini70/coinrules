@@ -1,16 +1,31 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AppSettings, Position, TradeHistory, TradeControlState, PositionStatus, ResultType, ObservationSignal } from '../types';
+import {
+  AppSettings,
+  Position,
+  TradeHistory,
+  TradeControlState,
+  PositionStatus,
+  ResultType,
+  ObservationSignal,
+  StoredTrade,
+  Trade,
+  TradeAnalysis,
+  TradeMarket,
+} from '../types';
 import { isSameDay } from 'date-fns';
 import { ko } from '../i18n/ko';
 import { en } from '../i18n/en';
 import { Translation } from '../i18n/types';
 import { analyzeSignal } from '../lib/signals';
+import { analyzeTrades, isClosedTrade } from '../lib/tradeAnalytics';
 import {
   DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
   DEFAULT_SHORT_TERM_TAKE_PROFIT_PERCENT,
 } from '../lib/tradingRules';
 import { fetchCandles } from '../services/upbitService';
+import { auth, db } from '../lib/firebase';
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
 
 interface AppStore {
   settings: AppSettings;
@@ -21,6 +36,8 @@ interface AppStore {
   signals: Record<string, ObservationSignal>;
   signalBuffer: Record<string, ObservationSignal[]>; // For debouncing
   lastPlayed: Record<string, number>; // throttle for sound
+  trades: StoredTrade[];
+  tradeAnalysis: TradeAnalysis;
 
   // Actions
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -43,6 +60,13 @@ interface AppStore {
   resetAll: () => void;
   getAppStateSnapshot: () => PersistedAppState;
   applyAppStateSnapshot: (snapshot: Partial<PersistedAppState>) => void;
+  loadTrades: () => Promise<void>;
+  addTrade: (tradeId: string, trade: Trade) => Promise<void>;
+  updateTrade: (
+    tradeId: string,
+    updates: Pick<Trade, 'exitPrice' | 'exitTime' | 'result' | 'pnlPercent'>,
+  ) => Promise<void>;
+  clearTrades: () => void;
 }
 
 export interface PersistedAppState {
@@ -77,6 +101,14 @@ const DEFAULT_CONTROL: TradeControlState = {
   lastTradeDate: new Date().toISOString().split('T')[0],
 };
 
+const EMPTY_TRADE_ANALYSIS: TradeAnalysis = {
+  total: 0,
+  winRate: 0,
+  avgWin: 0,
+  avgLoss: 0,
+  rr: 0,
+};
+
 function sanitizePersistedAppState(input: any): PersistedAppState {
   return {
     settings: input?.settings ?? DEFAULT_SETTINGS,
@@ -88,6 +120,20 @@ function sanitizePersistedAppState(input: any): PersistedAppState {
 }
 
 const MONITORED_COINS = ['KRW-BTC', 'KRW-ETH', 'KRW-SOL', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE', 'KRW-AVAX'];
+
+const sortTrades = (trades: StoredTrade[]) =>
+  [...trades].sort((a, b) => {
+    const timeA = a.exitTime ?? a.entryTime;
+    const timeB = b.exitTime ?? b.entryTime;
+    return timeB - timeA;
+  });
+
+const getTradeMarket = (signal?: ObservationSignal): TradeMarket => {
+  if (!signal) return 'range';
+  if (signal.breakout === 'bullish_breakout' || signal.trend === 'up') return 'bull';
+  if (signal.state === 'RISK') return 'bear';
+  return 'range';
+};
 
 const createSafeSignal = (signal?: Partial<ObservationSignal>): ObservationSignal => ({
   breakout: signal?.breakout ?? 'none',
@@ -108,6 +154,8 @@ export const useAppStore = create<AppStore>()(
       signals: {},
       signalBuffer: {},
       lastPlayed: {},
+      trades: [],
+      tradeAnalysis: EMPTY_TRADE_ANALYSIS,
 
       t: () => {
         const { language } = get();
@@ -275,6 +323,14 @@ export const useAppStore = create<AppStore>()(
         set((state) => ({
           activePositions: [...state.activePositions, newPosition],
         }));
+
+        void get().addTrade(newPosition.id, {
+          coin: newPosition.coin,
+          strategy: 'EMA_PULLBACK',
+          entryPrice: newPosition.buyPrice,
+          entryTime: Date.now(),
+          market: getTradeMarket(get().signals[newPosition.coin]),
+        });
       },
 
       closePosition: (id: string, sellPrice: number, resultType: ResultType, reasonSell: string) => {
@@ -324,6 +380,14 @@ export const useAppStore = create<AppStore>()(
             cooldowns,
           },
         }));
+
+        const pnlPercent = ((sellPrice / pos.buyPrice) - 1) * 100;
+        void get().updateTrade(id, {
+          exitPrice: sellPrice,
+          exitTime: Date.now(),
+          result: pnlPercent >= 0 ? 'win' : 'loss',
+          pnlPercent,
+        });
       },
 
       deletePosition: (id) => set((state) => ({
@@ -380,6 +444,71 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
+      loadTrades: async () => {
+        const user = auth.currentUser;
+        if (!user) {
+          set({ trades: [], tradeAnalysis: EMPTY_TRADE_ANALYSIS });
+          return;
+        }
+
+        const tradeSnapshot = await getDocs(collection(db, 'users', user.uid, 'trades'));
+        const trades = sortTrades(
+          tradeSnapshot.docs.map((tradeDoc) => ({
+            id: tradeDoc.id,
+            ...(tradeDoc.data() as Trade),
+          })),
+        );
+
+        set({
+          trades,
+          tradeAnalysis: analyzeTrades(trades),
+        });
+      },
+
+      addTrade: async (tradeId, trade) => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        await setDoc(doc(db, 'users', user.uid, 'trades', tradeId), trade, { merge: true });
+
+        set((state) => {
+          const trades = sortTrades([
+            { id: tradeId, ...trade },
+            ...state.trades.filter((existingTrade) => existingTrade.id !== tradeId),
+          ]);
+
+          return {
+            trades,
+            tradeAnalysis: analyzeTrades(trades),
+          };
+        });
+      },
+
+      updateTrade: async (tradeId, updates) => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        await setDoc(doc(db, 'users', user.uid, 'trades', tradeId), updates, { merge: true });
+
+        set((state) => {
+          const trades = sortTrades(
+            state.trades.map((trade) =>
+              trade.id === tradeId ? { ...trade, ...updates } : trade,
+            ),
+          );
+
+          return {
+            trades,
+            tradeAnalysis: analyzeTrades(trades),
+          };
+        });
+      },
+
+      clearTrades: () => set({
+        trades: [],
+        tradeAnalysis: EMPTY_TRADE_ANALYSIS,
+      }),
+
       importData: (json) => {
         try {
           const data = JSON.parse(json) as PersistedAppState;
@@ -407,6 +536,13 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'coin-rules-storage',
+      partialize: (state) => ({
+        settings: state.settings,
+        activePositions: state.activePositions,
+        history: state.history,
+        control: state.control,
+        language: state.language,
+      }),
     }
   )
 );
