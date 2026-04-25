@@ -41,6 +41,16 @@ interface AppStore {
   exportData: () => string;
   importData: (json: string) => boolean;
   resetAll: () => void;
+  getAppStateSnapshot: () => PersistedAppState;
+  applyAppStateSnapshot: (snapshot: Partial<PersistedAppState>) => void;
+}
+
+export interface PersistedAppState {
+  settings: AppSettings;
+  activePositions: Position[];
+  history: TradeHistory[];
+  control: TradeControlState;
+  language: 'ko' | 'en';
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -66,6 +76,16 @@ const DEFAULT_CONTROL: TradeControlState = {
   cooldowns: {},
   lastTradeDate: new Date().toISOString().split('T')[0],
 };
+
+function sanitizePersistedAppState(input: any): PersistedAppState {
+  return {
+    settings: input?.settings ?? DEFAULT_SETTINGS,
+    activePositions: input?.activePositions ?? [],
+    history: input?.history ?? [],
+    control: input?.control ?? DEFAULT_CONTROL,
+    language: input?.language ?? 'ko',
+  };
+}
 
 const MONITORED_COINS = ['KRW-BTC', 'KRW-ETH', 'KRW-SOL', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE', 'KRW-AVAX'];
 
@@ -340,18 +360,36 @@ export const useAppStore = create<AppStore>()(
       },
 
       exportData: () => {
-        const { settings, activePositions, history, control } = get();
-        return JSON.stringify({ settings, activePositions, history, control }, null, 2);
+        const { settings, activePositions, history, control, language } = get();
+        return JSON.stringify({ settings, activePositions, history, control, language }, null, 2);
+      },
+
+      getAppStateSnapshot: () => {
+        const { settings, activePositions, history, control, language } = get();
+        return sanitizePersistedAppState({ settings, activePositions, history, control, language });
+      },
+
+      applyAppStateSnapshot: (snapshot) => {
+        const nextState = sanitizePersistedAppState(snapshot);
+        set({
+          settings: nextState.settings,
+          activePositions: nextState.activePositions,
+          history: nextState.history,
+          control: nextState.control,
+          language: nextState.language,
+        });
       },
 
       importData: (json) => {
         try {
-          const data = JSON.parse(json);
+          const data = JSON.parse(json) as PersistedAppState;
+          const nextState = sanitizePersistedAppState(data);
           set({
-            settings: data.settings || DEFAULT_SETTINGS,
-            activePositions: data.activePositions || [],
-            history: data.history || [],
-            control: data.control || DEFAULT_CONTROL,
+            settings: nextState.settings,
+            activePositions: nextState.activePositions,
+            history: nextState.history,
+            control: nextState.control,
+            language: nextState.language,
           });
           return true;
         } catch (e) {
