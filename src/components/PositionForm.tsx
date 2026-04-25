@@ -42,7 +42,7 @@ type MarketAnalysis = {
 const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
 export function PositionForm() {
-  const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals, fetchSignals } = useAppStore();
+  const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals } = useAppStore();
   const tFromStore = useAppStore((state) => state.t);
   const t = typeof tFromStore === 'function' ? tFromStore() : ((key: string) => key);
   const safeSettings = settings ?? DEFAULT_SETTINGS;
@@ -65,26 +65,21 @@ export function PositionForm() {
   const [isPriceHighlighted, setIsPriceHighlighted] = useState(false);
   const [coinInput, setCoinInput] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const market = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? formData.coin : `KRW-${formData.coin || 'BTC'}`;
 
   useEffect(() => {
-    let active = true; // For race condition prevention
+    let active = true;
     const fetchSignalsAction = useAppStore.getState().fetchSignals;
-    
-    // Force KRW code if it's just the coin name
-    const market = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? formData.coin : `KRW-${formData.coin || 'BTC'}`;
     setMarketAnalysis(null);
-    
-    // Fetch only ticker for current price display
+
     const fetchMarketData = async () => {
-      // [1] State: fetch current ticker price
       const ticker = await fetchTicker(market);
       const candles = await fetchCandles(market, MARKET_ANALYSIS_CANDLE_COUNT);
-      
-      // [2] Race condition prevention
+
       if (!active) return;
       
       if (ticker) {
-        setCurrentPrice(ticker.trade_price);
+        setCurrentPrice((prevPrice) => (prevPrice === ticker.trade_price ? prevPrice : ticker.trade_price));
         
         // Analyze candles
         if (candles && candles.length >= MARKET_ANALYSIS_CANDLE_COUNT) {
@@ -155,7 +150,10 @@ export function PositionForm() {
               (isBreakout && !isVolumeSpike && latestCompleted.upperWickRatio >= 0.45) ||
               (attemptedBreakout && latestCompleted.upperWickRatio >= 0.55 && latestCompleted.close < latestCompleted.open);
 
-            setMarketAnalysis({ isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh });
+            setMarketAnalysis((prevAnalysis) => {
+              const nextAnalysis = { isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout, recentHigh };
+              return JSON.stringify(prevAnalysis) === JSON.stringify(nextAnalysis) ? prevAnalysis : nextAnalysis;
+            });
           }
         }
       }
@@ -172,16 +170,18 @@ export function PositionForm() {
       active = false;
       clearInterval(interval);
     };
-  }, [formData.coin]);
+  }, [market]);
 
   useEffect(() => {
+    const getCooldownRemainingAction = useAppStore.getState().getCooldownRemaining;
     const checkCooldown = () => {
-      setCooldownTime(getCooldownRemaining(formData.coin || 'KRW-BTC'));
+      const nextCooldownTime = getCooldownRemainingAction(formData.coin || 'KRW-BTC');
+      setCooldownTime((prevCooldownTime) => (prevCooldownTime === nextCooldownTime ? prevCooldownTime : nextCooldownTime));
     };
     checkCooldown();
     const interval = setInterval(checkCooldown, 1000);
     return () => clearInterval(interval);
-  }, [formData.coin, getCooldownRemaining]);
+  }, [formData.coin]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

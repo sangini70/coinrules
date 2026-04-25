@@ -204,10 +204,6 @@ export const useAppStore = create<AppStore>()(
               const buffer = signalBuffer[targetCoin] || [];
               const newBuffer = [...buffer, safeSignal].slice(-3);
 
-              console.log('COIN:', targetCoin);
-              console.log('SIGNAL RAW:', rawSignal);
-              console.log('SIGNAL FINAL:', safeSignal);
-
               set((state) => ({
                 signalBuffer: { ...state.signalBuffer, [targetCoin]: newBuffer },
                 signals: {
