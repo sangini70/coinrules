@@ -192,6 +192,18 @@ function AppContent() {
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSyncedSnapshotRef = useRef('');
+  const restoredUserUidRef = useRef<string | null>(null);
+  const restoreCompletedRef = useRef(false);
+  const setAuthUserSafe = (nextUser: User | null) =>
+    setAuthUser((prevUser) => (prevUser?.uid === nextUser?.uid ? prevUser : nextUser));
+  const setAuthLoadingSafe = (nextValue: boolean) =>
+    setAuthLoading((prevValue) => (prevValue === nextValue ? prevValue : nextValue));
+  const setCloudStatusSafe = (nextStatus: CloudStatus) =>
+    setCloudStatus((prevStatus) => (prevStatus === nextStatus ? prevStatus : nextStatus));
+  const setAuthErrorSafe = (nextError: AuthErrorType) =>
+    setAuthError((prevError) => (prevError === nextError ? prevError : nextError));
+  const setCloudReadySafe = (nextValue: boolean) =>
+    setCloudReady((prevValue) => (prevValue === nextValue ? prevValue : nextValue));
 
   const {
     control,
@@ -275,18 +287,25 @@ function AppContent() {
     [language],
   );
 
+  // Run only when the resolved theme value changes.
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', safeSettings.theme ?? 'light');
   }, [safeSettings.theme]);
 
+  // Start the daily control reset loop only for an authenticated user.
   useEffect(() => {
-    if (!authUser) return;
+    if (!authUser?.uid) return;
 
-    checkControlReset();
-    const interval = setInterval(checkControlReset, 60000);
+    const runControlReset = () => {
+      useAppStore.getState().checkControlReset();
+    };
+
+    runControlReset();
+    const interval = setInterval(runControlReset, 60000);
     return () => clearInterval(interval);
-  }, [authUser, checkControlReset]);
+  }, [authUser?.uid]);
 
+  // Clear any pending autosave timer only on unmount.
   useEffect(
     () => () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -294,92 +313,107 @@ function AppContent() {
     [],
   );
 
+  // Subscribe to auth changes once and restore Firestore state once per user.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
       try {
-        setAuthLoading(true);
-        setAuthError(null);
-        setCloudReady(false);
+        setAuthLoadingSafe(true);
+        setAuthErrorSafe(null);
+        setCloudReadySafe(false);
+        restoreCompletedRef.current = false;
 
         if (!user) {
-          setAuthUser(null);
-          setCloudStatus('idle');
+          setAuthUserSafe(null);
+          setCloudStatusSafe('idle');
           lastSyncedSnapshotRef.current = '';
+          restoredUserUidRef.current = null;
+          restoreCompletedRef.current = true;
           clearTrades();
           return;
         }
 
-        setAuthUser(user);
-        setCloudStatus('loading');
+        setAuthUserSafe(user);
+        setCloudStatusSafe('loading');
 
-        try {
-          const appStateRef = doc(db, 'users', user.uid);
-          const snapshot = await getDoc(appStateRef);
+        if (restoredUserUidRef.current !== user.uid) {
+          try {
+            const appStateRef = doc(db, 'users', user.uid);
+            const snapshot = await getDoc(appStateRef);
 
-          if (snapshot.exists() && snapshot.data()?.appState) {
-            applyAppStateSnapshot(snapshot.data().appState as Partial<PersistedAppState>);
-          } else {
-            const localBackup = readLocalPersistedState();
-            if (localBackup) {
-              applyAppStateSnapshot(localBackup);
-              const migratedSnapshot = useAppStore.getState().getAppStateSnapshot();
-              await saveSnapshotToFirestore(user.uid, migratedSnapshot, { migratedFromLocalStorage: true });
+            if (snapshot.exists() && snapshot.data()?.appState) {
+              applyAppStateSnapshot(snapshot.data().appState as Partial<PersistedAppState>);
+            } else {
+              const localBackup = readLocalPersistedState();
+              if (localBackup) {
+                applyAppStateSnapshot(localBackup);
+                const migratedSnapshot = useAppStore.getState().getAppStateSnapshot();
+                await saveSnapshotToFirestore(user.uid, migratedSnapshot, { migratedFromLocalStorage: true });
+              }
             }
+          } catch (error) {
+            console.error('Failed to restore app state from Firestore.', error);
+            setAuthErrorSafe('sync');
           }
-        } catch (error) {
-          console.error('Failed to restore app state from Firestore.', error);
-          setAuthError('sync');
+
+          restoredUserUidRef.current = user.uid;
         }
 
         try {
           await loadTrades();
         } catch (error) {
           console.error('Failed to load trades from Firestore.', error);
-          setAuthError('sync');
+          setAuthErrorSafe('sync');
         }
 
         lastSyncedSnapshotRef.current = serializeSnapshot(useAppStore.getState().getAppStateSnapshot());
-        setCloudStatus('ready');
+        restoreCompletedRef.current = true;
+        setCloudStatusSafe('ready');
       } catch (error) {
         console.error('Auth state handling failed.', error);
-        setCloudStatus('error');
-        setAuthError('sync');
+        setCloudStatusSafe('error');
+        setAuthErrorSafe('sync');
+        restoreCompletedRef.current = true;
       } finally {
-        setCloudReady(true);
-        setAuthLoading(false);
-        setCloudStatus('ready');
+        setCloudReadySafe(true);
+        setAuthLoadingSafe(false);
+        setCloudStatusSafe('ready');
       }
     });
 
     return () => unsubscribe();
-  }, [applyAppStateSnapshot, loadTrades, clearTrades]);
+  }, []);
 
+  // Autosave only after restore completes and only when the serialized snapshot actually changes.
   useEffect(() => {
-    if (!authUser || !cloudReady || authLoading) return;
+    if (!authUser?.uid || !cloudReady || authLoading || !restoreCompletedRef.current) return;
     if (serializedPersistedSnapshot === lastSyncedSnapshotRef.current) return;
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    setCloudStatus('saving');
+    setCloudStatusSafe('saving');
 
     saveTimeoutRef.current = setTimeout(async () => {
       try {
-        await saveSnapshotToFirestore(authUser.uid, persistedSnapshot as PersistedAppState);
-        lastSyncedSnapshotRef.current = serializedPersistedSnapshot;
-        setCloudStatus('synced');
-        setAuthError(null);
+        const latestSnapshot = useAppStore.getState().getAppStateSnapshot();
+        const latestSerializedSnapshot = serializeSnapshot(latestSnapshot);
+        if (latestSerializedSnapshot === lastSyncedSnapshotRef.current) return;
+
+        await saveSnapshotToFirestore(authUser.uid, latestSnapshot as PersistedAppState);
+        lastSyncedSnapshotRef.current = latestSerializedSnapshot;
+        setCloudStatusSafe('synced');
+        setAuthErrorSafe(null);
       } catch (error) {
         console.error('Failed to sync app state to Firestore.', error);
-        setCloudStatus('error');
-        setAuthError('sync');
+        setCloudStatusSafe('error');
+        setAuthErrorSafe('sync');
       }
-    }, 800);
+    }, 5000);
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [authUser, cloudReady, authLoading, persistedSnapshot, serializedPersistedSnapshot]);
+  }, [authUser?.uid, cloudReady, authLoading, serializedPersistedSnapshot]);
 
   const isBlockedSafe = safeControl.isInputDisabled ?? false;
 
@@ -395,12 +429,12 @@ function AppContent() {
           : { label: authText.cloudSynced, icon: Cloud, className: 'text-status-safe border-status-safe/20 bg-status-safe/5' };
 
   const handleGoogleLogin = async () => {
-    setAuthError(null);
+    setAuthErrorSafe(null);
     try {
       await signInWithPopup(auth, googleAuthProvider);
     } catch (error) {
       console.error('Google login failed.', error);
-      setAuthError('auth');
+      setAuthErrorSafe('auth');
     }
   };
 
@@ -419,7 +453,7 @@ function AppContent() {
       await signOut(auth);
     } catch (error) {
       console.error('Logout failed.', error);
-      setAuthError('sync');
+      setAuthErrorSafe('sync');
     }
   };
 

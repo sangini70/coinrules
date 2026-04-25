@@ -8,12 +8,19 @@ export function SettingsPanel() {
   const safeSettings = settings ?? DEFAULT_SETTINGS;
   const [localSettings, setLocalSettings] = useState(safeSettings);
   const [isSaved, setIsSaved] = useState(false);
+  const safeSettingsSerialized = JSON.stringify(safeSettings);
 
   useEffect(() => {
-    setLocalSettings(safeSettings);
-  }, [safeSettings]);
+    setLocalSettings((prevSettings) => {
+      const prevSerialized = JSON.stringify(prevSettings);
+      return prevSerialized === safeSettingsSerialized ? prevSettings : safeSettings;
+    });
+  }, [safeSettingsSerialized]);
 
   const handleSave = () => {
+    if (JSON.stringify(localSettings) === safeSettingsSerialized) {
+      return;
+    }
     updateSettings(localSettings);
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);

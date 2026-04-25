@@ -166,6 +166,9 @@ const createSafeSignal = (signal?: Partial<ObservationSignal>): ObservationSigna
   updatedAt: signal?.updatedAt ?? new Date().toISOString(),
 });
 
+const areSnapshotsEqual = (left: PersistedAppState, right: PersistedAppState) =>
+  JSON.stringify(left) === JSON.stringify(right);
+
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
@@ -319,9 +322,16 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      setLanguage: (language) => set({ language }),
+      setLanguage: (language) =>
+        set((state) => (state.language === language ? state : { language })),
 
-      updateSettings: (newSettings) => set((state) => ({ settings: { ...state.settings, ...newSettings } })),
+      updateSettings: (newSettings) =>
+        set((state) => {
+          const mergedSettings = { ...DEFAULT_SETTINGS, ...state.settings, ...newSettings };
+          return JSON.stringify(state.settings) === JSON.stringify(mergedSettings)
+            ? state
+            : { settings: mergedSettings };
+        }),
 
       addPosition: (pos) => {
         const { control, settings } = get();
@@ -416,13 +426,14 @@ export const useAppStore = create<AppStore>()(
         const { control } = get();
         const today = new Date().toISOString().split('T')[0];
         if (control.lastTradeDate !== today) {
-          set({
-            control: {
-              ...DEFAULT_CONTROL,
-              cooldowns: control.cooldowns, // Keep cooldowns across days? Usually yes for a few mins
-              lastTradeDate: today,
-            },
-          });
+          const nextControl = {
+            ...DEFAULT_CONTROL,
+            cooldowns: control.cooldowns,
+            lastTradeDate: today,
+          };
+          if (JSON.stringify(control) !== JSON.stringify(nextControl)) {
+            set({ control: nextControl });
+          }
         }
       },
 
@@ -453,12 +464,23 @@ export const useAppStore = create<AppStore>()(
 
       applyAppStateSnapshot: (snapshot) => {
         const nextState = sanitizePersistedAppState(snapshot);
-        set({
-          settings: nextState.settings,
-          activePositions: nextState.activePositions,
-          history: nextState.history,
-          control: nextState.control,
-          language: nextState.language,
+        set((state) => {
+          const currentSnapshot = sanitizePersistedAppState({
+            settings: state.settings,
+            activePositions: state.activePositions,
+            history: state.history,
+            control: state.control,
+            language: state.language,
+          });
+          return areSnapshotsEqual(currentSnapshot, nextState)
+            ? state
+            : {
+                settings: nextState.settings,
+                activePositions: nextState.activePositions,
+                history: nextState.history,
+                control: nextState.control,
+                language: nextState.language,
+              };
         });
       },
 
@@ -522,21 +544,38 @@ export const useAppStore = create<AppStore>()(
         });
       },
 
-      clearTrades: () => set({
-        trades: DEFAULT_STATE.trades,
-        tradeAnalysis: DEFAULT_STATE.tradeAnalysis,
-      }),
+      clearTrades: () => set((state) => (
+        Array.isArray(state.trades) &&
+        state.trades.length === 0 &&
+        JSON.stringify(state.tradeAnalysis) === JSON.stringify(DEFAULT_STATE.tradeAnalysis)
+          ? state
+          : {
+              trades: DEFAULT_STATE.trades,
+              tradeAnalysis: DEFAULT_STATE.tradeAnalysis,
+            }
+      )),
 
       importData: (json) => {
         try {
           const data = JSON.parse(json) as PersistedAppState;
           const nextState = sanitizePersistedAppState(data);
-          set({
-            settings: nextState.settings,
-            activePositions: nextState.activePositions,
-            history: nextState.history,
-            control: nextState.control,
-            language: nextState.language,
+          set((state) => {
+            const currentSnapshot = sanitizePersistedAppState({
+              settings: state.settings,
+              activePositions: state.activePositions,
+              history: state.history,
+              control: state.control,
+              language: state.language,
+            });
+            return areSnapshotsEqual(currentSnapshot, nextState)
+              ? state
+              : {
+                  settings: nextState.settings,
+                  activePositions: nextState.activePositions,
+                  history: nextState.history,
+                  control: nextState.control,
+                  language: nextState.language,
+                };
           });
           return true;
         } catch (e) {
@@ -545,17 +584,36 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      resetAll: () => set({
-        settings: DEFAULT_STATE.settings,
-        activePositions: DEFAULT_STATE.activePositions,
-        history: DEFAULT_STATE.history,
-        control: DEFAULT_STATE.control,
-        signals: DEFAULT_STATE.signals,
-        signalBuffer: DEFAULT_STATE.signalBuffer,
-        lastPlayed: DEFAULT_STATE.lastPlayed,
-        trades: DEFAULT_STATE.trades,
-        tradeAnalysis: DEFAULT_STATE.tradeAnalysis,
-        language: DEFAULT_STATE.language,
+      resetAll: () => set((state) => {
+        const currentSnapshot = sanitizePersistedAppState({
+          settings: state.settings,
+          activePositions: state.activePositions,
+          history: state.history,
+          control: state.control,
+          language: state.language,
+        });
+        const defaultSnapshot = sanitizePersistedAppState(DEFAULT_STATE);
+
+        return areSnapshotsEqual(currentSnapshot, defaultSnapshot) &&
+          Object.keys(state.signals ?? {}).length === 0 &&
+          Object.keys(state.signalBuffer ?? {}).length === 0 &&
+          Object.keys(state.lastPlayed ?? {}).length === 0 &&
+          Array.isArray(state.trades) &&
+          state.trades.length === 0 &&
+          JSON.stringify(state.tradeAnalysis) === JSON.stringify(DEFAULT_STATE.tradeAnalysis)
+          ? state
+          : {
+              settings: DEFAULT_STATE.settings,
+              activePositions: DEFAULT_STATE.activePositions,
+              history: DEFAULT_STATE.history,
+              control: DEFAULT_STATE.control,
+              signals: DEFAULT_STATE.signals,
+              signalBuffer: DEFAULT_STATE.signalBuffer,
+              lastPlayed: DEFAULT_STATE.lastPlayed,
+              trades: DEFAULT_STATE.trades,
+              tradeAnalysis: DEFAULT_STATE.tradeAnalysis,
+              language: DEFAULT_STATE.language,
+            };
       }),
     }),
     {

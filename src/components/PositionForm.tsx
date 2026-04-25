@@ -68,6 +68,7 @@ export function PositionForm() {
 
   useEffect(() => {
     let active = true; // For race condition prevention
+    const fetchSignalsAction = useAppStore.getState().fetchSignals;
     
     // Force KRW code if it's just the coin name
     const market = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? formData.coin : `KRW-${formData.coin || 'BTC'}`;
@@ -160,18 +161,18 @@ export function PositionForm() {
       }
     };
     
-    fetchSignals(market);
-    fetchMarketData();
+    void fetchSignalsAction(market);
+    void fetchMarketData();
     const interval = setInterval(() => {
-      fetchSignals(market);
-      fetchMarketData();
+      void fetchSignalsAction(market);
+      void fetchMarketData();
     }, 60000);
     
     return () => {
       active = false;
       clearInterval(interval);
     };
-  }, [formData.coin, fetchSignals]);
+  }, [formData.coin]);
 
   useEffect(() => {
     const checkCooldown = () => {
