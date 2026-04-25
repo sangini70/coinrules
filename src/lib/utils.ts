@@ -1,21 +1,26 @@
 import { format } from 'date-fns';
 
-export const formatCurrency = (value: number) => {
+export const formatCurrency = (value: number | null | undefined) => {
+  const safeValue = Number.isFinite(value as number) ? Number(value) : 0;
   return new Intl.NumberFormat('ko-KR', {
     style: 'currency',
     currency: 'KRW',
-  }).format(value);
+  }).format(safeValue);
 };
 
-export const formatPrice = (value: number) => {
-  if (value < 100) return value.toFixed(2);
-  return value.toLocaleString();
+export const formatPrice = (value: number | null | undefined) => {
+  const safeValue = Number.isFinite(value as number) ? Number(value) : 0;
+  if (safeValue < 100) return safeValue.toFixed(2);
+  return safeValue.toLocaleString();
 };
 
-export const formatPercent = (value: number) => {
-  return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+export const formatPercent = (value: number | null | undefined) => {
+  const safeValue = Number.isFinite(value as number) ? Number(value) : 0;
+  return `${safeValue > 0 ? '+' : ''}${safeValue.toFixed(2)}%`;
 };
 
 export const formatDate = (date: string | Date, pattern = 'yyyy-MM-dd HH:mm:ss') => {
-  return format(new Date(date), pattern);
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return '-';
+  return format(parsedDate, pattern);
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
+import { DEFAULT_CONTROL, DEFAULT_SETTINGS } from '../store/useAppStore';
 import { fetchTicker, fetchCandles } from '../services/upbitService';
 import { formatPrice } from '../lib/utils';
 import {
@@ -42,7 +43,11 @@ const average = (values: number[]) => values.reduce((sum, value) => sum + value,
 
 export function PositionForm() {
   const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals, fetchSignals } = useAppStore();
-  const t = useAppStore((state) => state.t)();
+  const tFromStore = useAppStore((state) => state.t);
+  const t = typeof tFromStore === 'function' ? tFromStore() : ((key: string) => key);
+  const safeSettings = settings ?? DEFAULT_SETTINGS;
+  const safeControl = control ?? DEFAULT_CONTROL;
+  const safeSignals = signals ?? {};
   
   const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
@@ -65,7 +70,7 @@ export function PositionForm() {
     let active = true; // For race condition prevention
     
     // Force KRW code if it's just the coin name
-    const market = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+    const market = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? formData.coin : `KRW-${formData.coin || 'BTC'}`;
     setMarketAnalysis(null);
     
     // Fetch only ticker for current price display
@@ -170,7 +175,7 @@ export function PositionForm() {
 
   useEffect(() => {
     const checkCooldown = () => {
-      setCooldownTime(getCooldownRemaining(formData.coin));
+      setCooldownTime(getCooldownRemaining(formData.coin || 'KRW-BTC'));
     };
     checkCooldown();
     const interval = setInterval(checkCooldown, 1000);
@@ -191,9 +196,9 @@ export function PositionForm() {
   const isCustomCoin = coinInput.length >= 2 && !COIN_OPTIONS.includes(`KRW-${coinInput.toUpperCase()}`);
   const customMarket = `KRW-${coinInput.toUpperCase()}`;
   // [CHANGED] Normalize the current selection so the UI always reads the same Zustand key.
-  const selectedCoin = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+  const selectedCoin = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? (formData.coin || 'KRW-BTC') : `KRW-${formData.coin || 'BTC'}`;
   // [CHANGED] Bind the UI to the live store signal, with a minimal fallback only for first render.
-  const safeSignal = signals[selectedCoin] ?? {
+  const safeSignal = safeSignals[selectedCoin || 'KRW-BTC'] ?? {
     breakout: 'none' as const,
     state: 'WAIT' as const,
     trend: 'neutral' as const,
@@ -247,7 +252,7 @@ export function PositionForm() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (formData.buyPrice <= 0 || formData.amount <= 0 || control.isInputDisabled || cooldownTime > 0) return;
+    if (formData.buyPrice <= 0 || formData.amount <= 0 || safeControl.isInputDisabled || cooldownTime > 0) return;
 
     const slPrice = formData.buyPrice * (1 + SHORT_TERM_STOP_LOSS_PERCENT / 100);
     const tp1Price = formData.buyPrice * (1 + SHORT_TERM_TAKE_PROFIT_1_PERCENT / 100);
@@ -260,7 +265,7 @@ export function PositionForm() {
       quantity: formData.quantity,
       entryAmount: formData.amount,
       stopLossPercent: formData.type === 'short_term' ? SHORT_TERM_STOP_LOSS_PERCENT : 0,
-      takeProfitPercent: formData.type === 'short_term' ? settings.takeProfitPercent : 0,
+      takeProfitPercent: formData.type === 'short_term' ? safeSettings.takeProfitPercent : 0,
       stopLossPrice: formData.type === 'short_term' ? slPrice : 0,
       takeProfitPrice1: formData.type === 'short_term' ? tp1Price : 0,
       takeProfitPrice2: formData.type === 'short_term' ? tp2Price : 0,
@@ -272,7 +277,7 @@ export function PositionForm() {
     setFormData(prev => ({ ...prev, buyPrice: 0, quantity: 0, memo: '' }));
   };
 
-  const isInputBlocked = control?.isInputDisabled ?? false;
+  const isInputBlocked = safeControl?.isInputDisabled ?? false;
   const isCoinBlocked = (cooldownTime ?? 0) > 0;
   const isBlocked = isInputBlocked || isCoinBlocked;
 
@@ -476,7 +481,7 @@ export function PositionForm() {
         </p>
         <div className="pt-4 mt-4 border-t border-status-danger/20">
           <p className="text-[9px] text-status-danger/40 uppercase font-mono italic">
-            {control.todayTradeCount >= settings.maxDailyTrades 
+            {safeControl.todayTradeCount >= safeSettings.maxDailyTrades 
               ? t('blocked_limit') 
               : t('blocked_tilt')}
           </p>
@@ -680,7 +685,7 @@ export function PositionForm() {
         </div>
         <div className="space-y-2 font-mono text-[11px] font-bold">
           <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
-            <span className="text-text-muted/40">SL ({settings.stopLossPercent}%)</span>
+            <span className="text-text-muted/40">SL ({safeSettings.stopLossPercent}%)</span>
             <span className="text-status-danger/40 text-[9px]">({slPreview ? formatPrice(slPreview) : "-"})</span>
           </div>
           <div className="flex justify-between items-center pb-2 border-b border-text-main/5">

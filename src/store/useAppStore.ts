@@ -77,7 +77,7 @@ export interface PersistedAppState {
   language: 'ko' | 'en';
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   stopLossPercent: DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
   takeProfitPercent: DEFAULT_SHORT_TERM_TAKE_PROFIT_PERCENT,
   breakevenTriggerPercent: 3,
@@ -93,7 +93,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
 };
 
-const DEFAULT_CONTROL: TradeControlState = {
+export const DEFAULT_CONTROL: TradeControlState = {
   todayTradeCount: 0,
   consecutiveLossCount: 0,
   isInputDisabled: false,

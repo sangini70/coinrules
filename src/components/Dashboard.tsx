@@ -1,35 +1,34 @@
 import * as React from 'react';
-import { useAppStore } from '../store/useAppStore';
-import { AlertCircle, Ban, Shield, ShieldCheck, TrendingUp, Zap } from 'lucide-react';
-import { motion } from 'motion/react';
+import { DEFAULT_CONTROL, DEFAULT_SETTINGS, useAppStore } from '../store/useAppStore';
+import { AlertCircle, Ban, Shield, Zap } from 'lucide-react';
 
 export function Dashboard() {
   const { control, settings, playSound } = useAppStore();
-  const t = useAppStore((state) => state.t)();
+  const translator = useAppStore((state) => state.t);
+  const t = typeof translator === 'function' ? translator() : ((key: string) => key);
+  const safeControl = control ?? DEFAULT_CONTROL;
+  const safeSettings = settings ?? DEFAULT_SETTINGS;
+  const cooldowns = safeControl.cooldowns ?? {};
   const [activeCooldowns, setActiveCooldowns] = React.useState<string[]>([]);
 
-  // Initial populate to avoid alerting on mount if cooldowns are already expired
   React.useEffect(() => {
     const now = new Date();
-    const active = Object.entries(control.cooldowns)
+    const active = Object.entries(cooldowns)
       .filter(([_, endStr]) => new Date(endStr) > now)
       .map(([coin]) => coin);
     setActiveCooldowns(active);
-  }, []);
+  }, [cooldowns]);
 
-  // Cooldown Watcher
   React.useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const currentlyActive = Object.entries(control.cooldowns)
+      const currentlyActive = Object.entries(cooldowns)
         .filter(([_, endStr]) => new Date(endStr) > now)
         .map(([coin]) => coin);
       
       const finished = activeCooldowns.filter(coin => !currentlyActive.includes(coin));
       
       if (finished.length > 0) {
-        // Double check it was actually a real cooldown (not just deleted)
-        // For simplicity, we just play notify sound
         playSound('notify');
       }
       
@@ -39,10 +38,12 @@ export function Dashboard() {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, [control.cooldowns, activeCooldowns, playSound]);
+  }, [cooldowns, activeCooldowns, playSound]);
 
-  const isTradeLocked = control.isInputDisabled;
-  const tradeCountPercent = (control.todayTradeCount / settings.maxDailyTrades) * 100;
+  const isTradeLocked = Boolean(safeControl.isInputDisabled);
+  const tradeCountPercent = safeSettings.maxDailyTrades > 0
+    ? ((safeControl.todayTradeCount ?? 0) / safeSettings.maxDailyTrades) * 100
+    : 0;
   
   return (
     <div className="space-y-12 transition-all duration-300">
@@ -72,9 +73,9 @@ export function Dashboard() {
             <div>
               <div className="text-[11px] uppercase tracking-widest text-text-muted/40 font-bold mb-2 font-mono">Daily Trades</div>
               <div className="text-6xl font-black tabular-nums tracking-tighter leading-none text-text-main">
-                {String(control.todayTradeCount).padStart(2, '0')}
+                {String(safeControl.todayTradeCount ?? 0).padStart(2, '0')}
                 <span className="text-text-muted/20">/</span>
-                {String(settings.maxDailyTrades).padStart(2, '0')}
+                {String(safeSettings.maxDailyTrades ?? 0).padStart(2, '0')}
               </div>
               <div className="mt-4 h-1 w-full bg-text-main/5">
                 <div 
@@ -87,9 +88,9 @@ export function Dashboard() {
             <div>
               <div className="text-[11px] uppercase tracking-widest text-text-muted/40 font-bold mb-2 font-mono">Cons. Losses</div>
               <div className="text-6xl font-black tabular-nums tracking-tighter leading-none text-status-danger">
-                {String(control.consecutiveLossCount).padStart(2, '0')}
+                {String(safeControl.consecutiveLossCount ?? 0).padStart(2, '0')}
               </div>
-              <div className="text-[9px] text-text-muted/40 mt-2 font-mono uppercase tracking-widest">Locked if reach {settings.maxConsecutiveLosses}</div>
+              <div className="text-[9px] text-text-muted/40 mt-2 font-mono uppercase tracking-widest">Locked if reach {safeSettings.maxConsecutiveLosses ?? 0}</div>
             </div>
           </div>
         </div>

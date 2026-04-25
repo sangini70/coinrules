@@ -1,13 +1,17 @@
 import * as React from 'react';
-import { useState } from 'react';
-import { useAppStore } from '../store/useAppStore';
-import { Download, Upload, Trash2, Save, Info } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { DEFAULT_SETTINGS, useAppStore } from '../store/useAppStore';
 
 export function SettingsPanel() {
   const { settings, updateSettings, exportData, importData, resetAll, t } = useAppStore();
-  const tFn = t();
-  const [localSettings, setLocalSettings] = useState(settings);
+  const tFn = typeof t === 'function' ? t() : ((key: string) => key);
+  const safeSettings = settings ?? DEFAULT_SETTINGS;
+  const [localSettings, setLocalSettings] = useState(safeSettings);
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setLocalSettings(safeSettings);
+  }, [safeSettings]);
 
   const handleSave = () => {
     updateSettings(localSettings);
@@ -63,13 +67,13 @@ export function SettingsPanel() {
              <div className="flex bg-aux-bg p-1 border border-text-main/10">
                 <button 
                   onClick={() => updateSettings({ theme: 'light' })}
-                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${settings.theme === 'light' ? 'bg-text-main text-main-bg' : 'text-text-muted hover:text-text-main'}`}
+                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${safeSettings.theme === 'light' ? 'bg-text-main text-main-bg' : 'text-text-muted hover:text-text-main'}`}
                 >
                   Light
                 </button>
                 <button 
                   onClick={() => updateSettings({ theme: 'dark' })}
-                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${settings.theme === 'dark' ? 'bg-text-main text-main-bg' : 'text-text-muted hover:text-text-main'}`}
+                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${safeSettings.theme === 'dark' ? 'bg-text-main text-main-bg' : 'text-text-muted hover:text-text-main'}`}
                 >
                   Dark
                 </button>
