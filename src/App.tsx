@@ -1,4 +1,4 @@
-import { useState, useEffect, ChangeEvent, useMemo, useRef } from 'react';
+import { Component, type PropsWithChildren, type ReactNode, useState, useEffect, ChangeEvent, useMemo, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -28,8 +28,46 @@ import { auth, db, googleAuthProvider } from './lib/firebase';
 const LOCAL_STORAGE_KEY = 'coin-rules-storage';
 
 type ActiveTab = 'positions' | 'history' | 'long_term' | 'settings';
-type CloudStatus = 'idle' | 'loading' | 'saving' | 'synced' | 'error';
+type CloudStatus = 'idle' | 'loading' | 'saving' | 'ready' | 'synced' | 'error';
 type AuthErrorType = 'auth' | 'sync' | null;
+
+type AppErrorBoundaryState = {
+  hasError: boolean;
+};
+
+class AppErrorBoundary extends Component<PropsWithChildren, AppErrorBoundaryState> {
+  state: AppErrorBoundaryState = { hasError: false };
+  declare props: PropsWithChildren;
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('App render error:', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Layout>
+          <div className="min-h-screen flex items-center justify-center px-8">
+            <div className="bg-card-bg border border-status-danger/20 p-10 max-w-xl w-full space-y-4">
+              <h1 className="text-2xl font-black uppercase tracking-tight text-status-danger">
+                앱 오류 발생 - 새로고침 또는 다시 로그인
+              </h1>
+              <p className="text-sm text-text-muted/70 leading-relaxed">
+                렌더링 중 예외가 발생했습니다. 새로고침 후 다시 시도하세요. 콘솔에 실제 에러 로그가 기록되었습니다.
+              </p>
+            </div>
+          </div>
+        </Layout>
+      );
+    }
+
+    return this.props.children as ReactNode;
+  }
+}
 
 const readLocalPersistedState = (): Partial<PersistedAppState> | null => {
   if (typeof window === 'undefined') return null;
@@ -69,7 +107,80 @@ const saveSnapshotToFirestore = async (
   }, { merge: true });
 };
 
-export default function App() {
+function LoadingScreen({ message }: { message: string }) {
+  return (
+    <Layout>
+      <div className="min-h-[60vh] flex items-center justify-center px-8">
+        <div className="bg-card-bg border border-text-main/5 p-10 max-w-xl w-full text-center space-y-4">
+          <Loader2 size={28} className="animate-spin mx-auto text-text-main" />
+          <h2 className="text-2xl font-black tracking-tight text-text-main uppercase">Loading</h2>
+          <p className="text-sm text-text-muted/60 leading-relaxed">{message}</p>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+function ErrorMessage({ message }: { message: string }) {
+  return (
+    <Layout>
+      <div className="min-h-[60vh] flex items-center justify-center px-8">
+        <div className="bg-card-bg border border-status-danger/20 p-10 max-w-xl w-full space-y-4">
+          <h2 className="text-2xl font-black tracking-tight uppercase text-status-danger">
+            앱 오류 발생 - 새로고침 또는 다시 로그인
+          </h2>
+          <p className="text-sm text-text-muted/70 leading-relaxed">{message}</p>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+function LoginScreen({
+  loginTitle,
+  loginDescription,
+  featureLock,
+  loginButton,
+  loginRequired,
+  onLogin,
+}: {
+  loginTitle: string;
+  loginDescription: string;
+  featureLock: string;
+  loginButton: string;
+  loginRequired: string;
+  onLogin: () => Promise<void>;
+}) {
+  return (
+    <Layout>
+      <div className="max-w-[1400px] mx-auto px-8 py-10">
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="bg-card-bg border border-text-main/5 p-10 max-w-xl w-full space-y-6">
+            <div className="flex items-center gap-3 text-text-main">
+              <Lock size={20} />
+              <h2 className="text-2xl font-black tracking-tight uppercase">{loginTitle}</h2>
+            </div>
+            <p className="text-sm text-text-muted/70 leading-relaxed">{loginDescription}</p>
+            <p className="text-xs text-text-muted/50 uppercase tracking-[0.18em] font-bold">{featureLock}</p>
+            <button
+              type="button"
+              onClick={() => {
+                void onLogin();
+              }}
+              className="w-full px-4 py-4 bg-text-main text-main-bg hover:opacity-90 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+            >
+              <LogIn size={14} />
+              {loginButton}
+            </button>
+            <p className="text-xs text-text-muted/50 leading-relaxed">{loginRequired}</p>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+function AppContent() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('positions');
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -125,7 +236,7 @@ export default function App() {
             cloudSynced: '클라우드 동기화 완료',
             cloudError: '클라우드 동기화 오류',
             authError: 'Google 로그인에 실패했습니다. 잠시 후 다시 시도하세요.',
-            syncError: '클라우드 데이터 동기화에 실패했습니다. 새로고침 후 다시 시도하세요.',
+            syncError: '클라우드 동기화 오류 / 로컬 상태로 실행 중',
             featureLock: '로그인 전에는 포지션 입력과 설정 변경이 잠깁니다.',
           }
         : {
@@ -141,7 +252,7 @@ export default function App() {
             cloudSynced: 'Cloud synced',
             cloudError: 'Cloud sync failed',
             authError: 'Google sign-in failed. Please try again.',
-            syncError: 'Cloud sync failed. Refresh and try again.',
+            syncError: 'Cloud sync failed. Running with local state.',
             featureLock: 'Position input and settings stay locked until you sign in.',
           },
     [language],
@@ -170,47 +281,58 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
 
-      setAuthLoading(true);
-      setAuthError(null);
-      setCloudReady(false);
-
-      if (!user) {
-        setAuthUser(null);
-        setCloudStatus('idle');
-        lastSyncedSnapshotRef.current = '';
-        clearTrades();
-        setAuthLoading(false);
-        return;
-      }
-
-      setAuthUser(user);
-      setCloudStatus('loading');
-
       try {
-        const appStateRef = doc(db, 'users', user.uid);
-        const snapshot = await getDoc(appStateRef);
+        setAuthLoading(true);
+        setAuthError(null);
+        setCloudReady(false);
 
-        if (snapshot.exists() && snapshot.data()?.appState) {
-          applyAppStateSnapshot(snapshot.data().appState as Partial<PersistedAppState>);
-        } else {
-          const localBackup = readLocalPersistedState();
-          if (localBackup) {
-            applyAppStateSnapshot(localBackup);
-            const migratedSnapshot = useAppStore.getState().getAppStateSnapshot();
-            await saveSnapshotToFirestore(user.uid, migratedSnapshot, { migratedFromLocalStorage: true });
-          }
+        if (!user) {
+          setAuthUser(null);
+          setCloudStatus('idle');
+          lastSyncedSnapshotRef.current = '';
+          clearTrades();
+          return;
         }
 
-        await loadTrades();
+        setAuthUser(user);
+        setCloudStatus('loading');
+
+        try {
+          const appStateRef = doc(db, 'users', user.uid);
+          const snapshot = await getDoc(appStateRef);
+
+          if (snapshot.exists() && snapshot.data()?.appState) {
+            applyAppStateSnapshot(snapshot.data().appState as Partial<PersistedAppState>);
+          } else {
+            const localBackup = readLocalPersistedState();
+            if (localBackup) {
+              applyAppStateSnapshot(localBackup);
+              const migratedSnapshot = useAppStore.getState().getAppStateSnapshot();
+              await saveSnapshotToFirestore(user.uid, migratedSnapshot, { migratedFromLocalStorage: true });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to restore app state from Firestore.', error);
+          setAuthError('sync');
+        }
+
+        try {
+          await loadTrades();
+        } catch (error) {
+          console.error('Failed to load trades from Firestore.', error);
+          setAuthError('sync');
+        }
+
         lastSyncedSnapshotRef.current = serializeSnapshot(useAppStore.getState().getAppStateSnapshot());
-        setCloudStatus('synced');
+        setCloudStatus('ready');
       } catch (error) {
-        console.error('Failed to restore app state from Firestore.', error);
+        console.error('Auth state handling failed.', error);
         setCloudStatus('error');
         setAuthError('sync');
       } finally {
         setCloudReady(true);
         setAuthLoading(false);
+        setCloudStatus('ready');
       }
     });
 
@@ -249,6 +371,8 @@ export default function App() {
       ? { label: authText.cloudLoading, icon: Loader2, className: 'text-blue-500 border-blue-500/20 bg-blue-500/5 animate-pulse' }
       : cloudStatus === 'saving'
         ? { label: authText.cloudSaving, icon: Loader2, className: 'text-blue-500 border-blue-500/20 bg-blue-500/5 animate-pulse' }
+        : cloudStatus === 'ready'
+          ? { label: authText.cloudSynced, icon: Cloud, className: 'text-status-safe border-status-safe/20 bg-status-safe/5' }
         : cloudStatus === 'error'
           ? { label: authText.cloudError, icon: CloudOff, className: 'text-status-danger border-status-danger/20 bg-status-danger/5' }
           : { label: authText.cloudSynced, icon: Cloud, className: 'text-status-safe border-status-safe/20 bg-status-safe/5' };
@@ -312,6 +436,21 @@ export default function App() {
       resetAll();
     }
   };
+
+  if (authLoading) return <LoadingScreen message={authText.loading} />;
+  if (authError) return <ErrorMessage message={authError === 'auth' ? authText.authError : authText.syncError} />;
+  if (!authUser) {
+    return (
+      <LoginScreen
+        loginTitle={authText.loginTitle}
+        loginDescription={authText.loginDescription}
+        featureLock={authText.featureLock}
+        loginButton={authText.loginButton}
+        loginRequired={authText.loginRequired}
+        onLogin={handleGoogleLogin}
+      />
+    );
+  }
 
   return (
     <Layout>
@@ -385,41 +524,7 @@ export default function App() {
       </header>
 
       <div className="max-w-[1400px] mx-auto px-8 py-10">
-        {authLoading ? (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="bg-card-bg border border-text-main/5 p-10 max-w-xl w-full text-center space-y-4">
-              <Loader2 size={28} className="animate-spin mx-auto text-text-main" />
-              <h2 className="text-2xl font-black tracking-tight text-text-main uppercase">{authText.loginTitle}</h2>
-              <p className="text-sm text-text-muted/60 leading-relaxed">{authText.loading}</p>
-            </div>
-          </div>
-        ) : !authUser ? (
-          <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="bg-card-bg border border-text-main/5 p-10 max-w-xl w-full space-y-6">
-              <div className="flex items-center gap-3 text-text-main">
-                <Lock size={20} />
-                <h2 className="text-2xl font-black tracking-tight uppercase">{authText.loginTitle}</h2>
-              </div>
-              <p className="text-sm text-text-muted/70 leading-relaxed">{authText.loginDescription}</p>
-              <p className="text-xs text-text-muted/50 uppercase tracking-[0.18em] font-bold">{authText.featureLock}</p>
-              {authError && (
-                <p className="text-sm text-status-danger font-bold">
-                  {authError === 'auth' ? authText.authError : authText.syncError}
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                className="w-full px-4 py-4 bg-text-main text-main-bg hover:opacity-90 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-              >
-                <LogIn size={14} />
-                {authText.loginButton}
-              </button>
-              <p className="text-xs text-text-muted/50 leading-relaxed">{authText.loginRequired}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             <aside className="lg:col-span-4 xl:col-span-3 space-y-8">
               <div className="bg-card-bg border border-text-main/5 p-8 space-y-6">
                 <div className="flex items-center gap-2 mb-2">
@@ -514,9 +619,16 @@ export default function App() {
               </footer>
             </main>
           </div>
-        )}
       </div>
     </Layout>
+  );
+}
+
+export default function App() {
+  return (
+    <AppErrorBoundary>
+      <AppContent />
+    </AppErrorBoundary>
   );
 }
 
