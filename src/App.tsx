@@ -8,7 +8,6 @@ import { Layout } from './components/Layout';
 import { PositionTabs, LongTermView } from './components/PositionTabs';
 import { SettingsPanel } from './components/SettingsPanel';
 import { PositionForm } from './components/PositionForm';
-import { TradePerformanceDashboard } from './components/TradePerformanceDashboard';
 import {
   ShieldCheck,
   Download,
@@ -215,8 +214,6 @@ function AppContent() {
     importData,
     resetAll,
     applyAppStateSnapshot,
-    loadTrades,
-    clearTrades,
   } = useAppStore();
   const t = useAppStore((state) => state.t)();
   const persistedSnapshot = useAppStore(
@@ -330,7 +327,6 @@ function AppContent() {
           lastSyncedSnapshotRef.current = '';
           restoredUserUidRef.current = null;
           restoreCompletedRef.current = true;
-          clearTrades();
           return;
         }
 
@@ -358,13 +354,6 @@ function AppContent() {
           }
 
           restoredUserUidRef.current = user.uid;
-        }
-
-        try {
-          await loadTrades();
-        } catch (error) {
-          console.error('Failed to load trades from Firestore.', error);
-          setAuthErrorSafe('sync');
         }
 
         lastSyncedSnapshotRef.current = serializeSnapshot(useAppStore.getState().getAppStateSnapshot());
@@ -622,8 +611,6 @@ function AppContent() {
                   {authError === 'auth' ? authText.authError : authText.syncError}
                 </div>
               )}
-
-              <TradePerformanceDashboard />
 
               <nav className="flex items-center gap-8 border-b border-text-main/10 overflow-x-auto pb-px no-scrollbar">
                 <button
