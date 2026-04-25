@@ -101,7 +101,15 @@ export const DEFAULT_CONTROL: TradeControlState = {
   lastTradeDate: new Date().toISOString().split('T')[0],
 };
 
-const EMPTY_TRADE_ANALYSIS: TradeAnalysis = {
+export const DEFAULT_SIGNAL: ObservationSignal = {
+  breakout: 'none',
+  state: 'WAIT',
+  trend: 'neutral',
+  volume: 'normal',
+  updatedAt: new Date(0).toISOString(),
+};
+
+export const EMPTY_TRADE_ANALYSIS: TradeAnalysis = {
   total: 0,
   winRate: 0,
   avgWin: 0,
@@ -109,13 +117,30 @@ const EMPTY_TRADE_ANALYSIS: TradeAnalysis = {
   rr: 0,
 };
 
+export const DEFAULT_STATE = {
+  settings: DEFAULT_SETTINGS,
+  activePositions: [] as Position[],
+  history: [] as TradeHistory[],
+  control: DEFAULT_CONTROL,
+  language: 'ko' as const,
+  signals: {} as Record<string, ObservationSignal>,
+  signalBuffer: {} as Record<string, ObservationSignal[]>,
+  lastPlayed: {} as Record<string, number>,
+  trades: [] as StoredTrade[],
+  tradeAnalysis: EMPTY_TRADE_ANALYSIS,
+};
+
 function sanitizePersistedAppState(input: any): PersistedAppState {
   return {
-    settings: input?.settings ?? DEFAULT_SETTINGS,
-    activePositions: input?.activePositions ?? [],
-    history: input?.history ?? [],
-    control: input?.control ?? DEFAULT_CONTROL,
-    language: input?.language ?? 'ko',
+    settings: { ...DEFAULT_SETTINGS, ...(input?.settings ?? {}) },
+    activePositions: Array.isArray(input?.activePositions) ? input.activePositions : [],
+    history: Array.isArray(input?.history) ? input.history : [],
+    control: {
+      ...DEFAULT_CONTROL,
+      ...(input?.control ?? {}),
+      cooldowns: input?.control?.cooldowns ?? DEFAULT_CONTROL.cooldowns,
+    },
+    language: input?.language === 'en' ? 'en' : 'ko',
   };
 }
 
@@ -136,26 +161,15 @@ const getTradeMarket = (signal?: ObservationSignal): TradeMarket => {
 };
 
 const createSafeSignal = (signal?: Partial<ObservationSignal>): ObservationSignal => ({
-  breakout: signal?.breakout ?? 'none',
-  state: signal?.state ?? 'WAIT',
-  trend: signal?.trend ?? 'neutral',
-  volume: signal?.volume ?? 'normal',
+  ...DEFAULT_SIGNAL,
+  ...signal,
   updatedAt: signal?.updatedAt ?? new Date().toISOString(),
 });
 
 export const useAppStore = create<AppStore>()(
   persist(
     (set, get) => ({
-      settings: DEFAULT_SETTINGS,
-      activePositions: [],
-      history: [],
-      control: DEFAULT_CONTROL,
-      language: 'ko',
-      signals: {},
-      signalBuffer: {},
-      lastPlayed: {},
-      trades: [],
-      tradeAnalysis: EMPTY_TRADE_ANALYSIS,
+      ...DEFAULT_STATE,
 
       t: () => {
         const { language } = get();
@@ -447,7 +461,7 @@ export const useAppStore = create<AppStore>()(
       loadTrades: async () => {
         const user = auth.currentUser;
         if (!user) {
-          set({ trades: [], tradeAnalysis: EMPTY_TRADE_ANALYSIS });
+          set({ trades: DEFAULT_STATE.trades, tradeAnalysis: DEFAULT_STATE.tradeAnalysis });
           return;
         }
 
@@ -505,8 +519,8 @@ export const useAppStore = create<AppStore>()(
       },
 
       clearTrades: () => set({
-        trades: [],
-        tradeAnalysis: EMPTY_TRADE_ANALYSIS,
+        trades: DEFAULT_STATE.trades,
+        tradeAnalysis: DEFAULT_STATE.tradeAnalysis,
       }),
 
       importData: (json) => {
@@ -528,10 +542,16 @@ export const useAppStore = create<AppStore>()(
       },
 
       resetAll: () => set({
-        settings: DEFAULT_SETTINGS,
-        activePositions: [],
-        history: [],
-        control: DEFAULT_CONTROL,
+        settings: DEFAULT_STATE.settings,
+        activePositions: DEFAULT_STATE.activePositions,
+        history: DEFAULT_STATE.history,
+        control: DEFAULT_STATE.control,
+        signals: DEFAULT_STATE.signals,
+        signalBuffer: DEFAULT_STATE.signalBuffer,
+        lastPlayed: DEFAULT_STATE.lastPlayed,
+        trades: DEFAULT_STATE.trades,
+        tradeAnalysis: DEFAULT_STATE.tradeAnalysis,
+        language: DEFAULT_STATE.language,
       }),
     }),
     {
@@ -543,6 +563,25 @@ export const useAppStore = create<AppStore>()(
         control: state.control,
         language: state.language,
       }),
+      merge: (persistedState, currentState) => {
+        const persisted = (persistedState as Partial<PersistedAppState> | undefined) ?? {};
+        const sanitized = sanitizePersistedAppState(persisted);
+
+        return {
+          ...currentState,
+          ...DEFAULT_STATE,
+          settings: sanitized.settings,
+          activePositions: sanitized.activePositions,
+          history: sanitized.history,
+          control: sanitized.control,
+          language: sanitized.language,
+          signals: currentState.signals ?? DEFAULT_STATE.signals,
+          signalBuffer: currentState.signalBuffer ?? DEFAULT_STATE.signalBuffer,
+          lastPlayed: currentState.lastPlayed ?? DEFAULT_STATE.lastPlayed,
+          trades: currentState.trades ?? DEFAULT_STATE.trades,
+          tradeAnalysis: currentState.tradeAnalysis ?? DEFAULT_STATE.tradeAnalysis,
+        };
+      },
     }
   )
 );

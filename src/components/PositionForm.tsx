@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { DEFAULT_CONTROL, DEFAULT_SETTINGS } from '../store/useAppStore';
+import { DEFAULT_CONTROL, DEFAULT_SETTINGS, DEFAULT_SIGNAL } from '../store/useAppStore';
 import { fetchTicker, fetchCandles } from '../services/upbitService';
 import { formatPrice } from '../lib/utils';
 import {
@@ -198,12 +198,7 @@ export function PositionForm() {
   // [CHANGED] Normalize the current selection so the UI always reads the same Zustand key.
   const selectedCoin = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? (formData.coin || 'KRW-BTC') : `KRW-${formData.coin || 'BTC'}`;
   // [CHANGED] Bind the UI to the live store signal, with a minimal fallback only for first render.
-  const safeSignal = safeSignals[selectedCoin || 'KRW-BTC'] ?? {
-    breakout: 'none' as const,
-    state: 'WAIT' as const,
-    trend: 'neutral' as const,
-    volume: 'normal' as const,
-  };
+  const safeSignal = safeSignals?.[selectedCoin ?? 'KRW-BTC'] ?? DEFAULT_SIGNAL;
 
   const handleSelectCoin = (coin: string) => {
     setFormData({ ...formData, coin });
