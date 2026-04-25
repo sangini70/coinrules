@@ -1,4 +1,4 @@
-import { Component, type PropsWithChildren, type ReactNode, useState, useEffect, ChangeEvent, useMemo, useRef } from 'react';
+import { Component, type ErrorInfo, type PropsWithChildren, type ReactNode, useState, useEffect, ChangeEvent, useMemo, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -43,8 +43,10 @@ class AppErrorBoundary extends Component<PropsWithChildren, AppErrorBoundaryStat
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error) {
-    console.error('App render error:', error);
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('App render error message:', error.message);
+    console.error('App render component stack:', info.componentStack);
+    console.error('App render error object:', error);
   }
 
   render() {
@@ -220,6 +222,21 @@ function AppContent() {
     [persistedSnapshot],
   );
 
+  const normalizedStoreSnapshot = useMemo(
+    () => ({
+      settings: settings ?? { theme: 'light', maxDailyTrades: 0, maxConsecutiveLosses: 0 },
+      control: control ?? { isInputDisabled: false, todayTradeCount: 0, consecutiveLossCount: 0 },
+      activePositions: Array.isArray(persistedSnapshot?.activePositions) ? persistedSnapshot.activePositions : [],
+      history: Array.isArray(persistedSnapshot?.history) ? persistedSnapshot.history : [],
+      language: persistedSnapshot?.language === 'en' ? 'en' : 'ko',
+    }),
+    [settings, control, persistedSnapshot],
+  );
+
+  const safeSettings = normalizedStoreSnapshot.settings;
+  const safeControl = normalizedStoreSnapshot.control;
+  const safeTranslator = typeof t === 'function' ? t : ((key: string) => key);
+
   const authText = useMemo(
     () =>
       language === 'ko'
@@ -259,8 +276,8 @@ function AppContent() {
   );
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', settings.theme);
-  }, [settings.theme]);
+    document.documentElement.setAttribute('data-theme', safeSettings.theme ?? 'light');
+  }, [safeSettings.theme]);
 
   useEffect(() => {
     if (!authUser) return;
@@ -364,7 +381,7 @@ function AppContent() {
     };
   }, [authUser, cloudReady, authLoading, persistedSnapshot, serializedPersistedSnapshot]);
 
-  const isBlocked = control.isInputDisabled;
+  const isBlockedSafe = safeControl.isInputDisabled ?? false;
 
   const cloudStatusMeta =
     cloudStatus === 'loading'
@@ -433,6 +450,7 @@ function AppContent() {
 
   const handleWipe = () => {
     if (confirm(t('reset_confirm'))) {
+      // translator is already store-backed; keep original call path here
       resetAll();
     }
   };
@@ -462,12 +480,12 @@ function AppContent() {
             </h1>
             <div className="flex flex-wrap gap-4 text-[10px] font-mono tracking-widest text-text-muted uppercase items-center pl-1">
               <span className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${isBlocked ? 'bg-status-danger' : 'bg-status-safe'}`}></span>
-                {t('system_operational')}
+                <span className={`w-2 h-2 rounded-full ${isBlockedSafe ? 'bg-status-danger' : 'bg-status-safe'}`}></span>
+                {safeTranslator('system_operational' as never)}
               </span>
               <span className="text-text-muted/10">|</span>
-              <span className={isBlocked ? 'text-status-danger font-bold' : 'text-status-safe opacity-80'}>
-                {isBlocked ? t('input_blocked') : t('input_active')}
+              <span className={isBlockedSafe ? 'text-status-danger font-bold' : 'text-status-safe opacity-80'}>
+                {isBlockedSafe ? safeTranslator('input_blocked' as never) : safeTranslator('input_active' as never)}
               </span>
               <span className="text-text-muted/10">|</span>
               <div className="flex gap-2">
@@ -540,7 +558,7 @@ function AppContent() {
                   className="w-full px-4 py-3 bg-aux-bg border border-text-main/5 text-text-muted/60 hover:text-text-main hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
                   <Download size={14} />
-                  {t('backup')}
+                  {safeTranslator('backup' as never)}
                 </button>
                 <div className="relative">
                   <input
@@ -551,7 +569,7 @@ function AppContent() {
                   />
                   <button className="w-full px-4 py-3 bg-aux-bg border border-text-main/5 text-text-muted/60 hover:text-text-main hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 pointer-events-none">
                     <Upload size={14} />
-                    {t('restore')}
+                    {safeTranslator('restore' as never)}
                   </button>
                 </div>
                 <button
@@ -559,7 +577,7 @@ function AppContent() {
                   className="w-full px-4 py-3 bg-aux-bg border border-text-main/5 text-text-muted/20 hover:text-status-danger hover:bg-text-main/5 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                 >
                   <Trash2 size={14} />
-                  {t('wipe')}
+                  {safeTranslator('wipe' as never)}
                 </button>
               </div>
             </aside>
@@ -634,18 +652,19 @@ export default function App() {
 
 function TradeHistoryView() {
   const { history, t } = useAppStore();
-  const translator = t();
+  const safeHistory = Array.isArray(history) ? history : [];
+  const translator = typeof t === 'function' ? t() : ((key: string) => key);
 
   return (
     <div className="space-y-10">
       <div className="flex items-end justify-between border-b border-text-main/10 pb-6">
         <h2 className="text-4xl font-black tracking-tight uppercase text-text-main">{translator('history')}</h2>
         <span className="text-[9px] font-mono text-text-muted/40 uppercase tracking-[0.2em] font-bold">
-          {history.length} {translator('records_found')}
+          {safeHistory.length} {translator('records_found')}
         </span>
       </div>
 
-      {history.length === 0 ? (
+      {safeHistory.length === 0 ? (
         <div className="bg-aux-bg border border-[#1A1A1A] p-24 text-center">
           <p className="text-text-muted/10 font-black uppercase tracking-[0.4em] text-3xl">{translator('no_records')}</p>
         </div>
@@ -657,7 +676,7 @@ function TradeHistoryView() {
             <div className="md:col-span-2">{translator('result')}</div>
           </div>
 
-          {history.map((item) => (
+          {safeHistory.map((item) => (
             <div key={item.id} className="bg-card-bg p-8 relative overflow-hidden group border-t border-text-main/5">
               <div
                 className={`absolute left-0 top-0 bottom-0 w-1 ${

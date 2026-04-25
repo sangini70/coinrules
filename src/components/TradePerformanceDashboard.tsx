@@ -3,23 +3,34 @@ import { useAppStore } from '../store/useAppStore';
 import { formatPercent } from '../lib/utils';
 import { isClosedTrade } from '../lib/tradeAnalytics';
 
+const EMPTY_TRADE_ANALYSIS = {
+  total: 0,
+  winRate: 0,
+  avgWin: 0,
+  avgLoss: 0,
+  rr: 0,
+};
+
 export function TradePerformanceDashboard() {
   const { trades, tradeAnalysis } = useAppStore((state) => ({
     trades: state.trades,
     tradeAnalysis: state.tradeAnalysis,
   }));
 
+  const safeTrades = Array.isArray(trades) ? trades : [];
+  const safeTradeAnalysis = tradeAnalysis ?? EMPTY_TRADE_ANALYSIS;
+
   const recentResults = useMemo(
-    () => trades.filter(isClosedTrade).slice(0, 10),
-    [trades],
+    () => safeTrades.filter(isClosedTrade).slice(0, 10),
+    [safeTrades],
   );
 
   const cards = [
-    { label: '총 거래 수', value: String(tradeAnalysis.total).padStart(2, '0') },
-    { label: '승률 (%)', value: `${tradeAnalysis.winRate.toFixed(1)}%` },
-    { label: '평균 수익 (%)', value: formatPercent(tradeAnalysis.avgWin) },
-    { label: '평균 손실 (%)', value: formatPercent(tradeAnalysis.avgLoss) },
-    { label: '손익비 (RR)', value: tradeAnalysis.rr.toFixed(2) },
+    { label: '총 거래 수', value: String(safeTradeAnalysis.total ?? 0).padStart(2, '0') },
+    { label: '승률 (%)', value: `${(safeTradeAnalysis.winRate ?? 0).toFixed(1)}%` },
+    { label: '평균 수익 (%)', value: formatPercent(safeTradeAnalysis.avgWin ?? 0) },
+    { label: '평균 손실 (%)', value: formatPercent(safeTradeAnalysis.avgLoss ?? 0) },
+    { label: '손익비 (RR)', value: (safeTradeAnalysis.rr ?? 0).toFixed(2) },
   ];
 
   return (
@@ -68,14 +79,16 @@ export function TradePerformanceDashboard() {
             {recentResults.map((trade) => (
               <div key={trade.id} className="border border-text-main/5 bg-aux-bg p-4 flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-lg font-black tracking-tight text-text-main">{trade.coin.replace('KRW-', '')}</p>
+                  <p className="text-lg font-black tracking-tight text-text-main">
+                    {String(trade.coin ?? '').replace('KRW-', '')}
+                  </p>
                   <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-text-muted/40">
-                    {trade.market} / {trade.strategy}
+                    {trade.market ?? 'range'} / {trade.strategy ?? 'EMA_PULLBACK'}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className={`text-sm font-black uppercase ${trade.result === 'win' ? 'text-status-safe' : 'text-status-danger'}`}>
-                    {trade.result}
+                    {trade.result ?? 'loss'}
                   </p>
                   <p className={`text-lg font-black tracking-tight ${trade.result === 'win' ? 'text-status-safe' : 'text-status-danger'}`}>
                     {formatPercent(trade.pnlPercent ?? 0)}
