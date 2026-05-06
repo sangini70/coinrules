@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { DEFAULT_SETTINGS, useAppStore } from '../store/useAppStore';
+import { triggerTestAlert } from '../lib/alerts';
 
 export function SettingsPanel() {
   const { settings, updateSettings, exportData, importData, resetAll, t } = useAppStore();
@@ -26,13 +27,17 @@ export function SettingsPanel() {
     setTimeout(() => setIsSaved(false), 2000);
   };
 
+  const handleAlertTest = () => {
+    triggerTestAlert(localSettings, 'entry');
+  };
+
   const handleExport = () => {
     const data = exportData();
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `backup_${new Date().toLocaleDateString('sv-SE')}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -230,6 +235,47 @@ export function SettingsPanel() {
            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500 ${(localSettings.enableSound || localSettings.enableVibration) ? 'opacity-100' : 'opacity-20 pointer-events-none grayscale'}`}>
               <div className="p-6 bg-aux-bg border border-text-main/5 flex items-center justify-between">
                 <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">실전 알림 활성화</p>
+                    <p className="text-[8px] font-medium text-text-muted/30 mt-1">강한 돌파와 거래량 급증만 알림</p>
+                </div>
+                <input 
+                  type="checkbox" 
+                  checked={localSettings.alertEnabled}
+                  onChange={e => setLocalSettings({...localSettings, alertEnabled: e.target.checked})}
+                  className="w-5 h-5 accent-status-safe bg-text-main/5 border-text-main/10"
+                />
+              </div>
+
+              <div className="p-6 bg-aux-bg border border-text-main/5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">알림 허용 시간</p>
+                    <p className="text-[8px] font-medium text-text-muted/30 mt-1">한국 시간 기준 시작/종료 시각</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={localSettings.alertStartHour}
+                      onChange={e => setLocalSettings({...localSettings, alertStartHour: Number(e.target.value)})}
+                      className="w-16 bg-main-bg border border-text-main/10 p-2 text-center text-sm font-black text-text-main outline-none"
+                    />
+                    <span className="text-text-muted/40 font-black">~</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={localSettings.alertEndHour}
+                      onChange={e => setLocalSettings({...localSettings, alertEndHour: Number(e.target.value)})}
+                      className="w-16 bg-main-bg border border-text-main/10 p-2 text-center text-sm font-black text-text-main outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-aux-bg border border-text-main/5 flex items-center justify-between">
+                <div>
                     <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">{tFn('notify_sl_imminent')}</p>
                     <p className="text-[8px] font-medium text-text-muted/30 mt-1">{tFn('notify_sl_desc')}</p>
                 </div>
@@ -253,6 +299,16 @@ export function SettingsPanel() {
                   className="w-5 h-5 accent-status-safe bg-text-main/5 border-text-main/10"
                 />
               </div>
+           </div>
+
+           <div className="pt-4">
+             <button 
+               type="button"
+               onClick={handleAlertTest}
+               className="px-6 py-4 font-black uppercase text-[10px] tracking-widest border border-text-main/10 text-text-main hover:bg-text-main/5 transition-all"
+             >
+               알림 테스트
+             </button>
            </div>
         </div>
       </section>

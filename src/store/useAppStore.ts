@@ -35,6 +35,8 @@ interface AppStore {
   control: TradeControlState;
   language: 'ko' | 'en';
   signals: Record<string, ObservationSignal>;
+  userCoins: string[];
+  coinCatalog: CoinCatalogItem[];
   signalBuffer: Record<string, ObservationSignal[]>; // For debouncing
   lastPlayed: Record<string, number>; // throttle for sound
   trades: StoredTrade[];
@@ -42,6 +44,8 @@ interface AppStore {
 
   // Actions
   updateSettings: (settings: Partial<AppSettings>) => void;
+  setUserCoins: (coins: string[]) => void;
+  setCoinCatalog: (coins: CoinCatalogItem[]) => void;
   addPosition: (position: Omit<Position, 'id' | 'createdAt' | 'isLocked'> & { isLocked?: boolean }) => void;
   closePosition: (id: string, sellPrice: number, resultType: ResultType, reasonSell: string) => void;
   deletePosition: (id: string) => void;
@@ -78,14 +82,24 @@ export interface PersistedAppState {
   language: 'ko' | 'en';
 }
 
+export type CoinCatalogItem = {
+  symbol: string;
+  market: string;
+  enabled: boolean;
+  priority: number;
+};
+
 export const DEFAULT_SETTINGS: AppSettings = {
   stopLossPercent: DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
+  stopLoss: DEFAULT_SHORT_TERM_STOP_LOSS_PERCENT,
   takeProfitPercent: DEFAULT_SHORT_TERM_TAKE_PROFIT_PERCENT,
   breakevenTriggerPercent: 3,
   maxDailyTrades: 3,
   maxConsecutiveLosses: 2,
   cooldownMinutes: 15,
   alertEnabled: true,
+  alertStartHour: 21,
+  alertEndHour: 2,
   enableSound: false,
   enableVibration: false,
   notifyStopLoss: false,
@@ -126,6 +140,8 @@ export const DEFAULT_STATE = {
   control: DEFAULT_CONTROL,
   language: 'ko' as const,
   signals: {} as Record<string, ObservationSignal>,
+  userCoins: [] as string[],
+  coinCatalog: [] as CoinCatalogItem[],
   signalBuffer: {} as Record<string, ObservationSignal[]>,
   lastPlayed: {} as Record<string, number>,
   trades: [] as StoredTrade[],
@@ -191,9 +207,18 @@ export const useAppStore = create<AppStore>()(
               let rawSignal: ObservationSignal | undefined;
 
               try {
-                const candles = await fetchCandles(targetCoin, 100, 15);
-                if (Array.isArray(candles) && candles.length > 50) {
-                  rawSignal = analyzeSignal(candles);
+                const [oneMinuteCandles, fiveMinuteCandles] = await Promise.all([
+                  fetchCandles(targetCoin, 120, 1),
+                  fetchCandles(targetCoin, 240, 5),
+                ]);
+
+                if (
+                  Array.isArray(oneMinuteCandles) &&
+                  Array.isArray(fiveMinuteCandles) &&
+                  oneMinuteCandles.length > 50 &&
+                  fiveMinuteCandles.length > 200
+                ) {
+                  rawSignal = analyzeSignal(oneMinuteCandles, fiveMinuteCandles);
                 }
               } catch (e) {
                 console.warn(
@@ -207,7 +232,6 @@ export const useAppStore = create<AppStore>()(
               const newBuffer = [...buffer, safeSignal].slice(-3);
               const alertScore =
                 (safeSignal.trend === 'up' ? 30 : 0) +
-                (safeSignal.volume === 'spike' ? 20 : 0) +
                 (safeSignal.breakout === 'bullish_breakout' ? 25 : 0) +
                 (safeSignal.state === 'PREPARE' ? 25 : 0);
 
@@ -215,20 +239,42 @@ export const useAppStore = create<AppStore>()(
                 targetCoin,
                 {
                   isBreakout: safeSignal.breakout === 'bullish_breakout',
-                  isVolumeSpike: safeSignal.volume === 'spike',
                   isFakeout: safeSignal.state === 'RISK',
                   score: Math.max(0, Math.min(100, alertScore)),
                 },
                 get().settings,
               );
 
-              set((state) => ({
-                signalBuffer: { ...state.signalBuffer, [targetCoin]: newBuffer },
-                signals: {
-                  ...state.signals,
-                  [targetCoin]: safeSignal,
-                },
-              }));
+              set((state) => {
+                const prevSignal = state.signals[targetCoin];
+                const prevBuffer = state.signalBuffer[targetCoin] || [];
+                const sameSignal =
+                  prevSignal?.trend === safeSignal.trend &&
+                  prevSignal?.breakout === safeSignal.breakout &&
+                  prevSignal?.state === safeSignal.state;
+                const sameBuffer =
+                  prevBuffer.length === newBuffer.length &&
+                  prevBuffer.every((item, index) => {
+                    const nextItem = newBuffer[index];
+                    return (
+                      item?.trend === nextItem?.trend &&
+                      item?.breakout === nextItem?.breakout &&
+                      item?.state === nextItem?.state
+                    );
+                  });
+
+                if (sameSignal && sameBuffer) {
+                  return {};
+                }
+
+                return {
+                  signalBuffer: { ...state.signalBuffer, [targetCoin]: newBuffer },
+                  signals: {
+                    ...state.signals,
+                    [targetCoin]: safeSignal,
+                  },
+                };
+              });
             }),
           );
         } finally {
@@ -339,9 +385,47 @@ export const useAppStore = create<AppStore>()(
       setLanguage: (language) =>
         set((state) => (state.language === language ? state : { language })),
 
+      setUserCoins: (coins) =>
+        set((state) => {
+          const nextCoins = Array.isArray(coins) ? [...new Set(coins.filter((coin) => typeof coin === 'string'))] : [];
+          const sameLength = state.userCoins.length === nextCoins.length;
+          const sameValues = sameLength && state.userCoins.every((coin, index) => coin === nextCoins[index]);
+          return sameValues ? state : { userCoins: nextCoins };
+        }),
+
+      setCoinCatalog: (coins) =>
+        set((state) => {
+          const nextCoins = Array.isArray(coins)
+            ? coins
+                .map((coin) => ({
+                  symbol: typeof coin.symbol === 'string' ? coin.symbol : '',
+                  market: typeof coin.market === 'string' ? coin.market : '',
+                  enabled: coin.enabled !== false,
+                  priority: Number.isFinite(coin.priority) ? coin.priority : 100,
+                }))
+                .filter((coin) => coin.symbol.length > 0)
+            : [];
+          const sameLength = state.coinCatalog.length === nextCoins.length;
+          const sameValues =
+            sameLength &&
+            state.coinCatalog.every((coin, index) => {
+              const nextCoin = nextCoins[index];
+              return (
+                coin.symbol === nextCoin.symbol &&
+                coin.market === nextCoin.market &&
+                coin.enabled === nextCoin.enabled &&
+                coin.priority === nextCoin.priority
+              );
+            });
+          return sameValues ? state : { coinCatalog: nextCoins };
+        }),
+
       updateSettings: (newSettings) =>
         set((state) => {
           const mergedSettings = { ...DEFAULT_SETTINGS, ...state.settings, ...newSettings };
+          if (typeof mergedSettings.stopLoss !== 'number') {
+            mergedSettings.stopLoss = mergedSettings.stopLossPercent;
+          }
           return JSON.stringify(state.settings) === JSON.stringify(mergedSettings)
             ? state
             : { settings: mergedSettings };
@@ -356,6 +440,7 @@ export const useAppStore = create<AppStore>()(
           id: `pos-${Math.random().toString(36).substr(2, 9)}`,
           createdAt: new Date().toISOString(),
           isLocked: pos.isLocked ?? false,
+          actionSignal: '관망',
         };
 
         set((state) => ({

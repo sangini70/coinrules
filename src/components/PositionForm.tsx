@@ -1,8 +1,10 @@
-import { useState, useEffect, FormEvent, useRef } from 'react';
+﻿import { useState, useEffect, FormEvent, useRef } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { DEFAULT_CONTROL, DEFAULT_SETTINGS, DEFAULT_SIGNAL } from '../store/useAppStore';
 import { fetchTicker, fetchCandles } from '../services/upbitService';
 import { formatPrice } from '../lib/utils';
+import { getExplain } from '../lib/explain';
+import { getEntryState, getPrepareState, getSignalScore } from '../lib/signals';
 import {
   SHORT_TERM_STOP_LOSS_PERCENT,
   SHORT_TERM_TAKE_PROFIT_1_PERCENT,
@@ -13,6 +15,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Translation } from '../i18n/types';
 
 const COIN_OPTIONS = ['KRW-BTC', 'KRW-ETH', 'KRW-SOL', 'KRW-XRP', 'KRW-ADA', 'KRW-DOGE', 'KRW-AVAX', 'KRW-DOT'];
+const DEFAULT_WATCHLIST = ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE'];
 const MARKET_ANALYSIS_CANDLE_COUNT = 24;
 const TREND_LOOKBACK = 5;
 const BREAKOUT_LOOKBACK = 20;
@@ -47,6 +50,8 @@ type LiquiditySnapshot = {
 const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 const formatMetric = (value: number, fractionDigits: number = 2) =>
   Number.isFinite(value) ? value.toLocaleString('ko-KR', { maximumFractionDigits: fractionDigits }) : '-';
+const normalizeWatchlistSymbol = (value: string) =>
+  value.replace(/\s+/g, '').replace(/^KRW-/i, '').toUpperCase();
 
 export function PositionForm() {
   const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals } = useAppStore();
@@ -75,8 +80,66 @@ export function PositionForm() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isPriceHighlighted, setIsPriceHighlighted] = useState(false);
   const [coinInput, setCoinInput] = useState('');
+  const [watchlistInput, setWatchlistInput] = useState('');
+  const [marketList, setMarketList] = useState<string[]>([]);
+  const [watchlist, setWatchlist] = useState<string[]>(() => {
+    if (typeof window === 'undefined') {
+      return DEFAULT_WATCHLIST;
+    }
+
+    try {
+      const raw = window.localStorage.getItem('asset-protection-watchlist');
+      if (!raw) return DEFAULT_WATCHLIST;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return DEFAULT_WATCHLIST;
+
+      const normalized = Array.from(
+        new Set(
+          parsed
+            .map((item) => normalizeWatchlistSymbol(String(item ?? '')))
+            .filter((item) => Boolean(item)),
+        ),
+      ).slice(0, 10);
+
+      return normalized.length > 0 ? normalized : DEFAULT_WATCHLIST;
+    } catch {
+      return DEFAULT_WATCHLIST;
+    }
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const lastGlobalSentAt = useRef<number>(0);
   const market = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? formData.coin : `KRW-${formData.coin || 'BTC'}`;
+
+  useEffect(() => {
+    const fetchMarkets = async () => {
+      try {
+        const res = await fetch('https://api.upbit.com/v1/market/all');
+        const data = await res.json();
+
+        const krwMarkets = Array.isArray(data)
+          ? data
+              .filter((m: any) => typeof m?.market === 'string' && m.market.startsWith('KRW-'))
+              .map((m: any) => m.market)
+          : [];
+
+        setMarketList(krwMarkets);
+      } catch (e) {
+        console.error('마켓 로드 실패', e);
+      }
+    };
+
+    void fetchMarkets();
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('asset-protection-watchlist', JSON.stringify(watchlist));
+    } catch (error) {
+      console.warn('WATCHLIST 저장 실패', error);
+    }
+  }, [watchlist]);
+
+  const isValidCoin = (coin: string) => marketList.includes(`KRW-${coin}`);
 
   useEffect(() => {
     let active = true;
@@ -230,6 +293,7 @@ export function PositionForm() {
   const selectedCoin = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? (formData.coin || 'KRW-BTC') : `KRW-${formData.coin || 'BTC'}`;
   // [CHANGED] Bind the UI to the live store signal, with a minimal fallback only for first render.
   const safeSignal = safeSignals?.[selectedCoin ?? 'KRW-BTC'] ?? DEFAULT_SIGNAL;
+  const btcSignal = safeSignals?.['KRW-BTC'] ?? DEFAULT_SIGNAL;
 
   const handleSelectCoin = (coin: string) => {
     setFormData({ ...formData, coin });
@@ -346,183 +410,334 @@ export function PositionForm() {
     const signalVolumeSpike = safeSignal.volume === 'spike';
     const signalBreakout = safeSignal.breakout === 'bullish_breakout';
 
-    if (!marketAnalysis) {
-      return {
-        score: 0,
-        scoreLabel: '-',
-        scoreColor: 'text-text-muted/40',
-        conclusion: signalBreakout
-          ? '돌파 시도'
-          : signalTrendUp && signalVolumeSpike
-            ? '상승 흐름 강화'
-            : signalTrendUp
-              ? '상승 흐름 강화'
-            : signalVolumeSpike
-              ? '거래량 유입 확대'
-              : '관망 구간',
-        reasons: signalBreakout
-          ? ['직전 고점 재시험', '종가 안착 확인 필요']
-          : signalTrendUp && signalVolumeSpike
-            ? ['추세 유지 중', '거래량 증가']
-            : signalTrendUp
-              ? ['추세 유지 중', '거래량 확인 필요']
-            : signalVolumeSpike
-              ? ['거래량 증가', '방향성 확인 필요']
-              : ['시장 데이터 수집 중'],
-        entryState: signalBreakout
-          ? '돌파 시도'
-          : signalTrendUp && signalVolumeSpike
-            ? '관망'
-            : signalTrendUp
-              ? '상승 시작'
-              : signalVolumeSpike
-                ? '거래량 유입 확대'
-                : '대기',
-      };
-    }
-
-    const { isUpTrend, isVolumeSpike, isBreakout, isSustained, isFakeout } = marketAnalysis;
-    const trendActive = isUpTrend || signalTrendUp;
-    const volumeActive = isVolumeSpike || signalVolumeSpike;
-    const breakoutActive = isBreakout || signalBreakout;
+    const trendActive = Boolean(marketAnalysis?.isUpTrend || signalTrendUp);
+    const volumeActive = Boolean(marketAnalysis?.isVolumeSpike || signalVolumeSpike);
+    const breakoutActive = Boolean(marketAnalysis?.isBreakout || signalBreakout);
+    const fakeout = Boolean(marketAnalysis?.isFakeout);
+    const highRisk = Boolean(marketAnalysis?.isBreakout && !marketAnalysis?.isSustained);
 
     let score = 0;
-    if (isUpTrend) score += 30;
-    if (isVolumeSpike) score += 20;
-    if (isBreakout) score += 25;
-    if (isSustained) score += 15;
-    if (isBreakout && isVolumeSpike) score += 10;
-    if (isBreakout && isSustained) score += 10;
-    if (isBreakout && !isSustained) score -= 10;
+    if (marketAnalysis?.isUpTrend) score += 30;
+    if (marketAnalysis?.isVolumeSpike) score += 20;
+    if (marketAnalysis?.isBreakout) score += 25;
+    if (marketAnalysis?.isSustained) score += 15;
+    if (marketAnalysis?.isBreakout && marketAnalysis?.isVolumeSpike) score += 10;
+    if (marketAnalysis?.isBreakout && marketAnalysis?.isSustained) score += 10;
+    if (marketAnalysis?.isBreakout && !marketAnalysis?.isSustained) score -= 10;
     score = Math.max(0, Math.min(100, score));
-
-    const interpretation =
-      isFakeout
-        ? 'fakeout'
-        : breakoutActive
-          ? (isSustained ? 'breakout_sustained' : 'breakout_attempt')
-          : trendActive && volumeActive
-            ? 'trend_volume'
-            : volumeActive
-              ? 'volume_only'
-              : trendActive
-                ? 'trend_only'
-                : 'fallback';
-
-    const interpretationMeta = (() => {
-      switch (interpretation) {
-        case 'fakeout':
-          return {
-            conclusion: '가짜 돌파 가능성',
-            reasons: ['돌파 실패 흔적', '지지선 확인 필요', '추가 확인 필요'],
-          };
-        case 'breakout_sustained':
-          return {
-            conclusion: '돌파 유지',
-            reasons: isVolumeSpike
-              ? ['거래량 증가', '돌파 이후 지지 확인', '추세 유지 중']
-              : ['돌파 유지 중', '지지선 확인 필요', '추가 확인 필요'],
-          };
-        case 'breakout_attempt':
-          return {
-            conclusion: '돌파 시도',
-            reasons: ['직전 고점 재시험', '종가 안착 확인 필요', '추가 확인 필요'],
-          };
-        case 'trend_volume':
-          return {
-            conclusion: '상승 흐름 강화',
-            reasons: ['추세 유지 중', '거래량 증가', '추가 확인 필요'],
-          };
-        case 'volume_only':
-          return {
-            conclusion: '거래량 유입 확대',
-            reasons: ['거래량 증가', '방향성 확인 필요', '추가 확인 필요'],
-          };
-        case 'trend_only':
-          return {
-            conclusion: '상승 흐름 강화',
-            reasons: ['추세 유지 중', '거래량 확인 필요', '지지선 확인 필요'],
-          };
-        default:
-          return {
-            conclusion: '관망 구간',
-            reasons: ['신호 부족', '방향성 확인 필요'],
-          };
-      }
-    })();
-
-    const conclusion = interpretationMeta.conclusion;
-    const reasons = interpretationMeta.reasons;
 
     const scoreLabel = score >= 75 ? '높음' : (score >= 60 ? '보통' : '낮음');
     const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
+    const entryState = getEntryState({
+      trend: trendActive,
+      volume: volumeActive,
+      breakout: breakoutActive,
+      fakeout,
+      highRisk,
+      btcTrend: btcSignal.trend,
+    });
 
-    let entryState = '대기';
-    if (isFakeout) entryState = '진입 금지';
-    else if (breakoutActive && isSustained) entryState = score >= 75 && isBreakout ? '진입 신호' : '상승 지속';
-    else if (breakoutActive && !isSustained) entryState = '위험';
-    else if (trendActive && volumeActive) entryState = score >= 60 ? '진입 준비' : '관망';
-    else if (trendActive) entryState = '상승 시작';
-    else if (volumeActive) entryState = '거래량 유입 확대';
-    else if (score >= 60) entryState = '진입 준비';
-    else if (score >= 35) entryState = '관망';
+    const conclusionMap: Record<'AVOID' | 'RISK' | 'ENTRY' | 'OBSERVE' | 'WAIT', string> = {
+      AVOID: '회피',
+      RISK: '손절 임박',
+      ENTRY: '진입',
+      OBSERVE: '관찰',
+      WAIT: '대기',
+    };
+
+    const reasons =
+      entryState === 'AVOID'
+        ? ['돌파 실패 흔적', '지지선 확인 필요']
+        : entryState === 'RISK'
+          ? ['손절 기준 근접', '변동성 점검 필요']
+          : entryState === 'ENTRY'
+            ? ['추세 확인', '거래량 확인', '돌파 확인']
+            : entryState === 'OBSERVE'
+              ? ['추세 유지 중', '추가 확인 필요']
+              : ['신호 부족', '방향성 확인 필요'];
 
     return {
       score,
       scoreLabel,
       scoreColor,
-      conclusion,
-      reasons: Array.from(new Set(reasons)),
+      conclusion: conclusionMap[entryState],
+      reasons,
       entryState,
+      trendActive,
+      volumeActive,
+      breakoutActive,
     };
   })();
 
-  // Status Priority for form
-  const getFormStatus = () => {
-    // [1] COOLDOWN CHECK
-    if (isCoinBlocked) {
-      return {
-        label: t('waiting_reentry'),
-        desc: `(재진입 대기 중 / ${Math.floor(cooldownTime / 60)}:${(cooldownTime % 60).toString().padStart(2, '0')})`,
-        color: 'text-status-warn',
-        border: 'border-status-warn/30',
-        bg: 'bg-status-warn/5',
-        dot: 'bg-status-warn'
-      };
+  const trendReady = entryAnalysis.trendActive;
+  const volumeReady = entryAnalysis.volumeActive;
+  const breakoutReady = entryAnalysis.breakoutActive;
+
+  const entryState = entryAnalysis.entryState;
+  const actionGuide =
+    entryState === 'ENTRY'
+      ? '소액 매수 가능'
+      : entryState === 'OBSERVE'
+        ? '매수하지 말고 관찰하라'
+        : entryState === 'WAIT'
+          ? '대기'
+        : entryState === 'AVOID'
+          ? '매수 금지'
+          : '매수 금지 (리스크 구간)';
+
+  const prepareState = getPrepareState({
+    trend: trendReady,
+    volume: volumeReady,
+    breakout: breakoutReady,
+  });
+  const signalScore = getSignalScore({
+    trend: trendReady,
+    volume: volumeReady,
+    breakout: breakoutReady,
+  });
+  let scoreColor = "text-gray-400";
+
+  if (signalScore >= 80) {
+    scoreColor = "text-green-500";
+  } else if (signalScore >= 60) {
+    scoreColor = "text-yellow-500";
+  } else {
+    scoreColor = "text-red-500";
+  }
+
+  const failReasons: string[] = [];
+
+  if (!trendReady) failReasons.push("Trend 부족");
+  if (!volumeReady) failReasons.push("거래량 부족");
+  if (!breakoutReady) failReasons.push("돌파 부족");
+  if (signalScore < 80) failReasons.push("점수 부족");
+  if (prepareState !== "ENTRY") failReasons.push("진입 단계 아님");
+  if (btcSignal.trend !== "up") failReasons.push("BTC 하락");
+
+  const getColor = (v: boolean) => (v ? "text-green-500" : "text-red-500");
+  const explain = getExplain({
+    state: entryState,
+    trendReady,
+    volumeReady,
+    breakoutReady,
+    btcTrend: btcSignal.trend,
+    score: signalScore,
+  });
+  const explainReason = entryState === "ENTRY" ? "조건 충족" : failReasons.slice(0, 2).join(" / ") || "조건 부족";
+
+  const addWatchlistSymbol = () => {
+    const normalized = normalizeWatchlistSymbol(watchlistInput);
+    if (!normalized) return;
+    if (watchlist.includes(normalized)) return;
+    if (!isValidCoin(normalized)) {
+      alert('존재하지 않는 코인입니다');
+      return;
     }
-    
-    // [CHANGED] marketAnalysis가 있으면 entryAnalysis.entryState를 최종 표시 상태로 사용하고,
-    // safeSignal은 fallback 스타일 결정에만 사용합니다.
-    const displayState = marketAnalysis ? entryAnalysis.entryState : safeSignal.state;
-    const displayDesc = marketAnalysis ? entryAnalysis.conclusion : entryAnalysis.conclusion;
-    const statusMap: Record<string, any> = {
-      '진입 금지': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
-      '위험': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
-      '진입 신호': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
-      '진입 준비': { color: 'text-blue-500', border: 'border-blue-500/30', bg: 'bg-blue-500/5', dot: 'bg-blue-500' },
-      '상승 지속': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
-      '상승 시작': { color: 'text-text-main', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-main' },
-      '거래량 유입 확대': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
-      '돌파 시도': { color: 'text-blue-500', border: 'border-blue-500/30', bg: 'bg-blue-500/5', dot: 'bg-blue-500' },
-      '관망': { color: 'text-text-main', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
-      '대기': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
-      '상태 확인 중': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
-      'WAIT': { color: 'text-status-danger', border: 'border-status-danger/30', bg: 'bg-status-danger/5', dot: 'bg-status-danger' },
-      'OBSERVE': { color: 'text-text-muted', border: 'border-text-muted/30', bg: 'bg-text-muted/5', dot: 'bg-text-muted' },
-      'CAUTION': { color: 'text-status-warn', border: 'border-status-warn/30', bg: 'bg-status-warn/5', dot: 'bg-status-warn' },
-      'PREPARE': { color: 'text-status-safe', border: 'border-status-safe/30', bg: 'bg-status-safe/5', dot: 'bg-status-safe' },
-      'RISK': { color: 'text-text-muted/50', border: 'border-text-main/10', bg: 'bg-aux-bg', dot: 'bg-text-muted/20' },
-    };
-    const base = statusMap[displayState] || statusMap[safeSignal.state] || statusMap.RISK;
+    setWatchlist((prev) => {
+      if (prev.includes(normalized)) return prev;
+      if (prev.length >= 10) return prev;
+      return [...prev, normalized];
+    });
+    setWatchlistInput('');
+  };
+
+  const removeWatchlistSymbol = (symbol: string) => {
+    setWatchlist((prev) => {
+      const next = prev.filter((item) => item !== symbol);
+      return next.length > 0 ? next : DEFAULT_WATCHLIST;
+    });
+  };
+
+  const resetWatchlist = () => {
+    setWatchlist(DEFAULT_WATCHLIST);
+    setWatchlistInput('');
+  };
+
+  const evaluateEmailSignal = async (symbol: string) => {
+    const marketSymbol = `KRW-${symbol}`;
+    const ticker = await fetchTicker(marketSymbol);
+    const [candles, oneMinuteCandles] = await Promise.all([
+      fetchCandles(marketSymbol, MARKET_ANALYSIS_CANDLE_COUNT, 5),
+      fetchCandles(marketSymbol, 2, 1),
+    ]);
+
+    if (!ticker || !Array.isArray(candles) || candles.length < MARKET_ANALYSIS_CANDLE_COUNT) {
+      return null;
+    }
+
+    const candleData: CandleSnapshot[] = candles.map((c) => ({
+      open: c.opening_price,
+      close: c.trade_price,
+      high: c.high_price,
+      low: c.low_price,
+      volume: c.candle_acc_trade_volume,
+      upperWickRatio:
+        (c.high_price - Math.max(c.opening_price, c.trade_price)) /
+        (c.high_price - c.low_price + Number.EPSILON),
+    }));
+    const completedCandles = candleData.slice(1);
+
+    if (completedCandles.length < BREAKOUT_LOOKBACK + SUSTAIN_LOOKBACK) {
+      return null;
+    }
+
+    const latestCompleted = completedCandles[0];
+    const trendCandles = completedCandles.slice(0, TREND_LOOKBACK);
+    const recentVolumeCandles = completedCandles.slice(0, RECENT_VOLUME_WINDOW);
+    const baselineVolumeCandles = completedCandles.slice(
+      RECENT_VOLUME_WINDOW,
+      RECENT_VOLUME_WINDOW + BASELINE_VOLUME_WINDOW,
+    );
+    const breakoutReferenceCandles = completedCandles.slice(1, BREAKOUT_LOOKBACK + 1);
+    const sustainReferenceCandles = completedCandles.slice(SUSTAIN_LOOKBACK, SUSTAIN_LOOKBACK + BREAKOUT_LOOKBACK);
+    const recentThreeCandles = completedCandles.slice(0, SUSTAIN_LOOKBACK);
+
+    const higherHighCount = trendCandles.slice(0, -1).reduce(
+      (count, candle, index) => count + (candle.high > trendCandles[index + 1].high ? 1 : 0),
+      0,
+    );
+    const higherLowCount = trendCandles.slice(0, -1).reduce(
+      (count, candle, index) => count + (candle.low > trendCandles[index + 1].low ? 1 : 0),
+      0,
+    );
+    const higherCloseCount = trendCandles.slice(0, -1).reduce(
+      (count, candle, index) => count + (candle.close > trendCandles[index + 1].close ? 1 : 0),
+      0,
+    );
+
+    const recentHigh = Math.max(...breakoutReferenceCandles.map((c) => c.high));
+    const sustainedLevel = Math.max(...sustainReferenceCandles.map((c) => c.high));
+    const avgVol3 = average(recentVolumeCandles.map((c) => c.volume));
+    const avgVol10 = average(baselineVolumeCandles.map((c) => c.volume));
+    const isUpTrend =
+      higherHighCount >= 3 &&
+      higherLowCount >= 3 &&
+      higherCloseCount >= 3 &&
+      latestCompleted.close > trendCandles[TREND_LOOKBACK - 1].close;
+    const isBreakout = latestCompleted.close > recentHigh;
+    const isSustained = recentThreeCandles.every((c) => c.close > sustainedLevel);
+    const isVolumeSpike = avgVol3 >= avgVol10 * VOLUME_SPIKE_MULTIPLIER;
+    const attemptedBreakout = latestCompleted.high > recentHigh;
+    const breakoutRejected = attemptedBreakout && latestCompleted.close <= recentHigh;
+    const isFakeout =
+      breakoutRejected ||
+      (isBreakout && !isVolumeSpike && latestCompleted.upperWickRatio >= 0.45) ||
+      (attemptedBreakout && latestCompleted.upperWickRatio >= 0.55 && latestCompleted.close < latestCompleted.open);
+
+    const trendActive = Boolean(isUpTrend);
+    const volumeActive = Boolean(isVolumeSpike);
+    const breakoutActive = Boolean(isBreakout);
+    const fakeout = Boolean(isFakeout);
+    const highRisk = Boolean(isBreakout && !isSustained);
+
+    const signalScore = getSignalScore({
+      trend: trendActive,
+      volume: volumeActive,
+      breakout: breakoutActive,
+    });
+    const prepareState = getPrepareState({
+      trend: trendActive,
+      volume: volumeActive,
+      breakout: breakoutActive,
+    });
+    const entryState = getEntryState({
+      trend: trendActive,
+      volume: volumeActive,
+      breakout: breakoutActive,
+      fakeout,
+      highRisk,
+      btcTrend: btcSignal.trend,
+    });
 
     return {
-      label: displayState,
-      desc: displayDesc,
-      ...base,
+      market: marketSymbol,
+      symbol: marketSymbol.replace('KRW-', ''),
+      price: Number(ticker.trade_price ?? 0),
+      currentPrice: Number(ticker.trade_price ?? 0),
+      entryState,
+      trend: trendActive,
+      volume: volumeActive,
+      breakout: breakoutActive,
+      signalScore,
+      prepareState,
     };
   };
 
-  const statusInfo = getFormStatus();
+  useEffect(() => {
+    let isCancelled = false;
+    const EMAIL_COOLDOWN = 1 * 60 * 1000;
+
+    const runWatchlist = async () => {
+      const entryCandidates: Array<{
+        symbol: string;
+        entryState: string;
+        price: number;
+        trend: boolean;
+        volume: boolean;
+        breakout: boolean;
+        signalScore: number;
+        prepareState: string;
+      }> = [];
+
+      for (const symbol of watchlist) {
+        try {
+          const result = await evaluateEmailSignal(symbol);
+          if (!result || isCancelled) continue;
+          if (result.entryState !== 'ENTRY') continue;
+          if (!Number.isFinite(result.currentPrice) || result.currentPrice <= 0) continue;
+
+          entryCandidates.push({
+            symbol,
+            entryState: result.entryState,
+            price: result.price,
+            trend: result.trend,
+            volume: result.volume,
+            breakout: result.breakout,
+            signalScore: result.signalScore,
+            prepareState: result.prepareState,
+          });
+        } catch (error) {
+          console.error('WATCHLIST SIGNAL ERROR:', symbol, error);
+        }
+      }
+
+      entryCandidates.sort((a, b) => b.signalScore - a.signalScore);
+      const bestEntry = entryCandidates[0];
+
+      if (
+        bestEntry &&
+        Date.now() - lastGlobalSentAt.current > EMAIL_COOLDOWN
+      ) {
+        lastGlobalSentAt.current = Date.now();
+        void fetch('/api/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            symbol: bestEntry.symbol,
+            entryState: bestEntry.entryState,
+            price: bestEntry.price,
+            trend: bestEntry.trend,
+            volume: bestEntry.volume,
+            breakout: bestEntry.breakout,
+            signalScore: bestEntry.signalScore,
+            prepareState: bestEntry.prepareState,
+          }),
+        }).catch((error) => {
+          console.error('EMAIL SEND ERROR:', error);
+        });
+      }
+    };
+
+    void runWatchlist();
+    const interval = setInterval(() => {
+      void runWatchlist();
+    }, 60_000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [btcSignal.trend, watchlist]);
 
   if (isInputBlocked) {
     return (
@@ -547,258 +762,288 @@ export function PositionForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* MARKET SELECT */}
-      <div className="space-y-2 relative" ref={dropdownRef}>
-        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('select_coin')}</label>
-        <div className="relative">
-          <input
-            type="text"
-            value={coinInput}
-            onChange={(e) => setCoinInput(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
-            onFocus={() => setIsDropdownOpen(true)}
-            placeholder={formData.coin.replace('KRW-', '')}
-            className="w-full bg-aux-bg border border-text-main/10 p-4 text-xl font-black uppercase tracking-tight text-text-main outline-none focus:border-text-muted/30 transition-all"
-          />
-          <ChevronDown size={16} className={`absolute right-4 top-1/2 -translate-y-1/2 text-text-muted/40 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
-        </div>
-        
-        <AnimatePresence>
-          {isDropdownOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              className="absolute z-50 left-0 right-0 top-full mt-1 bg-card-bg border border-text-main/10 shadow-2xl overflow-hidden"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {/* MARKET SELECT */}
+          <div className="space-y-2 relative" ref={dropdownRef}>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('select_coin')}</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={coinInput}
+                onChange={(e) => setCoinInput(e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase())}
+                onFocus={() => setIsDropdownOpen(true)}
+                placeholder={formData.coin.replace('KRW-', '')}
+                className="w-full bg-aux-bg border border-text-main/10 p-4 text-xl font-black uppercase tracking-tight text-text-main outline-none focus:border-text-muted/30 transition-all"
+              />
+              <ChevronDown size={16} className={`absolute right-4 top-1/2 -translate-y-1/2 text-text-muted/40 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </div>
+            
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="absolute z-50 left-0 right-0 top-full mt-1 bg-card-bg border border-text-main/10 shadow-2xl overflow-hidden"
+                >
+                  <div className="max-h-48 overflow-y-auto overscroll-contain scrollbar-hide">
+                    {filteredCoins.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => handleSelectCoin(opt)}
+                        className={`w-full p-4 text-left font-black uppercase tracking-tight text-sm hover:bg-text-main/5 transition-colors border-b border-text-main/5 last:border-0 ${formData.coin === opt ? 'text-text-main bg-text-main/5' : 'text-text-muted'}`}
+                      >
+                        {opt.replace('KRW-', '')}
+                      </button>
+                    ))}
+                    {isCustomCoin && (
+                      <button
+                        type="button"
+                        onClick={() => handleSelectCoin(customMarket)}
+                        className="w-full p-4 text-left font-black uppercase tracking-tight text-sm bg-status-safe/10 text-status-safe hover:bg-status-safe/20 transition-colors"
+                      >
+                        직접 입력: {coinInput.toUpperCase()}
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* STRATEGY TYPE */}
+          <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('select_strategy')}</label>
+            <div className="grid grid-cols-2 gap-1 bg-aux-bg p-1 border border-text-main/5">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, type: 'short_term' })}
+                className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'short_term' ? 'bg-status-safe text-white' : 'text-text-muted/40 hover:text-text-main'}`}
+              >
+                {t('shortTerm')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, type: 'long_term' })}
+                className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'long_term' ? 'bg-purple-600 text-white' : 'text-text-muted/40 hover:text-text-main'}`}
+              >
+                {t('longTerm')}
+              </button>
+            </div>
+          </div>
+
+          {/* BUY PRICE */}
+          <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('buy_price')}</label>
+            <input 
+              type="text"
+              inputMode="numeric"
+              value={formData.buyPrice || ''}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '');
+                handlePriceChange(Number(val));
+              }}
+              placeholder={t('placeholder_buy_price')}
+              className="w-full h-14 bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-main/30 transition-all"
+            />
+            <button
+              type="button"
+              onClick={handleFetchPrice}
+              className="w-full h-11 bg-text-main/5 border border-text-main/10 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-main hover:bg-text-main/10 transition-all"
             >
-              <div className="max-h-48 overflow-y-auto overscroll-contain scrollbar-hide">
-                {filteredCoins.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => handleSelectCoin(opt)}
-                    className={`w-full p-4 text-left font-black uppercase tracking-tight text-sm hover:bg-text-main/5 transition-colors border-b border-text-main/5 last:border-0 ${formData.coin === opt ? 'text-text-main bg-text-main/5' : 'text-text-muted'}`}
-                  >
-                    {opt.replace('KRW-', '')}
-                  </button>
-                ))}
-                {isCustomCoin && (
-                  <button
-                    type="button"
-                    onClick={() => handleSelectCoin(customMarket)}
-                    className="w-full p-4 text-left font-black uppercase tracking-tight text-sm bg-status-safe/10 text-status-safe hover:bg-status-safe/20 transition-colors"
-                  >
-                    직접 입력: {coinInput.toUpperCase()}
-                  </button>
-                )}
+              {t('auto_price')}
+            </button>
+          </div>
+
+          {/* AMOUNT */}
+          <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('investment')}</label>
+            <div className="relative group">
+              <input 
+                type="number"
+                value={formData.amount || ''}
+                onChange={(e) => handleAmountChange(Number(e.target.value))}
+                placeholder={t('placeholder_amount')}
+                className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-main/30 transition-all"
+              />
+              {/* Visual Focus Ring */}
+              <div className="absolute inset-0 border-2 border-text-main opacity-0 pointer-events-none focus-within:opacity-5 transition-opacity"></div>
+            </div>
+          </div>
+
+          {/* RULE SUMMARY */}
+          <div className="p-5 bg-card-bg border border-text-main/5 space-y-4">
+            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/30 mb-1 flex justify-between">
+              <span>{t('rule_summary')}</span>
+              <CheckCircle2 size={12} className={formData.buyPrice > 0 ? 'text-status-safe' : 'text-text-muted/10'} />
+            </div>
+            <div className="space-y-2 font-mono text-[11px] font-bold">
+              <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
+                <span className="text-text-muted/40">SL ({safeSettings.stopLossPercent}%)</span>
+                <span className="text-status-danger/40 text-[9px]">({slPreview ? formatPrice(slPreview) : "-"})</span>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
+                <span className="text-text-muted/40">TP1 (+{SHORT_TERM_TAKE_PROFIT_1_PERCENT}%)</span>
+                <span className="text-status-safe/40 text-[9px]">({tp1Preview ? formatPrice(tp1Preview) : "-"})</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted/40">TP2 (+{SHORT_TERM_TAKE_PROFIT_2_PERCENT}%)</span>
+                <span className="text-status-safe/40 text-[9px]">({tp2Preview ? formatPrice(tp2Preview) : "-"})</span>
+              </div>
+            </div>
+          </div>
 
-      {/* MARKET INTERPRETATION */}
-      <div 
-        className={`p-5 border transition-all duration-300 min-h-[140px] flex flex-col justify-between ${statusInfo.border} ${statusInfo.bg}`}
-      >
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/30">{t('current_status')}</span>
-            <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></div>
-          </div>
-          
-          <div className="mb-2">
-            <div className={`text-base font-black uppercase tracking-tight ${statusInfo.color}`}>
-              {statusInfo.label}
-            </div>
-            <div className="text-[9px] font-bold text-text-muted/60 uppercase tracking-widest mt-1">
-              {statusInfo.desc}
-            </div>
-          </div>
-        </div>
-        
-        {/* Evidence */}
-        <div className="grid grid-cols-3 gap-2 border-y border-text-main/5 py-3 my-3">
-            <div className="space-y-1">
-              <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Trend</p>
-              <p className={`text-[8px] font-bold uppercase ${safeSignal.trend === 'up' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {safeSignal.trend}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Volume</p>
-              <p className={`text-[8px] font-bold uppercase ${safeSignal.volume === 'spike' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {safeSignal.volume}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[7px] text-text-muted/30 font-black uppercase tracking-widest">Breakout</p>
-              <p className={`text-[8px] font-bold uppercase ${safeSignal.breakout === 'bullish_breakout' ? 'text-text-main' : 'text-text-muted/20'}`}>
-                {safeSignal.breakout === 'bullish_breakout' ? 'detect' : 'none'}
-              </p>
-            </div>
-        </div>
-
-        {/* WARNING MESSAGE */}
-        <div className="flex gap-2 items-start mt-2">
-          <Info size={10} className="text-text-muted/20 mt-0.5 shrink-0" />
-          <p className="text-[9px] text-text-muted/40 font-bold leading-relaxed whitespace-pre-line tracking-tight italic">
-            이 신호는 진입을 의미하지 않습니다.
-            충분히 관찰한 후 판단하세요.
-          </p>
-        </div>
-      </div>
-
-      {/* 시장 상태 확인 UI */}
-      <div className="mt-3 p-4 border rounded-lg bg-gray-50 border-text-main/10">
-        <div className="text-sm font-semibold text-gray-700 mb-2">단기 흐름 요약</div>
-        <div className="text-sm font-bold mb-1">
-          조건 충족 정도:{' '}
-          {marketAnalysis ? (
-            <span className={`text-base ${entryAnalysis.scoreColor}`}>
-              {entryAnalysis.score} ({entryAnalysis.scoreLabel})
-            </span>
-          ) : (
-            <span className="text-base text-text-muted/40">-</span>
-          )}{' '}
-          / 100
-        </div>
-        <div className="text-base font-bold text-gray-900 mb-2">상태 해석: {entryAnalysis.conclusion}</div>
-        <div className="text-[10px] text-text-muted/60 mb-3 font-bold italic">
-          * 참고용 상태 요약입니다. 실제 판단 전 추가 확인이 필요할 수 있습니다.
-        </div>
-        <div className="text-sm font-semibold text-gray-700 mb-1">확인된 신호</div>
-        <ul className="text-xs text-gray-600 space-y-0.5 list-disc list-inside">
-          {entryAnalysis.reasons.map((r, i) => <li key={i}>{r}</li>)}
-        </ul>
-      </div>
-
-      <div className={`mt-3 p-4 border rounded-lg ${liquidityRisk === 'NO_ENTRY' ? 'bg-status-danger/5 border-status-danger/20' : 'bg-gray-50 border-text-main/10'}`}>
-        <div className="text-sm font-semibold text-gray-700 mb-2">진입 전 유동성 체크</div>
-        <div className="grid grid-cols-2 gap-3 text-xs text-gray-700">
-          <div className="space-y-1">
-            <div className="text-text-muted/60">예상 보유 수량</div>
-            <div className="font-semibold">{formatMetric(estimatedQuantity, 6)}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-text-muted/60">5분 평균 거래량</div>
-            <div className="font-semibold">{formatMetric(avgVolume5m, 6)}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-text-muted/60">1분 거래량</div>
-            <div className="font-semibold">{formatMetric(volume1m, 6)}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-text-muted/60">최종 판정</div>
-            <div className={`font-semibold ${liquidityRisk === 'NO_ENTRY' ? 'text-status-danger' : 'text-status-safe'}`}>
-              {liquidityRisk === 'NO_ENTRY' ? '진입 차단' : '진입 가능'}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-text-muted/60">5분 대비 내 물량 비율</div>
-            <div className="font-semibold">{formatMetric(positionVolumeRatio5m, 4)}</div>
-          </div>
-          <div className="space-y-1">
-            <div className="text-text-muted/60">1분 대비 내 물량 비율</div>
-            <div className="font-semibold">{formatMetric(positionVolumeRatio1m, 4)}</div>
-          </div>
-        </div>
-        {liquidityRisk === 'NO_ENTRY' && (
-          <p className="mt-3 text-xs leading-relaxed text-status-danger whitespace-pre-line">
-            {liquidityBlockMessage}
-          </p>
-        )}
-      </div>
-
-      {/* STRATEGY TYPE */}
-      <div className="space-y-2">
-        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('select_strategy')}</label>
-        <div className="grid grid-cols-2 gap-1 bg-aux-bg p-1 border border-text-main/5">
+          {/* SUBMIT BUTTON */}
           <button
-            type="button"
-            onClick={() => setFormData({ ...formData, type: 'short_term' })}
-            className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'short_term' ? 'bg-status-safe text-white' : 'text-text-muted/40 hover:text-text-main'}`}
+            type="submit"
+            disabled={formData.buyPrice <= 0 || isBlocked}
+            className={`w-full py-5 font-black uppercase text-xs tracking-[0.3em] transition-all relative overflow-hidden group ${formData.buyPrice > 0 && !isBlocked ? 'bg-text-main text-main-bg hover:opacity-90' : 'bg-aux-bg text-text-muted/20 cursor-not-allowed border border-text-main/5'}`}
           >
-            {t('shortTerm')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, type: 'long_term' })}
-            className={`py-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.type === 'long_term' ? 'bg-purple-600 text-white' : 'text-text-muted/40 hover:text-text-main'}`}
-          >
-            {t('longTerm')}
+            <span className="relative z-10">{t('confirm_button')}</span>
           </button>
         </div>
-      </div>
 
-      {/* BUY PRICE */}
-      <div className="space-y-2">
-        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('buy_price')}</label>
-        <input 
-          type="text"
-          inputMode="numeric"
-          value={formData.buyPrice || ''}
-          onChange={(e) => {
-            const val = e.target.value.replace(/[^0-9]/g, '');
-            handlePriceChange(Number(val));
-          }}
-          placeholder={t('placeholder_buy_price')}
-          className="w-full h-14 bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-main/30 transition-all"
-        />
-        <button
-          type="button"
-          onClick={handleFetchPrice}
-          className="w-full h-11 bg-text-main/5 border border-text-main/10 text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-main hover:bg-text-main/10 transition-all"
-        >
-          {t('auto_price')}
-        </button>
-      </div>
-
-      {/* AMOUNT */}
-      <div className="space-y-2">
-        <label className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40 px-1">{t('investment')}</label>
-        <div className="relative group">
-          <input 
-            type="number"
-            value={formData.amount || ''}
-            onChange={(e) => handleAmountChange(Number(e.target.value))}
-            placeholder={t('placeholder_amount')}
-            className="w-full bg-aux-bg border border-text-main/5 p-4 text-xl font-black tracking-tight text-text-main outline-none focus:border-text-main/30 transition-all"
-          />
-          {/* Visual Focus Ring */}
-          <div className="absolute inset-0 border-2 border-text-main opacity-0 pointer-events-none focus-within:opacity-5 transition-opacity"></div>
+        <div className="space-y-6">
+          <div className="p-4 border rounded">
+            <div className="text-sm text-gray-500">감시 코인 설정</div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {watchlist.map((symbol) => (
+                <span key={symbol} className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm">
+                  <span>{symbol}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeWatchlistSymbol(symbol)}
+                    className="text-gray-500 hover:text-red-500"
+                    aria-label={`${symbol} 삭제`}
+                  >
+                    x
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <input
+                type="text"
+                value={watchlistInput}
+                onChange={(e) => setWatchlistInput(e.target.value)}
+                placeholder="예: SHIB, DOT, AVAX"
+                className="flex-1 border rounded px-3 py-2 text-sm"
+              />
+              <button type="button" onClick={addWatchlistSymbol} className="border rounded px-3 py-2 text-sm font-semibold">
+                추가
+              </button>
+              <button type="button" onClick={resetWatchlist} className="border rounded px-3 py-2 text-sm font-semibold">
+                초기화
+              </button>
+            </div>
+          </div>
+          <div className="p-4 border rounded">
+            <div className="text-sm text-gray-500">감시 코인</div>
+            <div className="text-sm font-semibold">{watchlist.join(' / ')}</div>
+          </div>
+          <div className="p-4 border rounded">
+            <div className="text-sm text-gray-500">현재 상태</div>
+            <div className="text-xl font-bold">{entryState}</div>
+          </div>
+          <div className="p-4 border rounded mt-4">
+            <div className="text-xs text-gray-400 mb-1">
+              {"신규 진입 기준 (매수 판단)"}
+            </div>
+            <div className="text-sm text-gray-500">{"지금 상황 해석"}</div>
+            <div className="text-sm">{"지금 결론: "}{explain.summary}</div>
+            <div className="text-sm">{"이유 요약: "}{explainReason}</div>
+            <div className="text-sm">{"다음 행동: "}{explain.action}</div>
+            <div className="text-sm">{"리스크: "}{explain.risk}</div>
+          </div>
+          <div className="p-4 border rounded mt-4">
+            <div className="text-sm text-gray-500">판단 근거</div>
+            <div>Trend: {trendReady ? "OK" : "NO"}</div>
+            <div>Volume: {volumeReady ? "OK" : "NO"}</div>
+            <div>Breakout: {breakoutReady ? "OK" : "NO"}</div>
+          </div>
+          <div className="p-4 border rounded mt-4">
+            <div className="text-sm text-gray-500">진입 단계</div>
+            <div className="text-lg font-semibold">{prepareState}</div>
+          </div>
+          <div className="p-4 border rounded mt-4">
+            <div className="text-sm text-gray-500">신호 점수</div>
+            <div className={`text-lg font-semibold ${scoreColor}`}>
+              {signalScore} / 100
+            </div>
+          </div>
+          <div className="p-4 border rounded mt-4">
+            <div className="text-sm text-gray-500">ENTRY 체크</div>
+            <div className={getColor(trendReady)}>
+              Trend: {trendReady ? "OK" : "NO"}
+            </div>
+            <div className={getColor(volumeReady)}>
+              Volume: {volumeReady ? "OK" : "NO"}
+            </div>
+            <div className={getColor(breakoutReady)}>
+              Breakout: {breakoutReady ? "OK" : "NO"}
+            </div>
+            <div className={getColor(signalScore >= 80)}>
+              Score: {signalScore >= 80 ? "OK" : "NO"}
+            </div>
+            <div className={getColor(prepareState === "ENTRY")}>
+              Stage: {prepareState === "ENTRY" ? "OK" : "NO"}
+            </div>
+            <div className={getColor(btcSignal.trend === "up")}>
+              BTC: {btcSignal.trend === "up" ? "OK" : "NO"}
+            </div>
+          </div>
+          <div className="p-4 border rounded mt-4">
+            <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
+            {entryState === "ENTRY" ? (
+              <div className="text-green-500">진입 가능</div>
+            ) : (
+              <ul className="text-sm list-disc pl-4">
+                {failReasons.slice(0, 2).map((r, i) => (
+                  <li key={i}>{r}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <div className={`mt-3 p-4 border rounded-lg ${liquidityRisk === 'NO_ENTRY' ? 'bg-status-danger/5 border-status-danger/20' : 'bg-gray-50 border-text-main/10'}`}>
+            <div className="text-sm font-semibold text-gray-700 mb-2">참고 데이터</div>
+            <div className="grid grid-cols-2 gap-3 text-xs text-gray-700">
+              <div className="space-y-1">
+                <div className="text-text-muted/60">예상 보유 수량</div>
+                <div className="font-semibold">{formatMetric(estimatedQuantity, 6)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-text-muted/60">5분 평균 거래량</div>
+                <div className="font-semibold">{formatMetric(avgVolume5m, 6)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-text-muted/60">1분 거래량</div>
+                <div className="font-semibold">{formatMetric(volume1m, 6)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-text-muted/60">최종 판정</div>
+                <div className={`font-semibold ${liquidityRisk === 'NO_ENTRY' ? 'text-status-danger' : 'text-status-safe'}`}>
+                  {liquidityRisk === 'NO_ENTRY' ? '진입 차단' : '진입 가능'}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-text-muted/60">5분 대비 내 물량 비율</div>
+                <div className="font-semibold">{formatMetric(positionVolumeRatio5m, 4)}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-text-muted/60">1분 대비 내 물량 비율</div>
+                <div className="font-semibold">{formatMetric(positionVolumeRatio1m, 4)}</div>
+              </div>
+            </div>
+            {liquidityRisk === 'NO_ENTRY' && (
+              <p className="mt-3 text-xs leading-relaxed text-status-danger whitespace-pre-line">
+                {liquidityBlockMessage}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* RULE SUMMARY */}
-      <div className="p-5 bg-card-bg border border-text-main/5 space-y-4">
-        <div className="text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/30 mb-1 flex justify-between">
-          <span>{t('rule_summary')}</span>
-          <CheckCircle2 size={12} className={formData.buyPrice > 0 ? 'text-status-safe' : 'text-text-muted/10'} />
-        </div>
-        <div className="space-y-2 font-mono text-[11px] font-bold">
-          <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
-            <span className="text-text-muted/40">SL ({safeSettings.stopLossPercent}%)</span>
-            <span className="text-status-danger/40 text-[9px]">({slPreview ? formatPrice(slPreview) : "-"})</span>
-          </div>
-          <div className="flex justify-between items-center pb-2 border-b border-text-main/5">
-            <span className="text-text-muted/40">TP1 (+{SHORT_TERM_TAKE_PROFIT_1_PERCENT}%)</span>
-            <span className="text-status-safe/40 text-[9px]">({tp1Preview ? formatPrice(tp1Preview) : "-"})</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-text-muted/40">TP2 (+{SHORT_TERM_TAKE_PROFIT_2_PERCENT}%)</span>
-            <span className="text-status-safe/40 text-[9px]">({tp2Preview ? formatPrice(tp2Preview) : "-"})</span>
-          </div>
-        </div>
-      </div>
-
-      {/* SUBMIT BUTTON */}
-      <button
-        type="submit"
-        disabled={formData.buyPrice <= 0 || isBlocked}
-        className={`w-full py-5 font-black uppercase text-xs tracking-[0.3em] transition-all relative overflow-hidden group ${formData.buyPrice > 0 && !isBlocked ? 'bg-text-main text-main-bg hover:opacity-90' : 'bg-aux-bg text-text-muted/20 cursor-not-allowed border border-text-main/5'}`}
-      >
-        <span className="relative z-10">{t('confirm_button')}</span>
-      </button>
     </form>
   );
 }

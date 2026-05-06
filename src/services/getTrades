@@ -1,0 +1,4 @@
+export async function fetchTrades() {
+  const res = await fetch("http://localhost:4000/api/trades");
+  return res.json();
+}

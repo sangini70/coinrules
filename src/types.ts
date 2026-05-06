@@ -3,12 +3,15 @@ export type ResultType = 'take_profit' | 'stop_loss' | 'manual_exit' | 'timeout_
 
 export interface AppSettings {
   stopLossPercent: number;
+  stopLoss?: number;
   takeProfitPercent: number;
   breakevenTriggerPercent: number;
   maxDailyTrades: number;
   maxConsecutiveLosses: number;
   cooldownMinutes: number;
   alertEnabled: boolean;
+  alertStartHour: number;
+  alertEndHour: number;
   // Sound UX Control
   enableSound: boolean;
   enableVibration: boolean;
@@ -34,6 +37,9 @@ export interface Position {
   createdAt: string;
   memo: string;
   isLocked: boolean;
+  isDangerCard?: boolean;
+  profitRate?: number;
+  actionSignal?: '손절 실행' | '익절 실행' | '관망';
 }
 
 export interface TradeHistory {
@@ -90,7 +96,7 @@ export interface TradeControlState {
 
 export type PositionStatus = 'WATCH' | 'HOLD' | 'BREAKEVEN' | 'TAKE_PROFIT' | 'STOP_LOSS';
 
-export type ObservationState = 'none' | 'WAIT' | 'OBSERVE' | 'CAUTION' | 'PREPARE' | 'RISK';
+export type ObservationState = 'none' | 'WAIT' | 'OBSERVE' | 'CAUTION' | 'PREPARE' | 'ENTRY' | 'RISK';
 
 export interface ObservationSignal {
   trend: 'up' | 'neutral';
