@@ -2,7 +2,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
 const USER_SETTINGS_COLLECTION = 'userSettings';
-const DEFAULT_SELECTED_COIN = 'KRW-BTC';
+const DEFAULT_SELECTED_COIN = '';
 
 export type UserSettings = {
   watchlist: string[];
@@ -44,7 +44,7 @@ export const loadUserSettings = async (uid: string): Promise<UserSettings | null
   const selectedCoin = normalizeSelectedCoin(data?.selectedCoin);
 
   return {
-    watchlist: watchlist.length > 0 ? watchlist : ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE'],
+    watchlist,
     selectedCoin,
     emailTo: typeof data?.emailTo === 'string' ? data.emailTo : undefined,
     emailEnabled: typeof data?.emailEnabled === 'boolean' ? data.emailEnabled : undefined,

@@ -752,7 +752,7 @@ export function PositionForm() {
 
 
 
-    coin: readFallbackSelectedCoin(),
+    coin: '',
 
 
 
@@ -865,6 +865,7 @@ export function PositionForm() {
 
 
   const [watchlistSettingsLoaded, setWatchlistSettingsLoaded] = useState(false);
+  const [watchlistStateSource, setWatchlistStateSource] = useState<'loading' | 'remote' | 'guest' | 'fallback'>('loading');
 
 
 
@@ -896,7 +897,7 @@ export function PositionForm() {
 
 
 
-      return DEFAULT_WATCHLIST;
+      return [];
 
 
 
@@ -936,7 +937,7 @@ export function PositionForm() {
 
 
 
-      if (!raw) return DEFAULT_WATCHLIST;
+      if (!raw) return [];
 
 
 
@@ -968,7 +969,7 @@ export function PositionForm() {
 
 
 
-      return normalized.length > 0 ? normalized : DEFAULT_WATCHLIST;
+      return normalized;
 
 
 
@@ -984,7 +985,7 @@ export function PositionForm() {
 
 
 
-      return DEFAULT_WATCHLIST;
+      return [];
 
 
 
@@ -1248,6 +1249,8 @@ export function PositionForm() {
 
       setAuthUserInfo(user ? { uid: user.uid, email: user.email } : null);
       setWatchlistOwnerUid(uid);
+      setWatchlistSettingsLoaded(false);
+      setWatchlistStateSource('loading');
 
       if (!uid) {
         const fallbackWatchlist = readFallbackWatchlist();
@@ -1258,9 +1261,16 @@ export function PositionForm() {
           ...prev,
           coin: fallbackSelectedCoin,
         }));
+        setWatchlistStateSource('guest');
         setWatchlistSettingsLoaded(true);
         return;
       }
+
+      setWatchlist([]);
+      setFormData((prev) => ({
+        ...prev,
+        coin: '',
+      }));
 
       void (async () => {
         try {
@@ -1271,11 +1281,28 @@ export function PositionForm() {
             setWatchlist(remoteSettings.watchlist);
             setFormData((prev) => ({
               ...prev,
-              coin: remoteSettings.selectedCoin || 'KRW-BTC',
+              coin: remoteSettings.selectedCoin || '',
             }));
+            setWatchlistStateSource('remote');
             setWatchlistSettingsLoaded(true);
             return;
           }
+
+          await saveUserSettings(uid, {
+            watchlist: [],
+            selectedCoin: '',
+          });
+
+          if (!isMounted) return;
+
+          setWatchlist([]);
+          setFormData((prev) => ({
+            ...prev,
+            coin: '',
+          }));
+          setWatchlistStateSource('remote');
+          setWatchlistSettingsLoaded(true);
+          return;
         } catch (error) {
           console.warn('USER SETTINGS LOAD FAILED', error);
         }
@@ -1290,6 +1317,7 @@ export function PositionForm() {
           ...prev,
           coin: fallbackSelectedCoin,
         }));
+        setWatchlistStateSource('fallback');
         setWatchlistSettingsLoaded(true);
       })();
     });
@@ -1346,8 +1374,10 @@ export function PositionForm() {
   useEffect(() => {
     if (!watchlistSettingsLoaded) return;
 
-    writeFallbackSettings(watchlist, formData.coin);
-  }, [watchlist, formData.coin, watchlistSettingsLoaded]);
+    if (watchlistStateSource === 'guest' || watchlistStateSource === 'fallback') {
+      writeFallbackSettings(watchlist, formData.coin);
+    }
+  }, [watchlist, formData.coin, watchlistSettingsLoaded, watchlistStateSource]);
 
 
 
@@ -1368,11 +1398,13 @@ export function PositionForm() {
   useEffect(() => {
     if (!watchlistSettingsLoaded) return;
 
-    writeFallbackSettings(watchlist, formData.coin);
+    if (watchlistStateSource === 'guest' || watchlistStateSource === 'fallback') {
+      writeFallbackSettings(watchlist, formData.coin);
+    }
 
     const uid = watchlistOwnerUid ?? auth.currentUser?.uid ?? null;
 
-    if (!uid) return;
+    if (!uid || watchlistStateSource !== 'remote') return;
 
     void (async () => {
       try {
@@ -1384,7 +1416,7 @@ export function PositionForm() {
         console.warn('USER SETTINGS SAVE FAILED', error);
       }
     })();
-  }, [formData.coin, watchlistSettingsLoaded, watchlistOwnerUid]);
+  }, [formData.coin, watchlistSettingsLoaded, watchlistOwnerUid, watchlistStateSource]);
 
   const isValidCoin = (coin: string) => marketList.includes(`KRW-${coin}`);
 
@@ -1408,7 +1440,7 @@ export function PositionForm() {
 
     const uid = watchlistOwnerUid ?? auth.currentUser?.uid ?? null;
 
-    if (!uid) return;
+    if (!uid || watchlistStateSource !== 'remote') return;
 
     try {
       await saveUserSettings(uid, {
@@ -7105,7 +7137,4 @@ const blockEntry = (message: string) => {
 
 
 }
-
-
-
 
