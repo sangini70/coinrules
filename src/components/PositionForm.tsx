@@ -1506,7 +1506,7 @@ export function PositionForm() {
 
 
 
-      alert('理쒕? 10媛쒓퉴吏 異붽??????덉뒿?덈떎');
+      alert('理쒕? 10媛쒓퉴吏 異붽???:?덉뒿?덈떎');
 
 
 
@@ -2769,7 +2769,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">濡쒓렇???곹깭</div>
+          <div className="text-sm text-gray-500">로그인 상태</div>
 
 
 
@@ -2777,7 +2777,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm font-semibold">{authUserInfo.email ?? '?대찓???놁쓬'}</div>
+          <div className="text-sm font-semibold">{authUserInfo.email ?? '이메일 없음'}</div>
 
 
 
@@ -2833,7 +2833,7 @@ export function PositionForm() {
 
 
 
-            濡쒓렇?꾩썐
+            로그아웃
 
 
 
@@ -2873,7 +2873,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">濡쒓렇???꾩슂</div>
+          <div className="text-sm text-gray-500">로그인 필요</div>
 
 
 
@@ -2921,7 +2921,7 @@ export function PositionForm() {
 
 
 
-            Google 濡쒓렇??
+            Google 로그인
 
 
 
@@ -4620,7 +4620,7 @@ export function PositionForm() {
 
 
   const liquidityBlockMessage =
-    '?좊룞??二쇱쓽: 嫄곕옒?됱씠 遺議깊빀?덈떎.\n?꾩옱 議곌굔?먯꽌??吏꾩엯??蹂대쪟?섏꽭??';
+    '유동성 주의: 거래량이 부족합니다.\n현재 조건에서 진입을 보류하세요.';
 
 const blockEntry = (message: string) => {
 
@@ -4768,7 +4768,7 @@ const blockEntry = (message: string) => {
 
       return blockEntry(
 
-        '?좊룞??二쇱쓽: 嫄곕옒?됱씠 遺議깊빀?덈떎.\n?꾩옱 議곌굔?먯꽌??吏꾩엯??蹂대쪟?섏꽭??',
+        '유동성 주의: 거래량이 부족합니다.\n현재 조건에서 진입을 보류하세요.',
 
       );
 
@@ -6503,7 +6503,7 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded">
-            <div className="text-sm text-gray-500">醫낅ぉ ?좏깮</div>
+            <div className="text-sm text-gray-500">종목 선택</div>
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
@@ -6523,7 +6523,7 @@ const blockEntry = (message: string) => {
                     }
                   }
                 }}
-                placeholder="?? BTC, ETH, SOL"
+                placeholder="예: BTC, ETH, SOL"
                 className="flex-1 border rounded px-3 py-2 text-sm"
               />
             </div>
@@ -6553,7 +6553,7 @@ const blockEntry = (message: string) => {
               )}
             </div>
             <div className="mt-2 text-xs text-gray-500">
-              ?꾩옱 ?좏깮: {selectedCoin.replace('KRW-', '')}
+              현재 선택: {selectedCoin.replace('KRW-', '')}
             </div>
           </div>
 
@@ -6645,7 +6645,7 @@ const blockEntry = (message: string) => {
 
 
 
-                placeholder="?? SHIB, DOT, AVAX"
+                placeholder="예: SHIB, DOT, AVAX"
 
 
 
@@ -6661,7 +6661,7 @@ const blockEntry = (message: string) => {
 
 
 
-                異붽?
+                추가
 
 
 
@@ -6673,7 +6673,7 @@ const blockEntry = (message: string) => {
 
 
 
-                珥덇린??
+                초기화
 
 
 
@@ -6746,12 +6746,12 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded mt-4">
-            <div className="text-xs text-gray-400 mb-1">吏湲??곹솴 ?댁꽍</div>
-            <div className="text-sm text-gray-500">吏湲?寃곕줎</div>
+            <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
+            <div className="text-sm text-gray-500">지금 결론</div>
             <div className="text-sm">{explainReason}</div>
-            <div className="text-sm">?댁쑀 ?붿빟: {explainReason}</div>
-            <div className="text-sm">?ㅼ쓬 ?됰룞: {explainReason}</div>
-            <div className="text-sm">由ъ뒪?? {explainReason}</div>
+            <div className="text-sm">이유 요약: {explainReason}</div>
+            <div className="text-sm">다음 행동: {explainReason}</div>
+            <div className="text-sm">리스크: {explainReason}</div>
           </div>
 
 
@@ -6812,7 +6812,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">?좏샇 ?먯닔</div>
+            <div className="text-sm text-gray-500">신호 점수</div>
 
 
 
@@ -6840,7 +6840,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">ENTRY 泥댄겕</div>
+            <div className="text-sm text-gray-500">ENTRY 체크</div>
 
 
 
@@ -6925,49 +6925,17 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded mt-4">
-
-
-
-            <div className="text-sm text-gray-500">ENTRY ?ㅽ뙣 ?댁쑀</div>
-
-
+            <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
 
             {entryState === 'ENTRY' ? (
-
-
-
-              <div className="text-green-500">Entry ready</div>
-
-
-
+              <div className="text-green-500">진입 가능</div>
             ) : (
-
-
-
               <ul className="text-sm list-disc pl-4">
-
-
-
                 {failReasons.slice(0, 2).map((r, i) => (
-
-
-
                   <li key={i}>{r}</li>
-
-
-
                 ))}
-
-
-
               </ul>
-
-
-
             )}
-
-
-
           </div>
 
 
@@ -7137,8 +7105,6 @@ const blockEntry = (message: string) => {
 
 
 }
-
-
 
 
 
