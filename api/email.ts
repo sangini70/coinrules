@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { sendMail } from './_mail';
+import { sendMail } from './_mail.js';
 
 type EmailPayload = {
   symbol?: string;
