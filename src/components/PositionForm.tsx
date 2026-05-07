@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent, useRef } from 'react';
+﻿import { useState, useEffect, FormEvent, useRef } from 'react';
 
 
 
@@ -46,7 +46,12 @@ import { fetchTicker, fetchCandles, fetchMarkets } from '../services/upbitServic
 
 
 
-import { loadUserWatchlist, normalizeWatchlist as normalizeStoredWatchlist, saveUserWatchlist } from '../services/userSettings';
+import {
+  loadUserSettings,
+  normalizeSelectedCoin,
+  normalizeWatchlist as normalizeStoredWatchlist,
+  saveUserSettings,
+} from '../services/userSettings';
 
 
 
@@ -598,6 +603,35 @@ const readFallbackWatchlist = () => {
 
 
 
+
+const readFallbackSelectedCoin = () => {
+  if (typeof window === 'undefined') {
+    return 'KRW-BTC';
+  }
+
+  try {
+    const raw = window.localStorage.getItem('asset-protection-selected-coin');
+    if (!raw) return 'KRW-BTC';
+    return normalizeSelectedCoin(JSON.parse(raw));
+  } catch {
+    return 'KRW-BTC';
+  }
+};
+
+const writeFallbackSettings = (watchlist: string[], selectedCoin: string) => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem('asset-protection-watchlist', JSON.stringify(watchlist));
+    window.localStorage.setItem(
+      'asset-protection-selected-coin',
+      JSON.stringify(normalizeSelectedCoin(selectedCoin)),
+    );
+  } catch (error) {
+    console.warn('WATCHLIST SAVE FAILED', error);
+  }
+};
+
 export function PositionForm() {
 
 
@@ -718,7 +752,7 @@ export function PositionForm() {
 
 
 
-    coin: 'KRW-BTC',
+    coin: readFallbackSelectedCoin(),
 
 
 
@@ -1206,269 +1240,59 @@ export function PositionForm() {
 
 
 
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-
-
-
-
-
-
-
       if (!isMounted) return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
       const uid = user?.uid ?? null;
 
-
-
-
-
-
-
       setAuthUserInfo(user ? { uid: user.uid, email: user.email } : null);
-
-
-
-
-
-
-
       setWatchlistOwnerUid(uid);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       if (!uid) {
+        const fallbackWatchlist = readFallbackWatchlist();
+        const fallbackSelectedCoin = readFallbackSelectedCoin();
 
-
-
-
-
-
-
-        setWatchlist(readFallbackWatchlist());
-
-
-
-
-
-
-
+        setWatchlist(fallbackWatchlist);
+        setFormData((prev) => ({
+          ...prev,
+          coin: fallbackSelectedCoin,
+        }));
         setWatchlistSettingsLoaded(true);
-
-
-
-
-
-
-
         return;
-
-
-
-
-
-
-
       }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       void (async () => {
-
-
-
-
-
-
-
         try {
-
-
-
-
-
-
-
-          const remoteWatchlist = await loadUserWatchlist(uid);
-
-
-
-
-
-
-
+          const remoteSettings = await loadUserSettings(uid);
           if (!isMounted) return;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          if (Array.isArray(remoteWatchlist) && remoteWatchlist.length > 0) {
-
-
-
-
-
-
-
-            setWatchlist(remoteWatchlist);
-
-
-
-
-
-
-
+          if (remoteSettings) {
+            setWatchlist(remoteSettings.watchlist);
+            setFormData((prev) => ({
+              ...prev,
+              coin: remoteSettings.selectedCoin || 'KRW-BTC',
+            }));
             setWatchlistSettingsLoaded(true);
-
-
-
-
-
-
-
             return;
-
-
-
-
-
-
-
           }
-
-
-
-
-
-
-
         } catch (error) {
-
-
-
-
-
-
-
           console.warn('USER SETTINGS LOAD FAILED', error);
-
-
-
-
-
-
-
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         if (!isMounted) return;
 
+        const fallbackWatchlist = readFallbackWatchlist();
+        const fallbackSelectedCoin = readFallbackSelectedCoin();
 
-
-
-
-
-
-        setWatchlist(readFallbackWatchlist());
-
-
-
-
-
-
-
+        setWatchlist(fallbackWatchlist);
+        setFormData((prev) => ({
+          ...prev,
+          coin: fallbackSelectedCoin,
+        }));
         setWatchlistSettingsLoaded(true);
-
-
-
-
-
-
-
       })();
-
-
-
-
-
-
-
     });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     return () => {
 
@@ -1518,16 +1342,12 @@ export function PositionForm() {
 
 
 
+
   useEffect(() => {
-
-
-
-
-
-
-
     if (!watchlistSettingsLoaded) return;
 
+    writeFallbackSettings(watchlist, formData.coin);
+  }, [watchlist, formData.coin, watchlistSettingsLoaded]);
 
 
 
@@ -1542,61 +1362,29 @@ export function PositionForm() {
 
 
 
-    try {
 
 
 
+  useEffect(() => {
+    if (!watchlistSettingsLoaded) return;
 
+    writeFallbackSettings(watchlist, formData.coin);
 
+    const uid = watchlistOwnerUid ?? auth.currentUser?.uid ?? null;
 
+    if (!uid) return;
 
-      window.localStorage.setItem('asset-protection-watchlist', JSON.stringify(watchlist));
-
-
-
-
-
-
-
-    } catch (error) {
-
-
-
-
-
-
-
-      console.warn('WATCHLIST SAVE FAILED', error);
-
-
-
-
-
-
-
-    }
-
-
-
-
-
-
-
-  }, [watchlist, watchlistSettingsLoaded]);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    void (async () => {
+      try {
+        await saveUserSettings(uid, {
+          watchlist,
+          selectedCoin: formData.coin,
+        });
+      } catch (error) {
+        console.warn('USER SETTINGS SAVE FAILED', error);
+      }
+    })();
+  }, [formData.coin, watchlistSettingsLoaded, watchlistOwnerUid]);
 
   const isValidCoin = (coin: string) => marketList.includes(`KRW-${coin}`);
 
@@ -1614,94 +1402,22 @@ export function PositionForm() {
 
 
 
+
   const persistWatchlistForUser = async (nextWatchlist: string[]) => {
-
-
-
-
-
-
-
     if (!watchlistSettingsLoaded) return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     const uid = watchlistOwnerUid ?? auth.currentUser?.uid ?? null;
 
-
-
-
-
-
-
     if (!uid) return;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     try {
-
-
-
-
-
-
-
-      await saveUserWatchlist(uid, nextWatchlist);
-
-
-
-
-
-
-
+      await saveUserSettings(uid, {
+        watchlist: nextWatchlist,
+        selectedCoin: formData.coin,
+      });
     } catch (error) {
-
-
-
-
-
-
-
       console.warn('USER SETTINGS SAVE FAILED', error);
-
-
-
-
-
-
-
     }
-
-
-
-
-
-
-
   };
 
 
@@ -1790,7 +1506,7 @@ export function PositionForm() {
 
 
 
-      alert('최대 10개까지 추가할 수 있습니다');
+      alert('理쒕? 10媛쒓퉴吏 異붽??????덉뒿?덈떎');
 
 
 
@@ -1846,14 +1562,6 @@ export function PositionForm() {
 
 
 
-    await persistWatchlistForUser(nextWatchlist);
-
-
-
-
-
-
-
   };
 
 
@@ -1894,7 +1602,6 @@ export function PositionForm() {
 
 
 
-    await persistWatchlistForUser(nextWatchlist.length > 0 ? nextWatchlist : DEFAULT_WATCHLIST);
 
 
 
@@ -1942,7 +1649,7 @@ export function PositionForm() {
 
 
 
-    await persistWatchlistForUser(DEFAULT_WATCHLIST);
+
 
 
 
@@ -3062,7 +2769,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">로그인 상태</div>
+          <div className="text-sm text-gray-500">濡쒓렇???곹깭</div>
 
 
 
@@ -3070,7 +2777,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm font-semibold">{authUserInfo.email ?? '이메일 없음'}</div>
+          <div className="text-sm font-semibold">{authUserInfo.email ?? '?대찓???놁쓬'}</div>
 
 
 
@@ -3126,7 +2833,7 @@ export function PositionForm() {
 
 
 
-            로그아웃
+            濡쒓렇?꾩썐
 
 
 
@@ -3166,7 +2873,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">로그인 필요</div>
+          <div className="text-sm text-gray-500">濡쒓렇???꾩슂</div>
 
 
 
@@ -3214,7 +2921,7 @@ export function PositionForm() {
 
 
 
-            Google 로그인
+            Google 濡쒓렇??
 
 
 
@@ -4913,7 +4620,7 @@ export function PositionForm() {
 
 
   const liquidityBlockMessage =
-    '유동성 주의: 거래량이 부족합니다.\n현재 조건에서는 진입을 보류하세요.';
+    '?좊룞??二쇱쓽: 嫄곕옒?됱씠 遺議깊빀?덈떎.\n?꾩옱 議곌굔?먯꽌??吏꾩엯??蹂대쪟?섏꽭??';
 
 const blockEntry = (message: string) => {
 
@@ -5061,7 +4768,7 @@ const blockEntry = (message: string) => {
 
       return blockEntry(
 
-        '유동성 주의: 거래량이 부족합니다.\n현재 조건에서는 진입을 보류하세요.',
+        '?좊룞??二쇱쓽: 嫄곕옒?됱씠 遺議깊빀?덈떎.\n?꾩옱 議곌굔?먯꽌??吏꾩엯??蹂대쪟?섏꽭??',
 
       );
 
@@ -6796,7 +6503,7 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded">
-            <div className="text-sm text-gray-500">종목 선택</div>
+            <div className="text-sm text-gray-500">醫낅ぉ ?좏깮</div>
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
@@ -6816,7 +6523,7 @@ const blockEntry = (message: string) => {
                     }
                   }
                 }}
-                placeholder="예: BTC, ETH, SOL"
+                placeholder="?? BTC, ETH, SOL"
                 className="flex-1 border rounded px-3 py-2 text-sm"
               />
             </div>
@@ -6846,7 +6553,7 @@ const blockEntry = (message: string) => {
               )}
             </div>
             <div className="mt-2 text-xs text-gray-500">
-              현재 선택: {selectedCoin.replace('KRW-', '')}
+              ?꾩옱 ?좏깮: {selectedCoin.replace('KRW-', '')}
             </div>
           </div>
 
@@ -6938,7 +6645,7 @@ const blockEntry = (message: string) => {
 
 
 
-                placeholder="예: SHIB, DOT, AVAX"
+                placeholder="?? SHIB, DOT, AVAX"
 
 
 
@@ -6954,7 +6661,7 @@ const blockEntry = (message: string) => {
 
 
 
-                추가
+                異붽?
 
 
 
@@ -6966,7 +6673,7 @@ const blockEntry = (message: string) => {
 
 
 
-                초기화
+                珥덇린??
 
 
 
@@ -6990,7 +6697,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">감시 코인</div>
+            <div className="text-sm text-gray-500">媛먯떆 肄붿씤</div>
 
 
 
@@ -7010,7 +6717,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">현재 상태</div>
+            <div className="text-sm text-gray-500">?꾩옱 ?곹깭</div>
 
 
 
@@ -7039,12 +6746,12 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded mt-4">
-            <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
-            <div className="text-sm text-gray-500">지금 결론</div>
+            <div className="text-xs text-gray-400 mb-1">吏湲??곹솴 ?댁꽍</div>
+            <div className="text-sm text-gray-500">吏湲?寃곕줎</div>
             <div className="text-sm">{explainReason}</div>
-            <div className="text-sm">이유 요약: {explainReason}</div>
-            <div className="text-sm">다음 행동: {explainReason}</div>
-            <div className="text-sm">리스크: {explainReason}</div>
+            <div className="text-sm">?댁쑀 ?붿빟: {explainReason}</div>
+            <div className="text-sm">?ㅼ쓬 ?됰룞: {explainReason}</div>
+            <div className="text-sm">由ъ뒪?? {explainReason}</div>
           </div>
 
 
@@ -7057,7 +6764,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">판단 근거</div>
+            <div className="text-sm text-gray-500">?먮떒 洹쇨굅</div>
 
 
 
@@ -7085,7 +6792,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">진입 단계</div>
+            <div className="text-sm text-gray-500">吏꾩엯 ?④퀎</div>
 
 
 
@@ -7105,7 +6812,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">신호 점수</div>
+            <div className="text-sm text-gray-500">?좏샇 ?먯닔</div>
 
 
 
@@ -7133,7 +6840,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">ENTRY 체크</div>
+            <div className="text-sm text-gray-500">ENTRY 泥댄겕</div>
 
 
 
@@ -7221,7 +6928,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
+            <div className="text-sm text-gray-500">ENTRY ?ㅽ뙣 ?댁쑀</div>
 
 
 
@@ -7430,6 +7137,9 @@ const blockEntry = (message: string) => {
 
 
 }
+
+
+
 
 
 
