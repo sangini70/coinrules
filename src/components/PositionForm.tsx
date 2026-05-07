@@ -642,6 +642,7 @@ export function PositionForm() {
     scoreColor,
     explainReason,
     failReasons,
+    prepareState,
   } = entryAnalysis;
 
   useEffect(() => {
