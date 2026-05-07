@@ -5527,7 +5527,7 @@ const blockEntry = (message: string) => {
 
 
 
-    const scoreColor = score >= 75 ? 'text-green-500' : (score >= 60 ? 'text-yellow-500' : 'text-red-500');
+    const scoreColor = score >= 75 ? 'text-green-500' : (score >= 60 ? 'text-blue-500' : 'text-gray-500');
 
 
 
@@ -7040,15 +7040,15 @@ const blockEntry = (message: string) => {
 
 
 
-            <div>Trend: {trendReady ? 'OK' : 'NO'}</div>
+            <div className={trendReady ? 'text-green-500' : 'text-red-500'}>Trend: {trendReady ? 'OK' : 'NO'}</div>
 
 
 
-            <div>Volume: {volumeReady ? 'OK' : 'NO'}</div>
+            <div className={volumeReady ? 'text-green-500' : 'text-red-500'}>Volume: {volumeReady ? 'OK' : 'NO'}</div>
 
 
 
-            <div>Breakout: {breakoutReady ? 'OK' : 'NO'}</div>
+            <div className={breakoutReady ? 'text-green-500' : 'text-red-500'}>Breakout: {breakoutReady ? 'OK' : 'NO'}</div>
 
 
 
