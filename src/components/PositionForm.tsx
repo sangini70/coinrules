@@ -3062,7 +3062,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">??? ??</div>
+          <div className="text-sm text-gray-500">로그인 상태</div>
 
 
 
@@ -3070,7 +3070,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm font-semibold">{authUserInfo.email ?? '??? ??'}</div>
+          <div className="text-sm font-semibold">{authUserInfo.email ?? '이메일 없음'}</div>
 
 
 
@@ -3126,7 +3126,7 @@ export function PositionForm() {
 
 
 
-            ????
+            로그아웃
 
 
 
@@ -3166,7 +3166,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">??? ??</div>
+          <div className="text-sm text-gray-500">로그인 필요</div>
 
 
 
@@ -3214,7 +3214,7 @@ export function PositionForm() {
 
 
 
-            Google ???
+            Google 로그인
 
 
 
@@ -4913,7 +4913,7 @@ export function PositionForm() {
 
 
   const liquidityBlockMessage =
-    '?? ??: ??? ??? ?????.\n?? ???? ?? ???? ?? ?????.';
+    '유동성 주의: 거래량이 부족합니다.\n현재 조건에서는 진입을 보류하세요.';
 
 const blockEntry = (message: string) => {
 
@@ -5061,7 +5061,7 @@ const blockEntry = (message: string) => {
 
       return blockEntry(
 
-        '?? ??: ??? ??? ?????.\n?? ???? ?? ???? ?? ?????.',
+        '유동성 주의: 거래량이 부족합니다.\n현재 조건에서는 진입을 보류하세요.',
 
       );
 
@@ -5527,7 +5527,7 @@ const blockEntry = (message: string) => {
 
 
 
-    const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
+    const scoreColor = score >= 75 ? 'text-green-500' : (score >= 60 ? 'text-yellow-500' : 'text-red-500');
 
 
 
@@ -6799,11 +6799,11 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">??? ??</div>
+            <div className="text-sm text-gray-500">로그인 상태</div>
 
 
 
-            <div className="text-sm font-semibold">{authUserInfo?.email ?? '??? ??'}</div>
+            <div className="text-sm font-semibold">{authUserInfo?.email ?? '이메일 없음'}</div>
 
 
 
@@ -6831,7 +6831,7 @@ const blockEntry = (message: string) => {
 
 
 
-              ????
+            Google 로그인
 
 
 
@@ -6935,7 +6935,7 @@ const blockEntry = (message: string) => {
 
 
 
-                placeholder="?: SHIB, DOT, AVAX"
+                placeholder="예: SHIB, DOT, AVAX"
 
 
 
@@ -6951,7 +6951,7 @@ const blockEntry = (message: string) => {
 
 
 
-                Add
+                추가
 
 
 
@@ -6963,7 +6963,7 @@ const blockEntry = (message: string) => {
 
 
 
-                Reset
+                초기화
 
 
 
@@ -6987,7 +6987,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">Watchlist Summary</div>
+            <div className="text-sm text-gray-500">감시 코인</div>
 
 
 
@@ -7007,11 +7007,23 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">Current State</div>
+            <div className="text-sm text-gray-500">현재 상태</div>
 
 
 
-            <div className="text-xl font-bold">{entryState}</div>
+            <div
+              className={`text-xl font-bold ${
+                entryState === 'ENTRY'
+                  ? 'text-green-500'
+                  : entryState === 'RISK'
+                    ? 'text-orange-500'
+                    : entryState === 'AVOID'
+                      ? 'text-red-500'
+                      : 'text-gray-500'
+              }`}
+            >
+              {entryState}
+            </div>
 
 
 
@@ -7024,12 +7036,12 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded mt-4">
-            <div className="text-xs text-gray-400 mb-1">?? ?? ??</div>
-            <div className="text-sm text-gray-500">?? ??</div>
+            <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
+            <div className="text-sm text-gray-500">지금 결론</div>
             <div className="text-sm">{explainReason}</div>
-            <div className="text-sm">?? ??: {explainReason}</div>
-            <div className="text-sm">?? ??: {explainReason}</div>
-            <div className="text-sm">???: {explainReason}</div>
+            <div className="text-sm">이유 요약: {explainReason}</div>
+            <div className="text-sm">다음 행동: {explainReason}</div>
+            <div className="text-sm">리스크: {explainReason}</div>
           </div>
 
 
@@ -7042,7 +7054,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">Judgement</div>
+            <div className="text-sm text-gray-500">판단 근거</div>
 
 
 
@@ -7070,7 +7082,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">Prepare State</div>
+            <div className="text-sm text-gray-500">진입 단계</div>
 
 
 
@@ -7090,7 +7102,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">Signal Score</div>
+            <div className="text-sm text-gray-500">신호 점수</div>
 
 
 
@@ -7118,7 +7130,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">ENTRY Check</div>
+            <div className="text-sm text-gray-500">ENTRY 체크</div>
 
 
 
@@ -7206,7 +7218,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">ENTRY Fail Reasons</div>
+            <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
 
 
 
@@ -7258,7 +7270,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm font-semibold text-gray-700 mb-2">Reference Data</div>
+            <div className="text-sm font-semibold text-gray-700 mb-2">참고 데이터</div>
 
 
 
