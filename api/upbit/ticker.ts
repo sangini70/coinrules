@@ -1,25 +1,15 @@
-export const config = {
-  runtime: 'edge',
-};
-
 const UPBIT_BASE_URL = 'https://api.upbit.com/v1';
 
-export default async function handler(req: Request) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'GET') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const url = new URL(req.url);
+  const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
   const market = url.searchParams.get('markets')?.trim() || url.searchParams.get('market')?.trim();
 
   if (!market) {
-    return new Response(JSON.stringify({ error: 'markets is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    });
+    return res.status(400).json({ error: 'markets is required' });
   }
 
   try {
@@ -33,20 +23,10 @@ export default async function handler(req: Request) {
     }
 
     const data = await response.json();
-
-    return new Response(JSON.stringify({ data, source: 'real' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    });
+    return res.status(200).json({ data, source: 'real' });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : 'Upbit API failed',
-      }),
-      {
-        status: 502,
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      }
-    );
+    return res.status(502).json({
+      error: error instanceof Error ? error.message : 'Upbit API failed',
+    });
   }
 }
