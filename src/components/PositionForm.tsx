@@ -619,13 +619,30 @@ export function PositionForm() {
       price: Number(currentPrice ?? 0),
       currentPrice: Number(currentPrice ?? 0),
       entryState,
+      trendReady: trendActive,
+      volumeReady: volumeActive,
+      breakoutReady: breakoutActive,
+      explainReason: reasons.join(' / '),
+      failReasons: reasons,
       trend: trendActive,
       volume: volumeActive,
       breakout: breakoutActive,
       signalScore,
+      scoreColor,
       prepareState,
     };
   })();
+
+  const {
+    entryState,
+    trendReady,
+    volumeReady,
+    breakoutReady,
+    signalScore,
+    scoreColor,
+    explainReason,
+    failReasons,
+  } = entryAnalysis;
 
   useEffect(() => {
     let isCancelled = false;
