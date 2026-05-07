@@ -1,14 +1,5 @@
 import { TickerData } from '../types';
 
-const MOCK_TICKERS: Record<string, TickerData> = {
-  'KRW-BTC': { market: 'KRW-BTC', trade_price: 98000000, signed_change_rate: 0.02 },
-  'KRW-ETH': { market: 'KRW-ETH', trade_price: 4500000, signed_change_rate: -0.01 },
-  'KRW-SOL': { market: 'KRW-SOL', trade_price: 210000, signed_change_rate: 0.05 },
-  'KRW-XRP': { market: 'KRW-XRP', trade_price: 850, signed_change_rate: -0.005 },
-};
-
-const getMockTicker = (market: string): TickerData => MOCK_TICKERS[market] || { market, trade_price: 100000, signed_change_rate: 0 };
-
 const BASE_URL = '/api/upbit';
 
 type UpbitProxyPayload<T> = {
@@ -24,11 +15,17 @@ const parsePayload = async <T>(response: Response): Promise<UpbitProxyPayload<T>
   }
 };
 
+const normalizeMarket = (market: string) => {
+  const raw = String(market ?? '').trim().toUpperCase();
+  if (!raw) return '';
+  return raw.startsWith('KRW-') ? raw : `KRW-${raw}`;
+};
+
 const buildTickerUrl = (market: string) =>
-  `${BASE_URL}/ticker?markets=${encodeURIComponent(market)}`;
+  `${BASE_URL}/ticker?market=${encodeURIComponent(normalizeMarket(market))}`;
 
 const buildCandleUrl = (market: string, count: number, unit: number) =>
-  `${BASE_URL}/candles/minutes/${encodeURIComponent(unit)}?market=${encodeURIComponent(market)}&count=${encodeURIComponent(count)}`;
+  `${BASE_URL}/candles/minutes/${encodeURIComponent(unit)}?market=${encodeURIComponent(normalizeMarket(market))}&count=${encodeURIComponent(count)}`;
 
 export const fetchMarkets = async (): Promise<string[]> => {
   try {
@@ -50,8 +47,8 @@ export const fetchMarkets = async (): Promise<string[]> => {
 };
 
 export const fetchTicker = async (market: string): Promise<TickerData | null> => {
-  // Enforce KRW-SOL for SOL
-  const targetMarket = market === 'SOL' ? 'KRW-SOL' : market;
+  const targetMarket = normalizeMarket(market);
+  if (!targetMarket) return null;
   
   try {
     const response = await fetch(buildTickerUrl(targetMarket));
@@ -63,27 +60,27 @@ export const fetchTicker = async (market: string): Promise<TickerData | null> =>
 
     if (!Array.isArray(data) || data.length === 0) {
       console.warn('Invalid payload structure:', payload);
-      return getMockTicker(targetMarket);
+      return null;
     }
 
     const ticker = data[0] as TickerData | undefined;
 
     if (!ticker?.trade_price) {
       console.warn('Invalid payload structure:', payload);
-      return getMockTicker(targetMarket);
+      return null;
     }
 
     return ticker;
   } catch (error) {
     console.warn(`Upbit API fetch failed for ${targetMarket}, reason: ${error instanceof Error ? error.message : 'Unknown'}`);
-    return getMockTicker(targetMarket);
+    return null;
   }
 };
 
 export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => {
   if (markets.length === 0) return [];
   try {
-    const response = await fetch(buildTickerUrl(markets.join(',')));
+    const response = await fetch(`${BASE_URL}/ticker?markets=${encodeURIComponent(markets.map(normalizeMarket).filter(Boolean).join(','))}`);
     const payload = await parsePayload<TickerData[]>(response);
 
     const data = Array.isArray(payload)
@@ -92,16 +89,16 @@ export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => 
 
     if (!Array.isArray(data) || data.length === 0) {
       console.warn('Invalid payload structure:', payload);
-      return markets.map(getMockTicker);
+      return [];
     }
     return data;
   } catch (error) {
     console.warn(`Upbit API fetch failed for multiple markets. (Reason: ${error instanceof Error ? error.message : 'Unknown'})`);
-    return markets.map(getMockTicker);
+    return [];
   }
 };
 
-export const fetchCandles = async (market: string, count: number = 20, unit: number = 5): Promise<any[] | null> => {
+export const fetchCandles = async (market: string, count: number = 20, unit: number = 5): Promise<any[]> => {
   try {
     const response = await fetch(buildCandleUrl(market, count, unit));
     const payload = await parsePayload<any[]>(response);
@@ -112,11 +109,11 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
 
     if (!Array.isArray(data) || data.length === 0) {
       console.warn('Invalid payload structure:', payload);
-      return null;
+      return [];
     }
     return data;
   } catch (error) {
     console.warn(`Upbit Candle API fetch failed for ${market}: ${error instanceof Error ? error.message : 'Unknown'}`);
-    return null;
+    return [];
   }
 };

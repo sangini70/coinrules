@@ -22,7 +22,7 @@ import { useAppStore } from '../store/useAppStore';
 
 
 
-import { DEFAULT_CONTROL, DEFAULT_SETTINGS, DEFAULT_SIGNAL } from '../store/useAppStore';
+import { DEFAULT_CONTROL, DEFAULT_SETTINGS } from '../store/useAppStore';
 
 
 
@@ -2641,7 +2641,7 @@ export function PositionForm() {
 
 
 
-      btcTrend: btcSignal.trend,
+      btcTrend: btcSignal?.trend ?? 'neutral',
 
 
 
@@ -4223,7 +4223,7 @@ export function PositionForm() {
 
 
 
-  const safeSignal = safeSignals?.[selectedCoin ?? 'KRW-BTC'] ?? DEFAULT_SIGNAL;
+  const safeSignal = safeSignals?.[selectedCoin ?? 'KRW-BTC'] ?? null;
 
 
 
@@ -4231,7 +4231,7 @@ export function PositionForm() {
 
 
 
-  const btcSignal = safeSignals?.['KRW-BTC'] ?? DEFAULT_SIGNAL;
+  const btcSignal = safeSignals?.['KRW-BTC'] ?? null;
 
 
 
@@ -5090,7 +5090,7 @@ const blockEntry = (message: string) => {
 
 
 
-    const signalTrendUp = safeSignal.trend === 'up';
+    const signalTrendUp = safeSignal?.trend === 'up';
 
 
 
@@ -5098,7 +5098,7 @@ const blockEntry = (message: string) => {
 
 
 
-    const signalVolumeSpike = safeSignal.volume === 'spike';
+    const signalVolumeSpike = safeSignal?.volume === 'spike';
 
 
 
@@ -5106,7 +5106,7 @@ const blockEntry = (message: string) => {
 
 
 
-    const signalBreakout = safeSignal.breakout === 'bullish_breakout';
+    const signalBreakout = safeSignal?.breakout === 'bullish_breakout';
 
 
 
@@ -5322,7 +5322,7 @@ const blockEntry = (message: string) => {
 
 
 
-      btcTrend: btcSignal.trend,
+      btcTrend: btcSignal?.trend ?? 'neutral',
 
 
 
@@ -5482,7 +5482,7 @@ const blockEntry = (message: string) => {
 
 
 
-              : ['No entry signal', 'Hold and wait'];
+              : ['행동신호 없음', '데이터 없음'];
 
 
 
@@ -6394,7 +6394,7 @@ const blockEntry = (message: string) => {
 
 
 
-  }, [btcSignal.trend, watchlist]);
+  }, [btcSignal?.trend, watchlist]);
 
 
 
@@ -6936,11 +6936,11 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className={btcSignal.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+            <div className={btcSignal?.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
 
 
 
-              BTC: {btcSignal.trend === 'up' ? 'OK' : 'NO'}
+              BTC: {btcSignal?.trend === 'up' ? 'OK' : 'NO'}
 
 
 
@@ -7137,4 +7137,3 @@ const blockEntry = (message: string) => {
 
 
 }
-
