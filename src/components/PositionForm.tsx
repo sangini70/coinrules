@@ -544,6 +544,7 @@ export function PositionForm() {
     if (marketAnalysis?.isBreakout && marketAnalysis?.isSustained) score += 10;
     if (marketAnalysis?.isBreakout && !marketAnalysis?.isSustained) score -= 10;
     score = Math.max(0, Math.min(100, score));
+    const signalScore = score;
 
     const scoreLabel = score >= 75 ? 'High' : (score >= 60 ? 'Medium' : 'Low');
     const scoreColor = score >= 75 ? 'text-text-main' : (score >= 60 ? 'text-blue-500' : 'text-yellow-600');
