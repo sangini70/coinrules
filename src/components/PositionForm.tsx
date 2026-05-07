@@ -6802,6 +6802,20 @@ const blockEntry = (message: string) => {
                 type="text"
                 value={coinInput}
                 onChange={(e) => setCoinInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const nextCoin = coinInput.trim().toUpperCase();
+                    if (!nextCoin) return;
+                    if (COIN_OPTIONS.includes(`KRW-${nextCoin}`)) {
+                      handleSelectCoin(`KRW-${nextCoin}`);
+                      return;
+                    }
+                    if (isCustomCoin) {
+                      handleSelectCoin(customMarket);
+                    }
+                  }
+                }}
                 placeholder="예: BTC, ETH, SOL"
                 className="flex-1 border rounded px-3 py-2 text-sm"
               />
@@ -6812,7 +6826,9 @@ const blockEntry = (message: string) => {
                   key={coin}
                   type="button"
                   onClick={() => handleSelectCoin(coin)}
-                  className="rounded-full border px-3 py-1 text-xs font-semibold"
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    selectedCoin === coin ? 'border-green-500 text-green-600 bg-green-50' : 'border-gray-300 text-gray-600'
+                  }`}
                 >
                   {coin.replace('KRW-', '')}
                 </button>
@@ -6821,11 +6837,16 @@ const blockEntry = (message: string) => {
                 <button
                   type="button"
                   onClick={() => handleSelectCoin(customMarket)}
-                  className="rounded-full border px-3 py-1 text-xs font-semibold text-green-600"
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    selectedCoin === customMarket ? 'border-green-500 text-green-600 bg-green-50' : 'border-gray-300 text-gray-600'
+                  }`}
                 >
                   {customMarket.replace('KRW-', '')}
                 </button>
               )}
+            </div>
+            <div className="mt-2 text-xs text-gray-500">
+              현재 선택: {selectedCoin.replace('KRW-', '')}
             </div>
           </div>
 
