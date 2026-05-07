@@ -582,8 +582,8 @@ export function PositionForm() {
     });
 
     return {
-      market: marketSymbol,
-      symbol: marketSymbol.replace('KRW-', ''),
+      market,
+      symbol: market.replace('KRW-', ''),
       price: Number(ticker.trade_price ?? 0),
       currentPrice: Number(ticker.trade_price ?? 0),
       entryState,
