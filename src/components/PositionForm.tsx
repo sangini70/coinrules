@@ -850,10 +850,10 @@ export function PositionForm() {
           <div className="p-4 border rounded mt-4">
             <div className="text-xs text-gray-400 mb-1">{"??ル맪??嶺뚯쉳????リ옇?? (嶺뚮씞??????堉?"}</div>
             <div className="text-sm text-gray-500">{"嶺뚯솘?????⑤?????怨댄맍"}</div>
-            <div className="text-sm">{"嶺뚯솘????롪퍒?▽빳? "}{explain.summary}</div>
+            <div className="text-sm">{"嶺뚯솘????롪퍒?▽빳? "}{explainReason}</div>
             <div className="text-sm">{"??怨? ??븐슜?? "}{explainReason}</div>
-            <div className="text-sm">{"???깅쾳 ??怨뺤쭢: "}{explain.action}</div>
-            <div className="text-sm">{"?洹먮봾裕?? "}{explain.risk}</div>
+            <div className="text-sm">{"???깅쾳 ??怨뺤쭢: "}{explainReason}</div>
+            <div className="text-sm">{"?洹먮봾裕?? "}{explainReason}</div>
           </div>
 
           <div className="p-4 border rounded mt-4">
