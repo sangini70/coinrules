@@ -16,26 +16,46 @@ type UpbitProxyPayload<T> = {
   source?: 'real' | 'cache' | 'fallback';
 };
 
-const parseJson = async <T>(response: Response): Promise<UpbitProxyPayload<T> | null> => {
+const parsePayload = async <T>(response: Response): Promise<UpbitProxyPayload<T> | T | null> => {
   try {
-    return (await response.json()) as UpbitProxyPayload<T>;
+    return (await response.json()) as UpbitProxyPayload<T> | T;
   } catch {
     return null;
   }
 };
 
+const buildTickerUrl = (market: string) =>
+  `${BASE_URL}/ticker?markets=${encodeURIComponent(market)}`;
+
 const buildCandleUrl = (market: string, count: number, unit: number) =>
-  `${BASE_URL}/candles?market=${encodeURIComponent(market)}&unit=${encodeURIComponent(unit)}&count=${encodeURIComponent(count)}`;
+  `${BASE_URL}/candles/minutes/${encodeURIComponent(unit)}?market=${encodeURIComponent(market)}&count=${encodeURIComponent(count)}`;
+
+export const fetchMarkets = async (): Promise<string[]> => {
+  try {
+    const response = await fetch(`${BASE_URL}/markets`);
+    const payload = await parsePayload<Array<{ market?: string }>>(response);
+    const data = Array.isArray(payload)
+      ? payload
+      : payload?.data;
+
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .map((item) => item?.market)
+      .filter((market): market is string => typeof market === 'string' && market.startsWith('KRW-'));
+  } catch (error) {
+    console.warn(`Upbit market list fetch failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+    return [];
+  }
+};
 
 export const fetchTicker = async (market: string): Promise<TickerData | null> => {
   // Enforce KRW-SOL for SOL
   const targetMarket = market === 'SOL' ? 'KRW-SOL' : market;
   
   try {
-    const response = await fetch(
-      `${BASE_URL}/ticker?market=${encodeURIComponent(targetMarket)}`,
-    );
-    const payload = await response.json();
+    const response = await fetch(buildTickerUrl(targetMarket));
+    const payload = await parsePayload<TickerData[]>(response);
 
     const data = Array.isArray(payload)
       ? payload
@@ -63,10 +83,8 @@ export const fetchTicker = async (market: string): Promise<TickerData | null> =>
 export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => {
   if (markets.length === 0) return [];
   try {
-    const response = await fetch(
-      `${BASE_URL}/ticker?market=${encodeURIComponent(markets.join(','))}`,
-    );
-    const payload = await response.json();
+    const response = await fetch(buildTickerUrl(markets.join(',')));
+    const payload = await parsePayload<TickerData[]>(response);
 
     const data = Array.isArray(payload)
       ? payload
@@ -86,7 +104,7 @@ export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => 
 export const fetchCandles = async (market: string, count: number = 20, unit: number = 5): Promise<any[] | null> => {
   try {
     const response = await fetch(buildCandleUrl(market, count, unit));
-    const payload = await response.json();
+    const payload = await parsePayload<any[]>(response);
 
     const data = Array.isArray(payload)
       ? payload

@@ -12,21 +12,10 @@ export default async function handler(req: Request) {
     });
   }
 
-  const url = new URL(req.url);
-  const market = url.searchParams.get('markets')?.trim() || url.searchParams.get('market')?.trim();
-
-  if (!market) {
-    return new Response(JSON.stringify({ error: 'markets is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    });
-  }
-
   try {
-    const response = await fetch(
-      `${UPBIT_BASE_URL}/ticker?markets=${encodeURIComponent(market)}`,
-      { headers: { Accept: 'application/json' } }
-    );
+    const response = await fetch(`${UPBIT_BASE_URL}/market/all?isDetails=false`, {
+      headers: { Accept: 'application/json' },
+    });
 
     if (!response.ok) {
       throw new Error(`Upbit request failed with status ${response.status}`);
@@ -46,7 +35,7 @@ export default async function handler(req: Request) {
       {
         status: 502,
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      }
+      },
     );
   }
 }

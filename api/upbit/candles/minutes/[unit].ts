@@ -4,6 +4,12 @@ export const config = {
 
 const UPBIT_BASE_URL = 'https://api.upbit.com/v1';
 
+const parsePositiveInteger = (value: string | null) => {
+  if (!value || !/^\d+$/.test(value)) return null;
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 export default async function handler(req: Request) {
   if (req.method !== 'GET') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -13,19 +19,27 @@ export default async function handler(req: Request) {
   }
 
   const url = new URL(req.url);
-  const market = url.searchParams.get('markets')?.trim() || url.searchParams.get('market')?.trim();
+  const pathUnit = url.pathname.split('/').pop() ?? '';
 
-  if (!market) {
-    return new Response(JSON.stringify({ error: 'markets is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    });
+  const market = url.searchParams.get('market')?.trim();
+  const count = url.searchParams.get('count');
+  const unit = parsePositiveInteger(pathUnit);
+  const parsedCount = parsePositiveInteger(count);
+
+  if (!market || unit === null || parsedCount === null) {
+    return new Response(
+      JSON.stringify({ error: 'market, unit, count are required' }),
+      {
+        status: 400,
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      },
+    );
   }
 
   try {
     const response = await fetch(
-      `${UPBIT_BASE_URL}/ticker?markets=${encodeURIComponent(market)}`,
-      { headers: { Accept: 'application/json' } }
+      `${UPBIT_BASE_URL}/candles/minutes/${unit}?market=${encodeURIComponent(market)}&count=${parsedCount}`,
+      { headers: { Accept: 'application/json' } },
     );
 
     if (!response.ok) {
@@ -46,7 +60,7 @@ export default async function handler(req: Request) {
       {
         status: 502,
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
-      }
+      },
     );
   }
 }
