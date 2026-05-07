@@ -6796,6 +6796,40 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded">
+            <div className="text-sm text-gray-500">종목 선택</div>
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                value={coinInput}
+                onChange={(e) => setCoinInput(e.target.value)}
+                placeholder="예: BTC, ETH, SOL"
+                className="flex-1 border rounded px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {filteredCoins.slice(0, 6).map((coin) => (
+                <button
+                  key={coin}
+                  type="button"
+                  onClick={() => handleSelectCoin(coin)}
+                  className="rounded-full border px-3 py-1 text-xs font-semibold"
+                >
+                  {coin.replace('KRW-', '')}
+                </button>
+              ))}
+              {isCustomCoin && (
+                <button
+                  type="button"
+                  onClick={() => handleSelectCoin(customMarket)}
+                  className="rounded-full border px-3 py-1 text-xs font-semibold text-green-600"
+                >
+                  {customMarket.replace('KRW-', '')}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 border rounded">
 
 
 
