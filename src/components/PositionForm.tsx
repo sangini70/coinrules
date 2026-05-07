@@ -213,6 +213,37 @@ export function PositionForm() {
     }
   };
 
+  const addWatchlistSymbol = async () => {
+    const coin = normalizeWatchlistSymbol(watchlistInput);
+    if (!coin) return;
+    if (watchlist.includes(coin)) return;
+    if (!isValidCoin(coin)) {
+      alert('존재하지 않는 코인입니다');
+      return;
+    }
+    if (watchlist.length >= 10) {
+      alert('최대 10개까지 추가할 수 있습니다');
+      return;
+    }
+
+    const nextWatchlist = [...watchlist, coin];
+    setWatchlist(nextWatchlist);
+    setWatchlistInput('');
+    await persistWatchlistForUser(nextWatchlist);
+  };
+
+  const removeWatchlistSymbol = async (symbol: string) => {
+    const nextWatchlist = watchlist.filter((item) => item !== symbol);
+    setWatchlist(nextWatchlist.length > 0 ? nextWatchlist : DEFAULT_WATCHLIST);
+    await persistWatchlistForUser(nextWatchlist.length > 0 ? nextWatchlist : DEFAULT_WATCHLIST);
+  };
+
+  const resetWatchlist = async () => {
+    setWatchlist(DEFAULT_WATCHLIST);
+    setWatchlistInput('');
+    await persistWatchlistForUser(DEFAULT_WATCHLIST);
+  };
+
   const handleGoogleLogin = async () => {
     try {
       await signInWithPopup(auth, googleAuthProvider);
