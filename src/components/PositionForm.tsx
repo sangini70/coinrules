@@ -6833,58 +6833,6 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">로그인 상태</div>
-
-
-
-            <div className="text-sm font-semibold">{authUserInfo?.email ?? '이메일 없음'}</div>
-
-
-
-            <div className="mt-1 text-xs text-gray-500">UID: {authUserInfo?.uid?.slice(0, 8) ?? ''}...</div>
-
-
-
-            <button
-
-
-
-              type="button"
-
-
-
-              onClick={handleLogout}
-
-
-
-              className="mt-3 border rounded px-3 py-2 text-sm font-semibold"
-
-
-
-            >
-
-
-
-            Google 로그인
-
-
-
-            </button>
-
-
-
-          </div>
-
-
-
-
-
-
-
-          <div className="p-4 border rounded">
-
-
-
             <div className="text-sm text-gray-500">Watchlist</div>
 
 
