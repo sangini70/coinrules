@@ -878,22 +878,22 @@ export function PositionForm() {
 
           <div className="p-4 border rounded mt-4">
             <div className="text-sm text-gray-500">ENTRY Check</div>
-            <div className={getColor(trendReady)}>
+            <div className={trendReady ? 'text-green-500' : 'text-red-500'}>
               Trend: {trendReady ? 'OK' : 'NO'}
             </div>
-            <div className={getColor(volumeReady)}>
+            <div className={volumeReady ? 'text-green-500' : 'text-red-500'}>
               Volume: {volumeReady ? 'OK' : 'NO'}
             </div>
-            <div className={getColor(breakoutReady)}>
+            <div className={breakoutReady ? 'text-green-500' : 'text-red-500'}>
               Breakout: {breakoutReady ? 'OK' : 'NO'}
             </div>
-            <div className={getColor(signalScore >= 80)}>
+            <div className={signalScore >= 80 ? 'text-green-500' : 'text-red-500'}>
               Score: {signalScore >= 80 ? 'OK' : 'NO'}
             </div>
-            <div className={getColor(prepareState === 'ENTRY')}>
+            <div className={prepareState === 'ENTRY' ? 'text-green-500' : 'text-red-500'}>
               Stage: {prepareState === 'ENTRY' ? 'OK' : 'NO'}
             </div>
-            <div className={getColor(btcSignal.trend === 'up')}>
+            <div className={btcSignal.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
               BTC: {btcSignal.trend === 'up' ? 'OK' : 'NO'}
             </div>
           </div>
