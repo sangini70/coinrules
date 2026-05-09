@@ -682,6 +682,8 @@ export function PositionForm() {
 
   const safeSignals = signals ?? {};
 
+  const activePositions = useAppStore((state) => state.activePositions);
+
 
 
 
@@ -4234,6 +4236,8 @@ export function PositionForm() {
 
   const btcSignal = safeSignals?.['KRW-BTC'] ?? null;
 
+  const hasReferenceData = Boolean(selectedCoin) && watchlist.length > 0 && Object.keys(safeSignals).length > 0 && activePositions.length > 0;
+
   useEffect(() => {
     if (!watchlistSettingsLoaded) return;
     if (watchlistStateSource === 'loading') return;
@@ -4635,36 +4639,6 @@ export function PositionForm() {
 
 
 
-
-  const avgVolume5m = liquiditySnapshot.avgVolume5m;
-
-
-
-
-
-
-
-  const volume1m = liquiditySnapshot.volume1m;
-
-
-
-
-
-
-
-  const positionVolumeRatio5m = avgVolume5m > 0 ? estimatedQuantity / avgVolume5m : Number.POSITIVE_INFINITY;
-
-
-
-
-
-
-
-  const positionVolumeRatio1m = volume1m > 0 ? estimatedQuantity / volume1m : Number.POSITIVE_INFINITY;
-
-
-
-  const liquidityRisk = positionVolumeRatio5m > 0.5 || positionVolumeRatio1m > 1.0 ? 'NO_ENTRY' : 'OK';
 
 
 
@@ -7016,7 +6990,7 @@ const blockEntry = (message: string) => {
 
 
 
-                <div className="font-semibold">{formatMetric(estimatedQuantity, 6)}</div>
+                <div className="font-semibold">{hasReferenceData ? formatMetric(estimatedQuantity, 6) : ''}</div>
 
 
 
@@ -7032,7 +7006,7 @@ const blockEntry = (message: string) => {
 
 
 
-                <div className="font-semibold">{formatMetric(avgVolume5m, 6)}</div>
+                <div className="font-semibold">{hasReferenceData ? formatMetric(avgVolume5m, 6) : ''}</div>
 
 
 
@@ -7048,7 +7022,7 @@ const blockEntry = (message: string) => {
 
 
 
-                <div className="font-semibold">{formatMetric(volume1m, 6)}</div>
+                <div className="font-semibold">{hasReferenceData ? formatMetric(volume1m, 6) : ''}</div>
 
 
 
@@ -7064,11 +7038,11 @@ const blockEntry = (message: string) => {
 
 
 
-                <div className={`font-semibold ${liquidityRisk === 'NO_ENTRY' ? 'text-status-danger' : 'text-status-safe'}`}>
+                <div className={`font-semibold ${hasReferenceData ? (liquidityRisk === 'NO_ENTRY' ? 'text-status-danger' : 'text-status-safe') : 'text-text-muted/60'}`}>
 
 
 
-                  {liquidityRisk === 'NO_ENTRY' ? 'Entry blocked' : 'Entry allowed'}
+                  {hasReferenceData ? (liquidityRisk === 'NO_ENTRY' ? 'Entry blocked' : 'Entry allowed') : ''}
 
 
 
@@ -7088,7 +7062,7 @@ const blockEntry = (message: string) => {
 
 
 
-                <div className="font-semibold">{formatMetric(positionVolumeRatio5m, 4)}</div>
+                <div className="font-semibold">{hasReferenceData ? formatMetric(positionVolumeRatio5m, 4) : ''}</div>
 
 
 
@@ -7104,7 +7078,7 @@ const blockEntry = (message: string) => {
 
 
 
-                <div className="font-semibold">{formatMetric(positionVolumeRatio1m, 4)}</div>
+                <div className="font-semibold">{hasReferenceData ? formatMetric(positionVolumeRatio1m, 4) : ''}</div>
 
 
 
@@ -7116,7 +7090,7 @@ const blockEntry = (message: string) => {
 
 
 
-            {liquidityRisk === 'NO_ENTRY' && (
+            {hasReferenceData && liquidityRisk === 'NO_ENTRY' && (
 
 
 
