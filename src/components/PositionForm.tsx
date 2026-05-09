@@ -909,6 +909,10 @@ export function PositionForm() {
 
     }
 
+    if (entryAnalysis.entryState !== 'ENTRY') {
+      return;
+    }
+
 
 
 
@@ -3903,6 +3907,8 @@ export function PositionForm() {
 
 
 
+
+    if (!market || watchlist.length === 0) return;
 
     void fetchSignalsAction(market);
 

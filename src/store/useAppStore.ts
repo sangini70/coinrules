@@ -200,7 +200,11 @@ export const useAppStore = create<AppStore>()(
       },
 
       fetchSignals: async (coin) => {
-        const targetCoins = Array.from(new Set([...MONITORED_COINS, coin]));
+        const targetCoin = typeof coin === 'string' ? coin.trim() : '';
+        if (!targetCoin) {
+          return;
+        }
+        const targetCoins = Array.from(new Set([...MONITORED_COINS, targetCoin]));
 
         try {
           await Promise.all(

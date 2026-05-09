@@ -78,9 +78,10 @@ export const fetchTicker = async (market: string): Promise<TickerData | null> =>
 };
 
 export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => {
-  if (markets.length === 0) return [];
+  const normalizedMarkets = markets.map(normalizeMarket).filter(Boolean);
+  if (normalizedMarkets.length === 0) return [];
   try {
-    const response = await fetch(`${BASE_URL}/ticker?markets=${encodeURIComponent(markets.map(normalizeMarket).filter(Boolean).join(','))}`);
+    const response = await fetch(`${BASE_URL}/ticker?markets=${encodeURIComponent(normalizedMarkets.join(','))}`);
     const payload = await parsePayload<TickerData[]>(response);
 
     const data = Array.isArray(payload)
@@ -99,8 +100,11 @@ export const fetchTickers = async (markets: string[]): Promise<TickerData[]> => 
 };
 
 export const fetchCandles = async (market: string, count: number = 20, unit: number = 5): Promise<any[]> => {
+  const targetMarket = normalizeMarket(market);
+  if (!targetMarket) return [];
+
   try {
-    const response = await fetch(buildCandleUrl(market, count, unit));
+    const response = await fetch(buildCandleUrl(targetMarket, count, unit));
     const payload = await parsePayload<any[]>(response);
 
     const data = Array.isArray(payload)
@@ -113,7 +117,7 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
     }
     return data;
   } catch (error) {
-    console.warn(`Upbit Candle API fetch failed for ${market}: ${error instanceof Error ? error.message : 'Unknown'}`);
+    console.warn(`Upbit Candle API fetch failed for ${targetMarket}: ${error instanceof Error ? error.message : 'Unknown'}`);
     return [];
   }
 };
