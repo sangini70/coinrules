@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, FormEvent, useRef } from 'react';
+import { useState, useEffect, FormEvent, useRef } from 'react';
 
 
 
@@ -491,7 +491,7 @@ const readFallbackWatchlist = () => {
 
 
 
-    return DEFAULT_WATCHLIST;
+    return [];
 
 
 
@@ -531,7 +531,7 @@ const readFallbackWatchlist = () => {
 
 
 
-    if (!raw) return DEFAULT_WATCHLIST;
+    if (!raw) return [];
 
 
 
@@ -555,7 +555,7 @@ const readFallbackWatchlist = () => {
 
 
 
-    return normalized.length > 0 ? normalized : DEFAULT_WATCHLIST;
+    return normalized.length > 0 ? normalized : [];
 
 
 
@@ -571,7 +571,7 @@ const readFallbackWatchlist = () => {
 
 
 
-    return DEFAULT_WATCHLIST;
+    return [];
 
 
 
@@ -606,15 +606,15 @@ const readFallbackWatchlist = () => {
 
 const readFallbackSelectedCoin = () => {
   if (typeof window === 'undefined') {
-    return 'KRW-BTC';
+    return '';
   }
 
   try {
     const raw = window.localStorage.getItem('asset-protection-selected-coin');
-    if (!raw) return 'KRW-BTC';
+    if (!raw) return '';
     return normalizeSelectedCoin(JSON.parse(raw));
   } catch {
-    return 'KRW-BTC';
+    return '';
   }
 };
 
@@ -1033,7 +1033,9 @@ export function PositionForm() {
 
 
 
-  const market = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? formData.coin : `KRW-${formData.coin || 'BTC'}`;
+  const market = formData.coin
+    ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
+    : '';
 
 
 
@@ -1044,10 +1046,10 @@ export function PositionForm() {
   useEffect(() => {
 
 
-
-
-
-
+    if (!market || watchlist.length === 0) {
+      setMarketAnalysis(null);
+      return;
+    }
 
     let active = true;
 
@@ -1253,14 +1255,12 @@ export function PositionForm() {
       setWatchlistStateSource('loading');
 
       if (!uid) {
-        const fallbackWatchlist = readFallbackWatchlist();
-        const fallbackSelectedCoin = readFallbackSelectedCoin();
-
-        setWatchlist(fallbackWatchlist);
+        setWatchlist([]);
         setFormData((prev) => ({
           ...prev,
-          coin: fallbackSelectedCoin,
+          coin: '',
         }));
+        useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
         setWatchlistStateSource('guest');
         setWatchlistSettingsLoaded(true);
         return;
@@ -1271,6 +1271,7 @@ export function PositionForm() {
         ...prev,
         coin: '',
       }));
+      useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
 
       void (async () => {
         try {
@@ -1300,6 +1301,7 @@ export function PositionForm() {
             ...prev,
             coin: '',
           }));
+          useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
           setWatchlistStateSource('remote');
           setWatchlistSettingsLoaded(true);
           return;
@@ -1309,14 +1311,12 @@ export function PositionForm() {
 
         if (!isMounted) return;
 
-        const fallbackWatchlist = readFallbackWatchlist();
-        const fallbackSelectedCoin = readFallbackSelectedCoin();
-
-        setWatchlist(fallbackWatchlist);
+        setWatchlist([]);
         setFormData((prev) => ({
           ...prev,
-          coin: fallbackSelectedCoin,
+          coin: '',
         }));
+        useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
         setWatchlistStateSource('fallback');
         setWatchlistSettingsLoaded(true);
       })();
@@ -1538,7 +1538,7 @@ export function PositionForm() {
 
 
 
-      alert('理쒕? 10媛쒓퉴吏 異붽???:?덉뒿?덈떎');
+      alert('최대 10개까지 추가할 수 있습니다');
 
 
 
@@ -2960,7 +2960,6 @@ export function PositionForm() {
 
 
 
-
           </button>
 
 
@@ -3018,10 +3017,10 @@ export function PositionForm() {
   useEffect(() => {
 
 
-
-
-
-
+    if (!market) {
+      setMarketAnalysis(null);
+      return;
+    }
 
     let active = true;
 
@@ -3991,7 +3990,7 @@ export function PositionForm() {
 
 
 
-  }, [market]);
+  }, [market, watchlist]);
 
 
 
@@ -4031,7 +4030,7 @@ export function PositionForm() {
 
 
 
-      const nextCooldownTime = getCooldownRemainingAction(formData.coin || 'KRW-BTC');
+      const nextCooldownTime = formData.coin ? getCooldownRemainingAction(formData.coin) : 0;
 
 
 
@@ -4207,7 +4206,9 @@ export function PositionForm() {
 
 
 
-  const selectedCoin = (formData.coin || 'KRW-BTC').startsWith('KRW-') ? (formData.coin || 'KRW-BTC') : `KRW-${formData.coin || 'BTC'}`;
+  const selectedCoin = formData.coin
+    ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
+    : '';
 
 
 
@@ -4223,7 +4224,7 @@ export function PositionForm() {
 
 
 
-  const safeSignal = safeSignals?.[selectedCoin ?? 'KRW-BTC'] ?? null;
+  const safeSignal = selectedCoin ? safeSignals?.[selectedCoin] ?? null : null;
 
 
 
@@ -4232,6 +4233,24 @@ export function PositionForm() {
 
 
   const btcSignal = safeSignals?.['KRW-BTC'] ?? null;
+
+  useEffect(() => {
+    if (!watchlistSettingsLoaded) return;
+    if (watchlistStateSource === 'loading') return;
+
+    const hasSignalData = Object.keys(safeSignals).length > 0;
+    if (watchlist.length === 0 || !selectedCoin || !hasSignalData) {
+      useAppStore.setState((state) =>
+        state.activePositions.length === 0 ? state : { activePositions: [] },
+      );
+    }
+  }, [
+    safeSignals,
+    selectedCoin,
+    watchlist.length,
+    watchlistSettingsLoaded,
+    watchlistStateSource,
+  ]);
 
 
 
@@ -4303,7 +4322,9 @@ export function PositionForm() {
 
 
 
-    const market = formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`;
+    const market = formData.coin
+      ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
+      : '';
 
 
 
@@ -6708,7 +6729,6 @@ const blockEntry = (message: string) => {
                 초기화
 
 
-
               </button>
 
 
@@ -6729,7 +6749,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">媛먯떆 肄붿씤</div>
+            <div className="text-sm text-gray-500">감시 코인</div>
 
 
 
@@ -6749,7 +6769,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">?꾩옱 ?곹깭</div>
+            <div className="text-sm text-gray-500">현재 상태</div>
 
 
 
@@ -6780,10 +6800,10 @@ const blockEntry = (message: string) => {
           <div className="p-4 border rounded mt-4">
             <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
             <div className="text-sm text-gray-500">지금 결론</div>
-            <div className="text-sm">{explainReason}</div>
             <div className="text-sm">이유 요약: {explainReason}</div>
             <div className="text-sm">다음 행동: {explainReason}</div>
             <div className="text-sm">리스크: {explainReason}</div>
+            <div className="text-sm">해석: {explainReason}</div>
           </div>
 
 
@@ -6796,7 +6816,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">?먮떒 洹쇨굅</div>
+            <div className="text-sm text-gray-500">판단 근거</div>
 
 
 
@@ -6824,7 +6844,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">吏꾩엯 ?④퀎</div>
+            <div className="text-sm text-gray-500">진입 단계</div>
 
 
 
