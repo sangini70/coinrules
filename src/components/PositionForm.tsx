@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent, useRef } from 'react';
+import { useState, useEffect, FormEvent, useRef, isValidElement } from 'react';
 
 
 
@@ -6299,7 +6299,7 @@ useEffect(() => {
 
 
 
-        {authPanel}
+        {isValidElement(authPanel) ? authPanel : null}
 
 
 
@@ -6391,7 +6391,7 @@ useEffect(() => {
 
 
 
-      {authPanel}
+      {isValidElement(authPanel) ? authPanel : null}
 
 
 
