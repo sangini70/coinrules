@@ -2556,6 +2556,10 @@ export function PositionForm() {
 
 
 
+    const explainReason = reasons.join(' / ');
+
+    const failReasons = reasons;
+
     const prepareState = getPrepareState({
 
 
@@ -6648,10 +6652,10 @@ useEffect(() => {
           <div className="p-4 border rounded mt-4">
             <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
             <div className="text-sm text-gray-500">지금 결론</div>
-            <div className="text-sm">이유 요약: {explainReason}</div>
-            <div className="text-sm">다음 행동: {explainReason}</div>
-            <div className="text-sm">리스크: {explainReason}</div>
-            <div className="text-sm">해석: {explainReason}</div>
+            <div className="text-sm">이유 요약: {String(explainReason)}</div>
+            <div className="text-sm">다음 행동: {String(explainReason)}</div>
+            <div className="text-sm">리스크: {String(explainReason)}</div>
+            <div className="text-sm">해석: {String(explainReason)}</div>
           </div>
 
 
@@ -6696,7 +6700,7 @@ useEffect(() => {
 
 
 
-            <div className="text-lg font-semibold">{prepareState}</div>
+            <div className="text-lg font-semibold">{String(prepareState)}</div>
 
 
 
@@ -6720,7 +6724,7 @@ useEffect(() => {
 
 
 
-              {signalScore} / 100
+              {String(signalScore)} / 100
 
 
 
@@ -6832,7 +6836,7 @@ useEffect(() => {
             ) : (
               <ul className="text-sm list-disc pl-4">
                 {failReasons.slice(0, 2).map((r, i) => (
-                  <li key={i}>{r}</li>
+              <li key={i}>{String(r)}</li>
                 ))}
               </ul>
             )}
@@ -6864,7 +6868,7 @@ useEffect(() => {
 
 
 
-                <div className="font-semibold">{hasReferenceData ? formatMetric(estimatedQuantity, 6) : ''}</div>
+                <div className="font-semibold">{hasReferenceData ? String(formatMetric(estimatedQuantity, 6)) : ''}</div>
 
 
 
@@ -6880,7 +6884,7 @@ useEffect(() => {
 
 
 
-                <div className="font-semibold">{hasReferenceData ? formatMetric(avgVolume5m, 6) : ''}</div>
+                <div className="font-semibold">{hasReferenceData ? String(formatMetric(avgVolume5m, 6)) : ''}</div>
 
 
 
@@ -6896,7 +6900,7 @@ useEffect(() => {
 
 
 
-                <div className="font-semibold">{hasReferenceData ? formatMetric(volume1m, 6) : ''}</div>
+                <div className="font-semibold">{hasReferenceData ? String(formatMetric(volume1m, 6)) : ''}</div>
 
 
 
@@ -6916,7 +6920,7 @@ useEffect(() => {
 
 
 
-                  {hasReferenceData ? (liquidityRisk === 'NO_ENTRY' ? 'Entry blocked' : 'Entry allowed') : ''}
+                  {hasReferenceData ? String(liquidityRisk === 'NO_ENTRY' ? 'Entry blocked' : 'Entry allowed') : ''}
 
 
 
@@ -6936,7 +6940,7 @@ useEffect(() => {
 
 
 
-                <div className="font-semibold">{hasReferenceData ? formatMetric(positionVolumeRatio5m, 4) : ''}</div>
+                <div className="font-semibold">{hasReferenceData ? String(formatMetric(positionVolumeRatio5m, 4)) : ''}</div>
 
 
 
@@ -6952,7 +6956,7 @@ useEffect(() => {
 
 
 
-                <div className="font-semibold">{hasReferenceData ? formatMetric(positionVolumeRatio1m, 4) : ''}</div>
+                <div className="font-semibold">{hasReferenceData ? String(formatMetric(positionVolumeRatio1m, 4)) : ''}</div>
 
 
 
@@ -6972,7 +6976,7 @@ useEffect(() => {
 
 
 
-                {liquidityBlockMessage}
+                {String(liquidityBlockMessage)}
 
 
 
