@@ -909,10 +909,6 @@ export function PositionForm() {
 
     }
 
-    if (entryAnalysis.entryState !== 'ENTRY') {
-      return;
-    }
-
 
 
 
@@ -1042,6 +1038,7 @@ export function PositionForm() {
   const market = formData.coin
     ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
     : '';
+
 
 
 
@@ -1544,7 +1541,7 @@ export function PositionForm() {
 
 
 
-      alert('최대 10개까지 추가할 수 있습니다');
+      alert('筌ㅼ뮆? 10揶쏆뮄?댐쭪? ?곕떽???????됰뮸??덈뼄');
 
 
 
@@ -2671,7 +2668,7 @@ export function PositionForm() {
 
 
 
-    return {
+  const entryAnalysis = {
 
 
 
@@ -2807,7 +2804,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">로그인 상태</div>
+          <div className="text-sm text-gray-500">嚥≪뮄????怨밴묶</div>
 
 
 
@@ -2815,7 +2812,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm font-semibold">{authUserInfo.email ?? '이메일 없음'}</div>
+          <div className="text-sm font-semibold">{authUserInfo.email ?? '??李????곸벉'}</div>
 
 
 
@@ -2871,7 +2868,7 @@ export function PositionForm() {
 
 
 
-            로그아웃
+            嚥≪뮄??袁⑹뜍
 
 
 
@@ -2911,7 +2908,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">로그인 필요</div>
+          <div className="text-sm text-gray-500">嚥≪뮄????袁⑹뒄</div>
 
 
 
@@ -2959,7 +2956,7 @@ export function PositionForm() {
 
 
 
-            Google 로그인
+            Google 嚥≪뮄???
 
 
 
@@ -4659,7 +4656,7 @@ export function PositionForm() {
 
 
   const liquidityBlockMessage =
-    '유동성 주의: 거래량이 부족합니다.\n현재 조건에서 진입을 보류하세요.';
+    '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??';
 
 const blockEntry = (message: string) => {
 
@@ -4799,7 +4796,7 @@ const blockEntry = (message: string) => {
 
       return blockEntry(
 
-        '유동성 주의: 거래량이 부족합니다.\n현재 조건에서 진입을 보류하세요.',
+        '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??',
 
       );
 
@@ -5081,15 +5078,7 @@ const blockEntry = (message: string) => {
 
 
 
-  const entryAnalysis = (() => {
-
-
-
-
-
-
-
-    const signalTrendUp = safeSignal?.trend === 'up';
+  const signalTrendUp = safeSignal?.trend === 'up';
 
 
 
@@ -5481,7 +5470,7 @@ const blockEntry = (message: string) => {
 
 
 
-              : ['행동신호 없음', '데이터 없음'];
+              : ['??곕짗?醫륁깈 ??곸벉', '?怨쀬뵠????곸벉'];
 
 
 
@@ -5682,126 +5671,7 @@ const blockEntry = (message: string) => {
 
 
     };
-
-
-
-
-
-
-
-  })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const {
-
-
-
-
-
-
-
-    entryState,
-
-
-
-
-
-
-
-    trendReady,
-
-
-
-
-
-
-
-    volumeReady,
-
-
-
-
-
-
-
-    breakoutReady,
-
-
-
-
-
-
-
-    signalScore,
-
-
-
-
-
-
-
-    scoreColor,
-
-
-
-
-
-
-
-    explainReason,
-
-
-
-
-
-
-
-    failReasons,
-
-
-
-
-
-
-
-    prepareState,
-
-
-
-
-
-
-
-  } = entryAnalysis;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  useEffect(() => {
+useEffect(() => {
 
 
 
@@ -6534,7 +6404,7 @@ const blockEntry = (message: string) => {
 
 
           <div className="p-4 border rounded">
-            <div className="text-sm text-gray-500">종목 선택</div>
+            <div className="text-sm text-gray-500">?ル굝???醫뤾문</div>
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
@@ -6554,7 +6424,7 @@ const blockEntry = (message: string) => {
                     }
                   }
                 }}
-                placeholder="예: BTC, ETH, SOL"
+                placeholder="?? BTC, ETH, SOL"
                 className="flex-1 border rounded px-3 py-2 text-sm"
               />
             </div>
@@ -6584,7 +6454,7 @@ const blockEntry = (message: string) => {
               )}
             </div>
             <div className="mt-2 text-xs text-gray-500">
-              현재 선택: {selectedCoin.replace('KRW-', '')}
+              ?袁⑹삺 ?醫뤾문: {selectedCoin.replace('KRW-', '')}
             </div>
           </div>
 
@@ -6676,7 +6546,7 @@ const blockEntry = (message: string) => {
 
 
 
-                placeholder="예: SHIB, DOT, AVAX"
+                placeholder="?? SHIB, DOT, AVAX"
 
 
 
@@ -6692,7 +6562,7 @@ const blockEntry = (message: string) => {
 
 
 
-                추가
+                ?곕떽?
 
 
 
@@ -6704,7 +6574,7 @@ const blockEntry = (message: string) => {
 
 
 
-                초기화
+                ?λ뜃由??
 
 
               </button>
@@ -6747,7 +6617,7 @@ const blockEntry = (message: string) => {
 
 
 
-            <div className="text-sm text-gray-500">현재 상태</div>
+            <div className="text-sm text-gray-500">?袁⑹삺 ?怨밴묶</div>
 
 
 
@@ -6958,7 +6828,7 @@ const blockEntry = (message: string) => {
             <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
 
             {entryState === 'ENTRY' ? (
-              <div className="text-green-500">진입 가능</div>
+               <div className="text-green-500">진입 가능</div>
             ) : (
               <ul className="text-sm list-disc pl-4">
                 {failReasons.slice(0, 2).map((r, i) => (
