@@ -6482,7 +6482,7 @@ useEffect(() => {
 
 
 
-                  <span>{symbol}</span>
+                  <span>{String(symbol)}</span>
 
 
 
@@ -6636,7 +6636,7 @@ useEffect(() => {
                       : 'text-gray-500'
               }`}
             >
-              {entryState}
+              {String(entryState)}
             </div>
 
 
