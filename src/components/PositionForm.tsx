@@ -640,7 +640,7 @@ export function PositionForm() {
 
 
 
-  const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals } = useAppStore();
+  const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals, clearMarketState } = useAppStore();
 
 
 
@@ -1262,7 +1262,7 @@ export function PositionForm() {
           ...prev,
           coin: '',
         }));
-        useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
+        clearMarketState();
         setWatchlistStateSource('guest');
         setWatchlistSettingsLoaded(true);
         return;
@@ -1273,7 +1273,7 @@ export function PositionForm() {
         ...prev,
         coin: '',
       }));
-      useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
+      clearMarketState();
 
       void (async () => {
         try {
@@ -1303,7 +1303,7 @@ export function PositionForm() {
             ...prev,
             coin: '',
           }));
-          useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
+          clearMarketState();
           setWatchlistStateSource('remote');
           setWatchlistSettingsLoaded(true);
           return;
@@ -1318,7 +1318,7 @@ export function PositionForm() {
           ...prev,
           coin: '',
         }));
-        useAppStore.setState({ activePositions: [], signals: {}, signalBuffer: {} });
+        clearMarketState();
         setWatchlistStateSource('fallback');
         setWatchlistSettingsLoaded(true);
       })();
@@ -4238,15 +4238,19 @@ export function PositionForm() {
 
   const hasReferenceData = Boolean(selectedCoin) && watchlist.length > 0 && Object.keys(safeSignals).length > 0 && activePositions.length > 0;
 
+  const avgVolume5m = liquiditySnapshot.avgVolume5m;
+  const volume1m = liquiditySnapshot.volume1m;
+  const positionVolumeRatio5m = avgVolume5m > 0 ? estimatedQuantity / avgVolume5m : Number.POSITIVE_INFINITY;
+  const positionVolumeRatio1m = volume1m > 0 ? estimatedQuantity / volume1m : Number.POSITIVE_INFINITY;
+  const liquidityRisk = positionVolumeRatio5m > 0.5 || positionVolumeRatio1m > 1.0 ? 'NO_ENTRY' : 'OK';
+
   useEffect(() => {
     if (!watchlistSettingsLoaded) return;
     if (watchlistStateSource === 'loading') return;
 
     const hasSignalData = Object.keys(safeSignals).length > 0;
     if (watchlist.length === 0 || !selectedCoin || !hasSignalData) {
-      useAppStore.setState((state) =>
-        state.activePositions.length === 0 ? state : { activePositions: [] },
-      );
+      clearMarketState();
     }
   }, [
     safeSignals,
@@ -4254,6 +4258,7 @@ export function PositionForm() {
     watchlist.length,
     watchlistSettingsLoaded,
     watchlistStateSource,
+    clearMarketState,
   ]);
 
 

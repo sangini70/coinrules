@@ -46,6 +46,7 @@ interface AppStore {
   updateSettings: (settings: Partial<AppSettings>) => void;
   setUserCoins: (coins: string[]) => void;
   setCoinCatalog: (coins: CoinCatalogItem[]) => void;
+  clearMarketState: () => void;
   addPosition: (position: Omit<Position, 'id' | 'createdAt' | 'isLocked'> & { isLocked?: boolean }) => void;
   closePosition: (id: string, sellPrice: number, resultType: ResultType, reasonSell: string) => void;
   deletePosition: (id: string) => void;
@@ -430,9 +431,22 @@ export const useAppStore = create<AppStore>()(
                 coin.enabled === nextCoin.enabled &&
                 coin.priority === nextCoin.priority
               );
-            });
+          });
           return sameValues ? state : { coinCatalog: nextCoins };
         }),
+
+      clearMarketState: () =>
+        set((state) =>
+          state.activePositions.length === 0 &&
+          Object.keys(state.signals ?? {}).length === 0 &&
+          Object.keys(state.signalBuffer ?? {}).length === 0
+            ? state
+            : {
+                activePositions: [],
+                signals: {},
+                signalBuffer: {},
+              },
+        ),
 
       updateSettings: (newSettings) =>
         set((state) => {
