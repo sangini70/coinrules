@@ -4236,6 +4236,8 @@ export function PositionForm() {
 
   const btcSignal = safeSignals?.['KRW-BTC'] ?? null;
 
+  const estimatedQuantity = formData.buyPrice > 0 ? formData.amount / formData.buyPrice : 0;
+
   const hasReferenceData = Boolean(selectedCoin) && watchlist.length > 0 && Object.keys(safeSignals).length > 0 && activePositions.length > 0;
 
   const avgVolume5m = liquiditySnapshot.avgVolume5m;
@@ -4637,7 +4639,6 @@ export function PositionForm() {
 
 
 
-  const estimatedQuantity = formData.buyPrice > 0 ? formData.amount / formData.buyPrice : 0;
 
 
 
@@ -4719,14 +4720,6 @@ const blockEntry = (message: string) => {
 
 
     // ENTRY PRE-CHECK: liquidity exit risk
-
-
-
-
-
-
-
-    const estimatedQuantity = formData.amount / formData.buyPrice;
 
 
 
