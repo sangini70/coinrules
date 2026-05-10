@@ -2557,8 +2557,10 @@ export function PositionForm() {
 
 
     const explainReason = reasons.join(' / ');
+    console.log('[REACT31_DEBUG]', 'explainReason', typeof explainReason, Array.isArray(explainReason), explainReason);
 
     const failReasons = reasons;
+    console.log('[REACT31_DEBUG]', 'failReasons', typeof failReasons, Array.isArray(failReasons), failReasons);
 
     const prepareState = getPrepareState({
 
@@ -2593,6 +2595,7 @@ export function PositionForm() {
 
 
     });
+    console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
 
 
 
@@ -2657,6 +2660,8 @@ export function PositionForm() {
 
 
     });
+    console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
+    console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
 
 
 
@@ -2753,6 +2758,7 @@ export function PositionForm() {
 
 
     };
+  console.log('[REACT31_DEBUG]', 'entryAnalysis', typeof entryAnalysis, Array.isArray(entryAnalysis), entryAnalysis);
 
 
 
@@ -4234,6 +4240,10 @@ export function PositionForm() {
 
 
   const safeSignal = selectedCoin ? safeSignals?.[selectedCoin] ?? null : null;
+  console.log('[REACT31_DEBUG]', 'safeSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
+  console.log('[REACT31_DEBUG]', 'currentSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
+  console.log('[REACT31_DEBUG]', 'signals[selectedCoin]', typeof (selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), Array.isArray(selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), selectedCoin ? safeSignals?.[selectedCoin] ?? null : null);
+  console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
 
 
 
@@ -4661,6 +4671,7 @@ export function PositionForm() {
 
   const liquidityBlockMessage =
     '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??';
+  console.log('[REACT31_DEBUG]', 'liquidityRiskMessage', typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
 
 const blockEntry = (message: string) => {
 
@@ -5323,6 +5334,8 @@ const blockEntry = (message: string) => {
 
 
     });
+    console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
+    console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
 
 
 
@@ -5523,6 +5536,7 @@ const blockEntry = (message: string) => {
 
 
     });
+    console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
 
 
 
