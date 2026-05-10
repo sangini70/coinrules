@@ -6759,11 +6759,9 @@ useEffect(() => {
             {entryState === 'ENTRY' ? (
                <div className="text-green-500">진입 가능</div>
             ) : (
-              <ul className="text-sm list-disc pl-4">
-                {failReasons.slice(0, 2).map((r, i) => (
-              <li key={i}>{String(r)}</li>
-                ))}
-              </ul>
+              <div className="text-sm">
+                {String(failReasons.slice(0, 2).join(' / '))}
+              </div>
             )}
           </div>
 
