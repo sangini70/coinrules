@@ -2560,6 +2560,7 @@ export function PositionForm() {
     console.log('[REACT31_DEBUG]', 'explainReason', typeof explainReason, Array.isArray(explainReason), explainReason);
 
     const failReasons = reasons;
+    console.log('[REACT31_DETAIL]', 'failReasons', JSON.stringify(failReasons, null, 2));
     console.log('[REACT31_DEBUG]', 'failReasons', typeof failReasons, Array.isArray(failReasons), failReasons);
 
     const prepareState = getPrepareState({
@@ -4671,6 +4672,7 @@ export function PositionForm() {
 
   const liquidityBlockMessage =
     '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??';
+  console.log('[REACT31_DETAIL]', 'liquidityRiskMessage', JSON.stringify(liquidityBlockMessage, null, 2));
   console.log('[REACT31_DEBUG]', 'liquidityRiskMessage', typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
 
 const blockEntry = (message: string) => {
@@ -5400,108 +5402,17 @@ const blockEntry = (message: string) => {
 
 
     };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     const reasons =
-
-
-
-
-
-
-
       entryState === 'AVOID'
-
-
-
-
-
-
-
         ? ['Low confidence', 'Avoid new entries']
-
-
-
-
-
-
-
         : entryState === 'RISK'
-
-
-
-
-
-
-
           ? ['Risk elevated', 'Wait for clearer setup']
-
-
-
-
-
-
-
           : entryState === 'ENTRY'
-
-
-
-
-
-
-
             ? ['Trend confirmed', 'Volume confirmed', 'Breakout confirmed']
-
-
-
-
-
-
-
             : entryState === 'OBSERVE'
-
-
-
-
-
-
-
               ? ['Trend developing', 'Monitor for follow-through']
-
-
-
-
-
-
-
-              : ['??곕짗?醫륁깈 ??곸벉', '?怨쀬뵠????곸벉'];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+              : ['????????????????', '?????????????'];
+    console.log('[REACT31_DETAIL]', 'reasons', JSON.stringify(reasons, null, 2));
 
     const prepareState = getPrepareState({
 
