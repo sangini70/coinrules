@@ -2562,8 +2562,10 @@ export function PositionForm() {
     console.log('[REACT31_DEBUG]', 'explainReason', typeof explainReason, Array.isArray(explainReason), explainReason);
 
     const failReasons = reasons;
+    console.log("[ISO_B]", "failReasons", typeof failReasons, Array.isArray(failReasons), failReasons);
     console.log('[REACT31_DETAIL]', 'failReasons', JSON.stringify(failReasons, null, 2));
     console.log('[REACT31_DEBUG]', 'failReasons', typeof failReasons, Array.isArray(failReasons), failReasons);
+    console.log("[SET_REASONS_PAYLOAD]", failReasons);
 
     const prepareState = getPrepareState({
 
@@ -2761,6 +2763,7 @@ export function PositionForm() {
 
 
     };
+  console.log("[ISO_A]", "entryAnalysis", typeof entryAnalysis, Array.isArray(entryAnalysis), entryAnalysis);
   console.log('[REACT31_DEBUG]', 'entryAnalysis', typeof entryAnalysis, Array.isArray(entryAnalysis), entryAnalysis);
 
 
@@ -4193,6 +4196,7 @@ export function PositionForm() {
 
 
   const filteredCoins = COIN_OPTIONS.filter(c => c.replace('KRW-', '').toLowerCase().includes(coinInput.toLowerCase()));
+  console.log("[ISO_A]", "filteredCoins", typeof filteredCoins, Array.isArray(filteredCoins), filteredCoins);
 
 
 
@@ -4679,6 +4683,7 @@ export function PositionForm() {
   const liquidityBlockMessage =
     '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??';
   console.log('[REACT31_DETAIL]', 'liquidityRiskMessage', JSON.stringify(liquidityBlockMessage, null, 2));
+  console.log("[ISO_B]", "liquidityBlockMessage", typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
   console.log('[REACT31_DEBUG]', 'liquidityRiskMessage', typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
 
 const blockEntry = (message: string) => {
@@ -5419,6 +5424,9 @@ const blockEntry = (message: string) => {
               ? ['Trend developing', 'Monitor for follow-through']
               : ['????????????????', '?????????????'];
     console.log('[REACT31_DETAIL]', 'reasons', JSON.stringify(reasons, null, 2));
+    console.log("[ISO_A]", "reasons", typeof reasons, Array.isArray(reasons), reasons);
+    console.log("[REASONS_RUNTIME]", reasons);
+    console.log("[REASONS_TYPE]", typeof reasons, Array.isArray(reasons), reasons?.[0]);
 
     const prepareState = getPrepareState({
 
