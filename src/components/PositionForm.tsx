@@ -6574,6 +6574,7 @@ useEffect(() => {
 
 
 
+          {false && (
           <div className="p-4 border rounded mt-4">
             <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
             <div className="text-sm text-gray-500">지금 결론</div>
@@ -6582,6 +6583,7 @@ useEffect(() => {
             <div className="text-sm">리스크: {String(explainReason)}</div>
             <div className="text-sm">해석: {String(explainReason)}</div>
           </div>
+          )}
 
 
 
