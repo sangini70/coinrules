@@ -633,8 +633,6 @@ const writeFallbackSettings = (watchlist: string[], selectedCoin: string) => {
 };
 
 export function PositionForm() {
-  return null;
-
   console.log("[PF_TOP_ENTER]");
 
 
@@ -644,6 +642,7 @@ export function PositionForm() {
 
 
   const { settings, addPosition, isCoinInCooldown, getCooldownRemaining, control, signals, clearMarketState } = useAppStore();
+  return null;
 
 
 
