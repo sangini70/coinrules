@@ -6530,7 +6530,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm font-semibold">{watchlist.join(' / ')}</div>
+            <div className="text-sm font-semibold">{String(Array.isArray(watchlist) ? watchlist.map((symbol) => String(symbol)).join(' / ') : '')}</div>
 
 
 
@@ -6760,7 +6760,7 @@ useEffect(() => {
                <div className="text-green-500">진입 가능</div>
             ) : (
               <div className="text-sm">
-                {String(failReasons.slice(0, 2).join(' / '))}
+                {String(Array.isArray(failReasons) ? failReasons.slice(0, 2).map((reason) => String(reason)).join(' / ') : '')}
               </div>
             )}
           </div>
