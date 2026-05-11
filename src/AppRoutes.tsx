@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { isValidElement, useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AlertTriangle, Cloud, Download, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { Layout } from './components/Layout';
@@ -423,6 +423,8 @@ function AppShell({
   const { control, exportData, importData, resetAll, setLanguage, language } = useAppStore();
   const t = useAppStore((state) => state.t)();
   const safeControl = control ?? DEFAULT_CONTROL;
+  const text = (key: Parameters<typeof t>[0]) => String(t(key));
+  const safeChildren = isValidElement(children) ? children : Array.isArray(children) ? children : null;
 
   const handleExport = () => {
     const data = exportData();
@@ -451,7 +453,7 @@ function AppShell({
   };
 
   const handleWipe = () => {
-    if (confirm(t('reset_confirm'))) {
+    if (confirm(text('reset_confirm'))) {
       resetAll();
     }
   };
@@ -462,12 +464,12 @@ function AppShell({
         <div className="relative z-10 flex w-full flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <h1 className="border-l-4 border-gray-900 pl-4 text-4xl font-black leading-none tracking-tight uppercase text-gray-900 md:text-5xl">
-              {t('app_name')}
+              {text('app_name')}
             </h1>
             <div className="flex flex-wrap items-center gap-4 pl-1 text-[10px] font-mono uppercase tracking-widest text-gray-500">
               <span className="flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${safeControl.isInputDisabled ? 'bg-red-500' : 'bg-green-600'}`}></span>
-                {safeControl.isInputDisabled ? t('input_blocked') : t('input_active')}
+                {safeControl.isInputDisabled ? text('input_blocked') : text('input_active')}
               </span>
               <span className="text-gray-300">|</span>
               <div className="flex gap-2">
@@ -492,11 +494,11 @@ function AppShell({
             <div className="flex flex-wrap items-center gap-2">
               <span className="flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-green-600">
                 <Cloud size={14} />
-                {t('system_operational')}
+                {text('system_operational')}
               </span>
               <span className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-500">
                 <AlertTriangle size={14} />
-                {safeControl.isInputDisabled ? t('input_blocked') : t('input_active')}
+                {safeControl.isInputDisabled ? text('input_blocked') : text('input_active')}
               </span>
             </div>
           </div>
@@ -509,9 +511,9 @@ function AppShell({
             <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="mb-2 flex items-center gap-2">
                 <ShieldCheck size={16} className="text-green-600" />
-                <h2 className="text-xl font-black tracking-tighter uppercase">{t('new_execution')}</h2>
+                <h2 className="text-xl font-black tracking-tighter uppercase">{text('new_execution')}</h2>
               </div>
-              {children}
+              {safeChildren}
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -520,11 +522,11 @@ function AppShell({
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900"
               >
                 <Download size={14} />
-                {t('backup')}
+                {text('backup')}
               </button>
               <label className="relative flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900">
                 <Upload size={14} />
-                {t('restore')}
+                {text('restore')}
                 <input type="file" accept=".json" onChange={handleImport} className="absolute inset-0 cursor-pointer opacity-0" />
               </label>
               <button
@@ -532,7 +534,7 @@ function AppShell({
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
               >
                 <Trash2 size={14} />
-                {t('wipe')}
+                {text('wipe')}
               </button>
             </div>
           </aside>
@@ -543,28 +545,28 @@ function AppShell({
                 onClick={() => setActiveTab('positions')}
                 className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'positions' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
               >
-                {t('active')}
+                {text('active')}
                 {activeTab === 'positions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
               </button>
               <button
                 onClick={() => setActiveTab('history')}
                 className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'history' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
               >
-                {t('history')}
+                {text('history')}
                 {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
               </button>
               <button
                 onClick={() => setActiveTab('long_term')}
                 className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'long_term' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
               >
-                {t('long_term')}
+                {text('long_term')}
                 {activeTab === 'long_term' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'settings' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
               >
-                {t('config')}
+                {text('config')}
                 {activeTab === 'settings' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
               </button>
             </nav>
