@@ -6347,6 +6347,7 @@ useEffect(() => {
 
 
     <div className="space-y-6">
+      {console.log("[RENDER_A]")}
 
 
 
@@ -6392,18 +6393,21 @@ useEffect(() => {
               />
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {filteredCoins.slice(0, 6).map((coin) => (
-                <button
-                  key={coin}
-                  type="button"
-                  onClick={() => handleSelectCoin(coin)}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                    selectedCoin === coin ? 'border-green-500 text-green-600 bg-green-50' : 'border-gray-300 text-gray-600'
-                  }`}
-                >
-                  {coin.replace('KRW-', '')}
-                </button>
-              ))}
+              {filteredCoins.slice(0, 6).map((coin) => {
+                console.log('[MAP_ITEM]', coin);
+                return (
+                  <button
+                    key={coin}
+                    type="button"
+                    onClick={() => handleSelectCoin(coin)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                      selectedCoin === coin ? 'border-green-500 text-green-600 bg-green-50' : 'border-gray-300 text-gray-600'
+                    }`}
+                  >
+                    {coin.replace('KRW-', '')}
+                  </button>
+                );
+              })}
               {isCustomCoin && (
                 <button
                   type="button"
@@ -6566,7 +6570,11 @@ useEffect(() => {
 
 
 
-            <div className="text-sm font-semibold">{String(Array.isArray(watchlist) ? watchlist.map((symbol) => String(symbol)).join(' / ') : '')}</div>
+            {console.log("[RENDER_C]")}
+            <div className="text-sm font-semibold">{String(Array.isArray(watchlist) ? watchlist.map((symbol) => {
+              console.log('[MAP_ITEM]', symbol);
+              return String(symbol);
+            }).join(' / ') : '')}</div>
 
 
 
@@ -6798,11 +6806,15 @@ useEffect(() => {
           <div className="p-4 border rounded mt-4">
             <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
 
+            {console.log("[RENDER_B]")}
             {entryState === 'ENTRY' ? (
                <div className="text-green-500">진입 가능</div>
             ) : (
               <div className="text-sm">
-                {String(Array.isArray(failReasons) ? failReasons.slice(0, 2).map((reason) => String(reason)).join(' / ') : '')}
+                {String(Array.isArray(failReasons) ? failReasons.slice(0, 2).map((reason) => {
+                  console.log('[MAP_ITEM]', reason);
+                  return String(reason);
+                }).join(' / ') : '')}
               </div>
             )}
           </div>
