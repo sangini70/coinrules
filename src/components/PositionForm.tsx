@@ -658,7 +658,7 @@ export function PositionForm() {
 
 
 
-  const safeSettings = settings ?? DEFAULT_SETTINGS;
+  const safeSettings = settings ?? {};
 
 
 
@@ -666,7 +666,7 @@ export function PositionForm() {
 
 
 
-  const safeControl = control ?? DEFAULT_CONTROL;
+  const safeControl = control ?? {};
 
 
 
