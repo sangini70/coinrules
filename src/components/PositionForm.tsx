@@ -641,7 +641,7 @@ export function PositionForm() {
 
 
 
-  const { settings, signals, control, clearMarketState, addPosition, isCoinInCooldown } = useAppStore();
+  const { settings, signals, control, clearMarketState, addPosition, isCoinInCooldown, getCooldownRemaining } = useAppStore();
   const tFromStore = useAppStore((state) => state.t);
 
 
