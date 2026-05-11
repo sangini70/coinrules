@@ -6819,10 +6819,16 @@ useEffect(() => {
                <div className="text-green-500">진입 가능</div>
             ) : (
               <div className="text-sm">
-                {String(Array.isArray(failReasons) ? failReasons.slice(0, 2).map((reason) => {
-                  console.log('[MAP_ITEM]', reason);
-                  return String(reason);
-                }).join(' / ') : '')}
+                {Array.isArray(failReasons)
+                  ? failReasons
+                      .map((reason) => {
+                        console.log('[MAP_ITEM]', reason);
+                        return typeof reason === 'object' && reason !== null
+                          ? JSON.stringify(reason)
+                          : String(reason);
+                      })
+                      .join(' / ')
+                  : String(failReasons ?? '')}
               </div>
             )}
           </div>
