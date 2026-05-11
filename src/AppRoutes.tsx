@@ -1,4 +1,4 @@
-import { isValidElement, useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { Component, isValidElement, useEffect, useRef, useState, type ChangeEvent, type ErrorInfo, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AlertTriangle, Cloud, Download, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { Layout } from './components/Layout';
@@ -34,6 +34,28 @@ type DangerPosition = Position & {
   actionSignal: '손절 실행' | '익절 실행' | '관망';
   isDangerCard: boolean;
 };
+
+// Debug-only boundary to capture React error #31 component stacks.
+class React31Boundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown, info: ErrorInfo) {
+    console.error('[REACT31_BOUNDARY]', error);
+    console.error('[REACT31_BOUNDARY_STACK]', info.componentStack);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+
+    return this.props.children;
+  }
+}
 
 const asString = (value: unknown, fallback = '-') => String(value ?? fallback);
 
@@ -630,9 +652,13 @@ export default function AppRoutes() {
 
   const dangerPosition = positions.find((position) => position.isDangerCard) ?? null;
 
-  return dangerPosition ? (
-    <DecisionMode positions={positions} dangerPosition={dangerPosition} onSell={handleSell} />
-  ) : (
-    <NormalMode positions={positions} onSell={handleSell} />
+  return (
+    <React31Boundary>
+      {dangerPosition ? (
+        <DecisionMode positions={positions} dangerPosition={dangerPosition} onSell={handleSell} />
+      ) : (
+        <NormalMode positions={positions} onSell={handleSell} />
+      )}
+    </React31Boundary>
   );
 }
