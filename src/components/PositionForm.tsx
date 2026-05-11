@@ -633,6 +633,7 @@ const writeFallbackSettings = (watchlist: string[], selectedCoin: string) => {
 };
 
 export function PositionForm() {
+  console.log("[PF_TOP_ENTER]");
 
 
 
@@ -6329,6 +6330,7 @@ useEffect(() => {
   renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
   renderDebugValue('entryState', entryState);
   renderDebugValue('authPanel', authPanel);
+  console.log("[PF_BEFORE_RETURN]");
 
   return (
 
