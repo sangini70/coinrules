@@ -6381,6 +6381,7 @@ useEffect(() => {
 
 
 
+          {false && (
           <div className="p-4 border rounded">
             <div className="text-sm text-gray-500">종목 선택</div>
             <div className="mt-2 flex gap-2">
@@ -6438,6 +6439,7 @@ useEffect(() => {
               ?????諛몃마??????影?력?? {selectedCoin.replace('KRW-', '')}
             </div>
           </div>
+          )}
 
           {false && (
           <div className="p-4 border rounded">
