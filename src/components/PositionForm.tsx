@@ -4250,6 +4250,7 @@ export function PositionForm() {
   console.log('[REACT31_DEBUG]', 'signals[selectedCoin]', typeof (selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), Array.isArray(selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), selectedCoin ? safeSignals?.[selectedCoin] ?? null : null);
   console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
   console.log("[STEP_3]");
+  console.log("[STEP_3]");
 
 
 
