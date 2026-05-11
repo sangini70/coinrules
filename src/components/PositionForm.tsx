@@ -708,6 +708,7 @@ export function PositionForm() {
 
 
   const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
+  console.log("[STEP_4]");
 
 
 
@@ -4226,6 +4227,7 @@ export function PositionForm() {
   const selectedCoin = formData.coin
     ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
     : '';
+  console.log("[STEP_1]");
 
 
 
@@ -4242,10 +4244,12 @@ export function PositionForm() {
 
 
   const safeSignal = selectedCoin ? safeSignals?.[selectedCoin] ?? null : null;
+  console.log("[STEP_2]");
   console.log('[REACT31_DEBUG]', 'safeSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
   console.log('[REACT31_DEBUG]', 'currentSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
   console.log('[REACT31_DEBUG]', 'signals[selectedCoin]', typeof (selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), Array.isArray(selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), selectedCoin ? safeSignals?.[selectedCoin] ?? null : null);
   console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
+  console.log("[STEP_3]");
 
 
 
