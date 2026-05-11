@@ -6357,6 +6357,12 @@ useEffect(() => {
   console.log("[PF_BEFORE_RETURN]");
 
   return (
+    <div className="p-4 text-sm text-gray-500">
+      POSITIONFORM_MINIMAL_RENDER
+    </div>
+  );
+
+  return (
 
 
 
