@@ -6578,23 +6578,16 @@ useEffect(() => {
 
 
 
+          {false && (
           <div className="p-4 border rounded">
-
-
-
             <div className="text-sm text-gray-500">현재 상태</div>
-
-
-
             {console.log("[RENDER_C]")}
             <div className="text-sm font-semibold">{String(Array.isArray(watchlist) ? watchlist.map((symbol) => {
               console.log('[MAP_ITEM]', symbol);
               return String(symbol);
             }).join(' / ') : '')}</div>
-
-
-
           </div>
+          )}
 
 
 
@@ -6683,6 +6676,7 @@ useEffect(() => {
 
 
 
+          {false && (
           <div className="p-4 border rounded mt-4">
 
 
@@ -6697,12 +6691,14 @@ useEffect(() => {
 
           </div>
 
+          )}
 
 
 
 
 
 
+          {false && (
           <div className="p-4 border rounded mt-4">
 
 
@@ -6725,6 +6721,7 @@ useEffect(() => {
 
           </div>
 
+          )}
 
 
 
@@ -6973,6 +6970,7 @@ useEffect(() => {
 
                 {String(liquidityBlockMessage)}
 
+          )}
 
 
               </p>
