@@ -6343,6 +6343,13 @@ useEffect(() => {
   renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
   renderDebugValue('entryState', entryState);
   renderDebugValue('authPanel', authPanel);
+  const failReasonsText = Array.isArray(failReasons)
+    ? failReasons
+        .map((reason) =>
+          typeof reason === 'object' && reason !== null ? JSON.stringify(reason) : String(reason)
+        )
+        .join(' / ')
+    : String(failReasons ?? '');
   console.log("[CHK] reasons", reasons);
   console.log("[CHK] failReasons", failReasons);
   console.log("[CHK] liquidityRiskMessage", liquidityBlockMessage);
@@ -6819,16 +6826,7 @@ useEffect(() => {
                <div className="text-green-500">진입 가능</div>
             ) : (
               <div className="text-sm">
-                {Array.isArray(failReasons)
-                  ? failReasons
-                      .map((reason) => {
-                        console.log('[MAP_ITEM]', reason);
-                        return typeof reason === 'object' && reason !== null
-                          ? JSON.stringify(reason)
-                          : String(reason);
-                      })
-                      .join(' / ')
-                  : String(failReasons ?? '')}
+                {failReasonsText}
               </div>
             )}
           </div>
