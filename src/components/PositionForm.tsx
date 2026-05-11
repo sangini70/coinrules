@@ -6779,6 +6779,7 @@ useEffect(() => {
 
 
 
+          {false && (
           <div className={`mt-3 p-4 border rounded-lg ${liquidityRisk === 'NO_ENTRY' ? 'bg-status-danger/5 border-status-danger/20' : 'bg-gray-50 border-text-main/10'}`}>
 
 
@@ -6920,6 +6921,7 @@ useEffect(() => {
 
 
           </div>
+          )}
 
 
 
