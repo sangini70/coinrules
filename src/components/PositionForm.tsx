@@ -6330,6 +6330,11 @@ useEffect(() => {
   renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
   renderDebugValue('entryState', entryState);
   renderDebugValue('authPanel', authPanel);
+  console.log("[CHK] reasons", reasons);
+  console.log("[CHK] failReasons", failReasons);
+  console.log("[CHK] liquidityRiskMessage", liquidityBlockMessage);
+  console.log("[CHK] entryState", entryState);
+  console.log("[CHK] authPanel", authPanel);
   console.log("[PF_BEFORE_RETURN]");
 
   return (
