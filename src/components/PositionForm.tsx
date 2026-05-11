@@ -641,7 +641,7 @@ export function PositionForm() {
 
 
 
-  const { settings, signals, control, clearMarketState } = useAppStore();
+  const { settings, signals, control, clearMarketState, addPosition } = useAppStore();
   const tFromStore = useAppStore((state) => state.t);
 
 
