@@ -643,7 +643,6 @@ export function PositionForm() {
 
   const { settings, signals } = useAppStore();
   const tFromStore = useAppStore((state) => state.t);
-  return null;
 
 
 
@@ -4249,6 +4248,8 @@ export function PositionForm() {
   console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
   console.log("[STEP_3]");
   console.log("[STEP_3]");
+  const currentSignal = selectedCoin ? signals[selectedCoin] : null;
+  return null;
 
 
 
