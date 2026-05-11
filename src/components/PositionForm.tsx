@@ -1511,7 +1511,7 @@ export function PositionForm() {
 
 
 
-      alert('존재하지 않는 코인입니다');
+      alert("\uC874\uC7AC\uD558\uC9C0 \uC54A\uB294 \uCF54\uC778\uC785\uB2C8\uB2E4");
 
 
 
@@ -1543,7 +1543,7 @@ export function PositionForm() {
 
 
 
-      alert('筌ㅼ뮆? 10揶쏆뮄?댐쭪? ?곕떽???????됰뮸??덈뼄');
+      alert('?饔낅떽?????壤? 10????ル늉??????? ?????댄뱼??????????????????놁졄');
 
 
 
@@ -2828,7 +2828,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm font-semibold">{authUserInfo.email ?? '??李????곸벉'}</div>
+          <div className="text-sm font-semibold">{authUserInfo.email ?? '嚥≪뮄?????李????곸벉'}</div>
 
 
 
@@ -2884,8 +2884,7 @@ export function PositionForm() {
 
 
 
-            嚥≪뮄??袁⑹뜍
-
+            ?癲??嶺??????諛몃마??
 
 
 
@@ -2924,7 +2923,7 @@ export function PositionForm() {
 
 
 
-          <div className="text-sm text-gray-500">嚥≪뮄????袁⑹뒄</div>
+          <div className="text-sm text-gray-500">로그인 필요</div>
 
 
 
@@ -2972,7 +2971,7 @@ export function PositionForm() {
 
 
 
-            Google 嚥≪뮄???
+            Google 로그인
 
 
 
@@ -4681,7 +4680,7 @@ export function PositionForm() {
 
 
   const liquidityBlockMessage =
-    '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??';
+    '??????ル?????????⑹름??? ?饔낅챷維???????μ떜媛?걫????????뼿????怨쀫뮡???遺얘턁??????????놁졄.\n?????諛몃마?????怨쀫뮡????勇??????饔낅떽???????????쇰뮛??????꿔꺂??節낆젂???';
   console.log('[REACT31_DETAIL]', 'liquidityRiskMessage', JSON.stringify(liquidityBlockMessage, null, 2));
   console.log("[ISO_B]", "liquidityBlockMessage", typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
   console.log('[REACT31_DEBUG]', 'liquidityRiskMessage', typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
@@ -4824,7 +4823,7 @@ const blockEntry = (message: string) => {
 
       return blockEntry(
 
-        '?醫딅짗??雅뚯눘?? 椰꾧퀡???깆뵠 ?봔鈺곌퉲鍮??덈뼄.\n?袁⑹삺 鈺곌퀗援?癒?퐣 筌욊쑴???癰귣?履??뤾쉭??',
+        '??????ル?????????⑹름??? ?饔낅챷維???????μ떜媛?걫????????뼿????怨쀫뮡???遺얘턁??????????놁졄.\n?????諛몃마?????怨쀫뮡????勇??????饔낅떽???????????쇰뮛??????꿔꺂??節낆젂???',
 
       );
 
@@ -6383,7 +6382,7 @@ useEffect(() => {
 
 
           <div className="p-4 border rounded">
-            <div className="text-sm text-gray-500">?ル굝???醫뤾문</div>
+            <div className="text-sm text-gray-500">종목 선택</div>
             <div className="mt-2 flex gap-2">
               <input
                 type="text"
@@ -6436,7 +6435,7 @@ useEffect(() => {
               )}
             </div>
             <div className="mt-2 text-xs text-gray-500">
-              ?袁⑹삺 ?醫뤾문: {selectedCoin.replace('KRW-', '')}
+              ?????諛몃마??????影?력?? {selectedCoin.replace('KRW-', '')}
             </div>
           </div>
 
@@ -6545,7 +6544,7 @@ useEffect(() => {
 
 
 
-                ?곕떽?
+                ?????댄뱼??
 
 
 
@@ -6557,7 +6556,7 @@ useEffect(() => {
 
 
 
-                ?λ뜃由??
+                ??????멸괜???
 
 
               </button>
@@ -6581,7 +6580,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm text-gray-500">감시 코인</div>
+            <div className="text-sm text-gray-500">현재 상태</div>
 
 
 
@@ -6606,7 +6605,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm text-gray-500">?袁⑹삺 ?怨밴묶</div>
+            <div className="text-sm text-gray-500">진입 단계</div>
 
 
 
@@ -6637,12 +6636,12 @@ useEffect(() => {
 
           {/* TEMP_ISOLATE_ASIDE_BOTTOM_START
           <div className="p-4 border rounded mt-4">
-            <div className="text-xs text-gray-400 mb-1">지금 상황 해석</div>
-            <div className="text-sm text-gray-500">지금 결론</div>
-            <div className="text-sm">이유 요약: {String(explainReason)}</div>
-            <div className="text-sm">다음 행동: {String(explainReason)}</div>
-            <div className="text-sm">리스크: {String(explainReason)}</div>
-            <div className="text-sm">해석: {String(explainReason)}</div>
+            <div className="text-xs text-gray-400 mb-1">?꿔꺂???????????????ㅻ샑筌?/div>
+            <div className="text-sm text-gray-500">?꿔꺂??????嚥▲굧????덈춣?/div>
+            <div className="text-sm">???? ???됰Ŋ??? {String(explainReason)}</div>
+            <div className="text-sm">???繹먮굞??????ㅻ깹壤? {String(explainReason)}</div>
+            <div className="text-sm">??잙갭큔?딆뼍吏?? {String(explainReason)}</div>
+            <div className="text-sm">????ㅻ샑筌? {String(explainReason)}</div>
           </div>
           )}
 
@@ -6656,7 +6655,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm text-gray-500">판단 근거</div>
+            <div className="text-sm text-gray-500">???????????筌?/div>
 
 
 
@@ -6684,7 +6683,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm text-gray-500">진입 단계</div>
+            <div className="text-sm text-gray-500">?꿔꺂???????壤굿????/div>
 
 
 
@@ -6704,7 +6703,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm text-gray-500">신호 점수</div>
+            <div className="text-sm text-gray-500">????ъ군濚??????/div>
 
 
 
@@ -6733,7 +6732,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm text-gray-500">ENTRY 체크</div>
+            <div className="text-sm text-gray-500">ENTRY ?꿔꺂?????용Ъ?/div>
 
 
 
@@ -6818,18 +6817,20 @@ useEffect(() => {
 
 
 
+          {false && (
           <div className="p-4 border rounded mt-4">
-            <div className="text-sm text-gray-500">ENTRY 실패 이유</div>
+            <div className="text-sm text-gray-500">ENTRY ?????곌숯 ????</div>
 
             {console.log("[RENDER_B]")}
             {entryState === 'ENTRY' ? (
-               <div className="text-green-500">진입 가능</div>
+               <div className="text-green-500">?꿔꺂???????醫딆쓧???/div>
             ) : (
               <div className="text-sm">
                 {failReasonsText}
               </div>
             )}
           </div>
+          )}
 
 
 
@@ -6842,7 +6843,7 @@ useEffect(() => {
 
 
 
-            <div className="text-sm font-semibold text-gray-700 mb-2">참고 데이터</div>
+            <div className="text-sm font-semibold text-gray-700 mb-2">?꿔꺂??癰귥빖????????????/div>
 
 
 
