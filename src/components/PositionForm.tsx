@@ -6361,10 +6361,6 @@ useEffect(() => {
 
 
     <div className="space-y-6">
-      {console.log("[RENDER_A]")}
-
-
-
       {false && (isValidElement(authPanel) ? authPanel : null)}
 
 
@@ -6581,7 +6577,6 @@ useEffect(() => {
           {false && (
           <div className="p-4 border rounded">
             <div className="text-sm text-gray-500">현재 상태</div>
-            {console.log("[RENDER_C]")}
             <div className="text-sm font-semibold">{String(Array.isArray(watchlist) ? watchlist.map((symbol) => {
               console.log('[MAP_ITEM]', symbol);
               return String(symbol);
@@ -6822,7 +6817,6 @@ useEffect(() => {
           <div className="p-4 border rounded mt-4">
             <div className="text-sm text-gray-500">ENTRY ?????곌숯 ????</div>
 
-            {console.log("[RENDER_B]")}
             {entryState === 'ENTRY' ? (
                <div className="text-green-500">?꿔꺂???????醫딆쓧???/div>
             ) : (
