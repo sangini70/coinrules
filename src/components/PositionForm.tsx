@@ -6308,6 +6308,28 @@ useEffect(() => {
 
 
 
+  const renderDebugValue = (name: string, value: unknown) => {
+    const isObjectLike = typeof value === 'object' && value !== null;
+    console.log('[RENDER_DEBUG]', name, {
+      typeof: typeof value,
+      isArray: Array.isArray(value),
+      isValidElement: isValidElement(value as React.ReactElement),
+      keys: isObjectLike ? Object.keys(value as Record<string, unknown>).length : 0,
+      preview: value,
+    });
+  };
+
+  renderDebugValue('selectedCoin', selectedCoin);
+  renderDebugValue('safeSignal', safeSignal);
+  renderDebugValue('currentSignal', safeSignal);
+  renderDebugValue('marketAnalysis', marketAnalysis);
+  renderDebugValue('prepareState', prepareState);
+  renderDebugValue('reasons', reasons);
+  renderDebugValue('failReasons', failReasons);
+  renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
+  renderDebugValue('entryState', entryState);
+  renderDebugValue('authPanel', authPanel);
+
   return (
 
 
