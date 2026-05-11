@@ -641,7 +641,7 @@ export function PositionForm() {
 
 
 
-  const { settings } = useAppStore();
+  const { settings, signals } = useAppStore();
   const tFromStore = useAppStore((state) => state.t);
   return null;
 
