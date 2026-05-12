@@ -220,8 +220,8 @@ export const useAppStore = create<AppStore>()(
                 if (
                   Array.isArray(oneMinuteCandles) &&
                   Array.isArray(fiveMinuteCandles) &&
-                  oneMinuteCandles.length > 50 &&
-                  fiveMinuteCandles.length > 200
+                  oneMinuteCandles.length > 0 &&
+                  fiveMinuteCandles.length > 0
                 ) {
                   rawSignal = analyzeSignal(oneMinuteCandles, fiveMinuteCandles);
                 }
