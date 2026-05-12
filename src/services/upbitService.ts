@@ -25,7 +25,7 @@ const buildTickerUrl = (market: string) =>
   `${BASE_URL}/ticker?market=${encodeURIComponent(normalizeMarket(market))}`;
 
 const buildCandleUrl = (market: string, count: number, unit: number) =>
-  `${BASE_URL}/candles/minutes/${encodeURIComponent(unit)}?market=${encodeURIComponent(normalizeMarket(market))}&count=${encodeURIComponent(count)}`;
+  `${BASE_URL}/candles?unit=${encodeURIComponent(unit)}&market=${encodeURIComponent(normalizeMarket(market))}&count=${encodeURIComponent(count)}`;
 
 export const fetchMarkets = async (): Promise<string[]> => {
   try {
