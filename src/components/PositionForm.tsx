@@ -3032,20 +3032,7 @@ export function PositionForm() {
 
 
   useEffect(() => {
-    console.log('[PF_FLOW] effect start market analysis', {
-      market,
-      watchlistLength: watchlist.length,
-      selectedCoin,
-      formCoin: formData.coin,
-    });
-
     if (!market) {
-      console.log('[PF_FLOW] blocked no market market analysis', {
-        market,
-        watchlistLength: watchlist.length,
-        selectedCoin,
-        formCoin: formData.coin,
-      });
       setMarketAnalysis(null);
       return;
     }
@@ -3083,7 +3070,6 @@ export function PositionForm() {
 
 
     const fetchMarketData = async () => {
-      console.log('[PF_FLOW]', 'fetchMarketData start', market);
 
 
 
@@ -3931,12 +3917,9 @@ export function PositionForm() {
 
 
 
-    console.log('[PF_FLOW] effect start fetch path', { market });
     if (!market) return;
 
-    console.log('[PF_FLOW] before fetchSignalsAction', { market });
     void fetchSignalsAction(market);
-    console.log('[PF_FLOW] after fetchSignalsAction call', { market });
 
 
 
@@ -3944,7 +3927,6 @@ export function PositionForm() {
 
 
 
-    console.log('[PF_FLOW] before fetchMarketData', { market });
     void fetchMarketData();
 
 
@@ -3961,9 +3943,7 @@ export function PositionForm() {
 
 
 
-      console.log('[PF_FLOW] interval before fetchSignalsAction', { market });
       void fetchSignalsAction(market);
-      console.log('[PF_FLOW] interval after fetchSignalsAction', { market });
 
 
 
@@ -3971,7 +3951,6 @@ export function PositionForm() {
 
 
 
-      console.log('[PF_FLOW] interval before fetchMarketData', { market });
       void fetchMarketData();
 
 
@@ -4248,7 +4227,6 @@ export function PositionForm() {
   const selectedCoin = formData.coin
     ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
     : '';
-  console.log('[PF_FLOW]', 'selectedCoin value', selectedCoin);
 
 
 
@@ -4272,8 +4250,13 @@ export function PositionForm() {
   console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
   console.log("[STEP_3]");
   console.log("[STEP_3]");
-  const currentSignal = null;
-  return null;
+  const currentSignal = safeSignal ?? {
+    state: 'OBSERVE' as const,
+    trend: 'neutral' as const,
+    volume: 'normal' as const,
+    breakout: 'none' as const,
+    updatedAt: new Date(0).toISOString(),
+  };
 
 
 
