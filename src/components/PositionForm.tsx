@@ -3032,9 +3032,10 @@ export function PositionForm() {
 
 
   useEffect(() => {
-
+    console.log('[PF_FLOW]', 'effect start market analysis', market, watchlist.length);
 
     if (!market) {
+      console.log('[PF_FLOW]', 'blocked no market market analysis', market, watchlist.length);
       setMarketAnalysis(null);
       return;
     }
@@ -3072,6 +3073,7 @@ export function PositionForm() {
 
 
     const fetchMarketData = async () => {
+      console.log('[PF_FLOW]', 'fetchMarketData start', market);
 
 
 
@@ -3919,9 +3921,12 @@ export function PositionForm() {
 
 
 
+    console.log('[PF_FLOW]', 'effect start fetch path', market);
     if (!market) return;
 
+    console.log('[PF_FLOW]', 'before fetchSignalsAction', market);
     void fetchSignalsAction(market);
+    console.log('[PF_FLOW]', 'after fetchSignalsAction call', market);
 
 
 
@@ -3929,6 +3934,7 @@ export function PositionForm() {
 
 
 
+    console.log('[PF_FLOW]', 'before fetchMarketData', market);
     void fetchMarketData();
 
 
@@ -3945,7 +3951,9 @@ export function PositionForm() {
 
 
 
+      console.log('[PF_FLOW]', 'interval before fetchSignalsAction', market);
       void fetchSignalsAction(market);
+      console.log('[PF_FLOW]', 'interval after fetchSignalsAction', market);
 
 
 
@@ -3953,6 +3961,7 @@ export function PositionForm() {
 
 
 
+      console.log('[PF_FLOW]', 'interval before fetchMarketData', market);
       void fetchMarketData();
 
 
@@ -4229,7 +4238,7 @@ export function PositionForm() {
   const selectedCoin = formData.coin
     ? (formData.coin.startsWith('KRW-') ? formData.coin : `KRW-${formData.coin}`)
     : '';
-  console.log("[STEP_1]");
+  console.log('[PF_FLOW]', 'selectedCoin value', selectedCoin);
 
 
 
