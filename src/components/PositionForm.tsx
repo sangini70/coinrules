@@ -3914,7 +3914,7 @@ export function PositionForm() {
 
 
 
-    if (!market || watchlist.length === 0) return;
+    if (!market) return;
 
     void fetchSignalsAction(market);
 
