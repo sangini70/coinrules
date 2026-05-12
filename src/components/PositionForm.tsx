@@ -6811,19 +6811,20 @@ useEffect(() => {
 
 
 
-          {false && (
-          <div className="p-4 border rounded mt-4">
-            <div className="text-sm text-gray-500">ENTRY ?????怨뚯댅 ????</div>
-
-            {entryState === 'ENTRY' ? (
-               <div className="text-green-500">?轅붽틓????????ル봿????/div>
-            ) : (
-              <div className="text-sm">
-                {failReasonsText}
-              </div>
-            )}
+          <div className="flex flex-wrap gap-2 border rounded mt-4 p-4">
+            <button type="button" className="rounded-full border px-3 py-1 text-xs font-semibold">
+              단타 포지션
+            </button>
+            <button type="button" className="rounded-full border px-3 py-1 text-xs font-semibold">
+              거래 기록
+            </button>
+            <button type="button" className="rounded-full border px-3 py-1 text-xs font-semibold">
+              장기 보유
+            </button>
+            <button type="button" className="rounded-full border px-3 py-1 text-xs font-semibold">
+              설정
+            </button>
           </div>
-          )}
 
 
 
