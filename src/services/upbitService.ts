@@ -105,21 +105,19 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
 
   try {
     const requestUrl = buildCandleUrl(targetMarket, count, unit);
-    console.log('[fetchCandles]', 'requestUrl', requestUrl);
+    console.log('[fetchCandles]', 'before fetch', requestUrl);
     const response = await fetch(requestUrl);
-    if (!response.ok) {
-      console.warn(
-        `Upbit Candle API request failed for ${targetMarket}: ${response.status} ${response.statusText} (${requestUrl})`,
-      );
-      return [];
-    }
+    console.log('[fetchCandles]', 'after fetch', requestUrl);
+    console.log('[fetchCandles]', 'response.ok', response.ok);
+    console.log('[fetchCandles]', 'response.status', response.status);
+    console.log('[fetchCandles]', 'before json', requestUrl);
     const payload = await parsePayload<any[]>(response);
+    console.log('[fetchCandles]', 'after json', requestUrl);
 
     const data = Array.isArray(payload)
       ? payload
       : payload?.data;
 
-    console.log('[fetchCandles]', 'response.status', response.status);
     console.log('[fetchCandles]', 'Array.isArray(data)', Array.isArray(data));
     console.log('[fetchCandles]', 'data.length', Array.isArray(data) ? data.length : -1);
     console.log(
@@ -132,10 +130,15 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
       console.warn('Invalid payload structure:', payload);
       return [];
     }
-    console.log('[fetchCandles]', 'returning candles.length', data.length);
+    console.log('[fetchCandles]', 'final length', data.length);
     return data;
   } catch (error) {
-    console.warn(`Upbit Candle API fetch failed for ${targetMarket}: ${error instanceof Error ? error.message : 'Unknown'}`);
+    console.warn(
+      '[fetchCandles]',
+      'catch',
+      error instanceof Error ? error.name : 'UnknownError',
+      error instanceof Error ? error.message : String(error),
+    );
     return [];
   }
 };
