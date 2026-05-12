@@ -6352,8 +6352,6 @@ useEffect(() => {
   console.log("[CHK] authPanel", authPanel);
   console.log("[PF_BEFORE_RETURN]");
 
-  return null;
-
   return (
 
 
@@ -6824,6 +6822,19 @@ useEffect(() => {
             <button type="button" className="rounded-full border px-3 py-1 text-xs font-semibold">
               설정
             </button>
+            {activePositions.map((position) => (
+              <div key={position.id}>
+                {String(position.coin ?? '')}
+                {String(position.stopLossPrice ?? '')}
+                {String(position.takeProfitPrice1 ?? '')}
+                {String(position.takeProfitPrice2 ?? '')}
+                {String(position.profitRate ?? '')}
+                {String(position.entryAmount ?? '')}
+                {String(position.buyPrice ?? '')}
+                {String(position.memo ?? '')}
+                {String(position.isLocked ?? '')}
+              </div>
+            ))}
           </div>
 
 
