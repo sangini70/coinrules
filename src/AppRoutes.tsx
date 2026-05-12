@@ -635,7 +635,14 @@ export default function AppRoutes() {
 
     if (hasDangerNow) {
       setDangerLock(true);
-      setDangerPositions(positions.filter((position) => position.isDangerCard));
+      setDangerPositions((prevDangerPositions) => {
+        const nextDangerPositions = positions.filter((position) => position.isDangerCard);
+        const isSameDangerPositions =
+          prevDangerPositions.length === nextDangerPositions.length &&
+          prevDangerPositions.every((item, index) => item.id === nextDangerPositions[index]?.id);
+
+        return isSameDangerPositions ? prevDangerPositions : nextDangerPositions;
+      });
     }
   }, [positions]);
 
