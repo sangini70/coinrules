@@ -232,16 +232,6 @@ export const useAppStore = create<AppStore>()(
               }
 
               if (!rawSignal) {
-                set((state) => {
-                  const nextSignals = { ...state.signals };
-                  const nextBuffer = { ...state.signalBuffer };
-                  delete nextSignals[targetCoin];
-                  delete nextBuffer[targetCoin];
-                  return {
-                    signals: nextSignals,
-                    signalBuffer: nextBuffer,
-                  };
-                });
                 return;
               }
 
