@@ -1276,10 +1276,15 @@ export function PositionForm() {
           if (!isMounted) return;
 
           if (remoteSettings) {
-            setWatchlist(remoteSettings.watchlist);
+            const nextWatchlist = Array.isArray(remoteSettings.watchlist) ? remoteSettings.watchlist : [];
+            setWatchlist(nextWatchlist);
             setFormData((prev) => ({
               ...prev,
-              coin: remoteSettings.selectedCoin || '',
+              coin:
+                remoteSettings.selectedCoin ||
+                nextWatchlist[0] ||
+                filteredCoins[0] ||
+                '',
             }));
             setWatchlistStateSource('remote');
             setWatchlistSettingsLoaded(true);
