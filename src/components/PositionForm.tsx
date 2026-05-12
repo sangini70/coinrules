@@ -2555,7 +2555,13 @@ export function PositionForm() {
 
 
 
-    const explainReason = reasons.join(' / ');
+    const explainReason = reasons
+      .map((reason) =>
+        typeof reason === 'object' && reason !== null
+          ? String((reason as Record<string, unknown>).label ?? (reason as Record<string, unknown>).text ?? (reason as Record<string, unknown>).message ?? JSON.stringify(reason))
+          : String(reason)
+      )
+      .join(' / ');
     console.log('[REACT31_DEBUG]', 'explainReason', typeof explainReason, Array.isArray(explainReason), explainReason);
 
     const failReasons = reasons;
@@ -5551,7 +5557,13 @@ const blockEntry = (message: string) => {
 
 
 
-      explainReason: reasons.join(' / '),
+      explainReason: reasons
+        .map((reason) =>
+          typeof reason === 'object' && reason !== null
+            ? String((reason as Record<string, unknown>).label ?? (reason as Record<string, unknown>).text ?? (reason as Record<string, unknown>).message ?? JSON.stringify(reason))
+            : String(reason)
+        )
+        .join(' / '),
 
 
 
