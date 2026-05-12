@@ -3032,10 +3032,20 @@ export function PositionForm() {
 
 
   useEffect(() => {
-    console.log('[PF_FLOW]', 'effect start market analysis', market, watchlist.length);
+    console.log('[PF_FLOW] effect start market analysis', {
+      market,
+      watchlistLength: watchlist.length,
+      selectedCoin,
+      formCoin: formData.coin,
+    });
 
     if (!market) {
-      console.log('[PF_FLOW]', 'blocked no market market analysis', market, watchlist.length);
+      console.log('[PF_FLOW] blocked no market market analysis', {
+        market,
+        watchlistLength: watchlist.length,
+        selectedCoin,
+        formCoin: formData.coin,
+      });
       setMarketAnalysis(null);
       return;
     }
@@ -3921,12 +3931,12 @@ export function PositionForm() {
 
 
 
-    console.log('[PF_FLOW]', 'effect start fetch path', market);
+    console.log('[PF_FLOW] effect start fetch path', { market });
     if (!market) return;
 
-    console.log('[PF_FLOW]', 'before fetchSignalsAction', market);
+    console.log('[PF_FLOW] before fetchSignalsAction', { market });
     void fetchSignalsAction(market);
-    console.log('[PF_FLOW]', 'after fetchSignalsAction call', market);
+    console.log('[PF_FLOW] after fetchSignalsAction call', { market });
 
 
 
@@ -3934,7 +3944,7 @@ export function PositionForm() {
 
 
 
-    console.log('[PF_FLOW]', 'before fetchMarketData', market);
+    console.log('[PF_FLOW] before fetchMarketData', { market });
     void fetchMarketData();
 
 
@@ -3951,9 +3961,9 @@ export function PositionForm() {
 
 
 
-      console.log('[PF_FLOW]', 'interval before fetchSignalsAction', market);
+      console.log('[PF_FLOW] interval before fetchSignalsAction', { market });
       void fetchSignalsAction(market);
-      console.log('[PF_FLOW]', 'interval after fetchSignalsAction', market);
+      console.log('[PF_FLOW] interval after fetchSignalsAction', { market });
 
 
 
@@ -3961,7 +3971,7 @@ export function PositionForm() {
 
 
 
-      console.log('[PF_FLOW]', 'interval before fetchMarketData', market);
+      console.log('[PF_FLOW] interval before fetchMarketData', { market });
       void fetchMarketData();
 
 
