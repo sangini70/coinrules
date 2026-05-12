@@ -24,12 +24,14 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const response = await fetch(
-      `${UPBIT_BASE_URL}/candles/minutes/${unit}?market=${encodeURIComponent(market)}&count=${parsedCount}`,
-      { headers: { Accept: 'application/json' } },
-    );
+    const requestUrl = `${UPBIT_BASE_URL}/candles/minutes/${unit}?market=${encodeURIComponent(market)}&count=${parsedCount}`;
+    const response = await fetch(requestUrl, { headers: { Accept: 'application/json' } });
 
     if (!response.ok) {
+      const bodySnippet = await response.text();
+      console.error(
+        `Upbit request failed: status=${response.status} statusText=${response.statusText} url=${requestUrl} body=${bodySnippet.slice(0, 500)}`,
+      );
       throw new Error(`Upbit request failed with status ${response.status}`);
     }
 

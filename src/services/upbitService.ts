@@ -104,7 +104,14 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
   if (!targetMarket) return [];
 
   try {
-    const response = await fetch(buildCandleUrl(targetMarket, count, unit));
+    const requestUrl = buildCandleUrl(targetMarket, count, unit);
+    const response = await fetch(requestUrl);
+    if (!response.ok) {
+      console.warn(
+        `Upbit Candle API request failed for ${targetMarket}: ${response.status} ${response.statusText} (${requestUrl})`,
+      );
+      return [];
+    }
     const payload = await parsePayload<any[]>(response);
 
     const data = Array.isArray(payload)
