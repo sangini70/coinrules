@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent, useRef, isValidElement } from 'react';
+import { useState, useEffect, useMemo, FormEvent, useRef, isValidElement } from 'react';
 
 
 
@@ -633,6 +633,21 @@ const writeFallbackSettings = (watchlist: string[], selectedCoin: string) => {
 };
 
 export function PositionForm() {
+  const [test] = useState('OK');
+  const ref = useRef(null);
+  const memoTest = useMemo(() => 'MEMO_OK', []);
+  useEffect(() => {
+    setMarketAnalysisAction(null);
+  }, []);
+  const storeMarketList = useAppStore((state) => state.marketList);
+  const storeSignals = useAppStore((state) => state.signals);
+  const setMarketAnalysisAction = useAppStore((state) => state.setMarketAnalysis);
+  void test;
+  void ref;
+  void memoTest;
+  void storeMarketList;
+  void storeSignals;
+  void setMarketAnalysisAction;
   return <div>PF_TOP_RETURN</div>;
 
   // console.log("[PF_TOP_ENTER]");
