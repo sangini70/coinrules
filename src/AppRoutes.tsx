@@ -269,7 +269,7 @@ function AppShell({
             </nav>
 
             <div className="min-h-[600px]">
-              {activeTab === 'positions' && <ActionSignalPositionsView positions={positions} onSell={onSell} />}
+              {activeTab === 'positions' && null}
               {activeTab === 'history' && <TradeRecordsView />}
               {activeTab === 'long_term' && <LongTermView />}
               {activeTab === 'settings' && <SettingsPanel />}
@@ -338,11 +338,7 @@ export default function AppRoutes() {
 
   return (
     <React31Boundary>
-      {dangerPosition ? (
-        <DecisionMode positions={positions} dangerPosition={dangerPosition} onSell={handleSell} />
-      ) : (
-        <NormalMode positions={positions} onSell={handleSell} />
-      )}
+      {dangerPosition ? null : <NormalMode positions={positions} onSell={handleSell} />}
     </React31Boundary>
   );
 }
