@@ -642,6 +642,20 @@ export function PositionForm() {
   useEffect(() => {
     fetchSignalsAction();
   }, []);
+  useEffect(() => {
+    console.log("POLLING_EFFECT_ENTER");
+
+    console.log("POLLING_INTERVAL_CREATE");
+    const interval = window.setInterval(() => {
+      console.log("RUNWATCHLIST_CALL");
+      void runWatchlist();
+    }, 6000);
+
+    return () => {
+      console.log("POLLING_EFFECT_CLEANUP");
+      window.clearInterval(interval);
+    };
+  }, []);
   const storeMarketList = useAppStore((state) => state.marketList);
   const storeSignals = useAppStore((state) => state.signals);
   const setMarketAnalysisAction = useAppStore((state) => state.setMarketAnalysis);
