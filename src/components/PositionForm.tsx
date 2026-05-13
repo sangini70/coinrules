@@ -6268,7 +6268,7 @@ useEffect(() => {
 
 
 
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{t('input_blocked')}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{String(t('input_blocked'))}</span>
 
 
 
@@ -6280,7 +6280,7 @@ useEffect(() => {
 
 
 
-            {t('inputBlocked')}
+            {String(t('inputBlocked'))}
 
 
 
@@ -6300,11 +6300,11 @@ useEffect(() => {
 
 
 
-                ? t('blocked_limit')
+                ? String(t('blocked_limit'))
 
 
 
-                : t('blocked_tilt')}
+                : String(t('blocked_tilt'))}
 
 
 
@@ -6347,23 +6347,18 @@ useEffect(() => {
     });
   };
 
-  renderDebugValue('selectedCoin', selectedCoin);
-  renderDebugValue('safeSignal', safeSignal);
-  renderDebugValue('currentSignal', safeSignal);
-  renderDebugValue('marketAnalysis', marketAnalysis);
-  renderDebugValue('prepareState', prepareState);
-  renderDebugValue('reasons', reasons);
-  renderDebugValue('failReasons', failReasons);
-  renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
-  renderDebugValue('entryState', entryState);
-  renderDebugValue('authPanel', authPanel);
-  const failReasonsText = Array.isArray(failReasons)
-    ? failReasons
-        .map((reason) =>
-          typeof reason === 'object' && reason !== null ? JSON.stringify(reason) : String(reason)
-        )
-        .join(' / ')
-    : String(failReasons ?? '');
+  false && renderDebugValue('selectedCoin', selectedCoin);
+  false && renderDebugValue('safeSignal', safeSignal);
+  false && renderDebugValue('currentSignal', safeSignal);
+  false && renderDebugValue('marketAnalysis', marketAnalysis);
+  false && renderDebugValue('prepareState', prepareState);
+  false && renderDebugValue('reasons', reasons);
+  false && renderDebugValue('failReasons', failReasons);
+  false && renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
+  false && renderDebugValue('entryState', entryState);
+  false && renderDebugValue('authPanel', authPanel);
+  console.log('[ENTRY_STATE_TYPE]', typeof entryState, entryState);
+  const failReasonsText = '';
   console.log("[CHK] reasons", reasons);
   console.log("[CHK] failReasons", failReasons);
   console.log("[CHK] liquidityRiskMessage", liquidityBlockMessage);
@@ -6640,6 +6635,7 @@ useEffect(() => {
 
 
           {/* TEMP_ISOLATE_ASIDE_BOTTOM_START
+          {false && (
           <div className="p-4 border rounded mt-4">
             <div className="text-xs text-gray-400 mb-1">?轅붽틓????????????????살깙嶺?/div>
             <div className="text-sm text-gray-500">?轅붽틓???????β뼯援?????덉땃?/div>
