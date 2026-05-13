@@ -101,7 +101,7 @@ class React31Boundary extends Component<{ children: ReactNode }, { hasError: boo
 
     if (Array.isArray(children)) {
       const safeChildren = children.filter(isRenderableNode);
-      return safeChildren.length > 0 ? safeChildren : null;
+      return safeChildren.length > 0 ? <>{safeChildren}</> : null;
     }
 
     if (
