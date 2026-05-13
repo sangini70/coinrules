@@ -647,8 +647,8 @@ export function PositionForm() {
 
     console.log("POLLING_INTERVAL_CREATE");
     const interval = window.setInterval(() => {
-      console.log("RUNWATCHLIST_CALL");
-      void runWatchlist();
+      console.log("POLLING_TICK");
+      void fetchSignalsAction();
     }, 6000);
 
     return () => {
