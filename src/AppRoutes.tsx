@@ -342,41 +342,7 @@ function ActionSignalPositionsView({
           const pnlAmount = (Number(position.currentPrice ?? 0) - Number(position.buyPrice ?? 0)) * Number(position.quantity ?? 0);
           const pnlTone = pnlAmount > 0 ? 'text-green-500' : pnlAmount < 0 ? 'text-red-500' : 'text-gray-400';
 
-          return (
-            <div
-              key={position.id}
-              className={`flex flex-col gap-3 rounded-2xl border border-gray-200 p-4 shadow-sm ${tones.card}`}
-            >
-              <div className="min-w-0 text-center">
-                <div className="truncate text-xl font-black tracking-tight text-gray-900">
-                  {formatCoinName(position.coin)}
-                </div>
-                <div className="mt-1 text-xs font-mono uppercase tracking-[0.2em] text-gray-400">
-                  ID {String(position.id).slice(-6)}
-                </div>
-              </div>
-
-              <div className={`text-center text-8xl font-black tracking-tight leading-none ${tones.text}`}>
-                {position.actionSignal}
-              </div>
-
-              <div className={`text-center text-4xl font-black leading-none ${profitRate > 0 ? 'text-green-500' : profitRate < 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                {asPercentText(profitRate)}
-              </div>
-
-              <div className={`text-center text-2xl font-semibold leading-tight ${pnlTone}`}>
-                {asNumberText(pnlAmount)}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleSell(position)}
-                className={`w-full rounded-xl py-3 text-sm font-black uppercase tracking-[0.16em] transition active:scale-[0.99] ${tones.button}`}
-              >
-                매도 실행
-              </button>
-            </div>
-          );
+          return null;
         })}
       </div>
     </div>
@@ -442,50 +408,7 @@ function TradeRecordsView() {
             const tp1 = asNumberText(item?.tp1);
             const sl = asNumberText(item?.sl);
 
-            return (
-              <div key={index} className="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-2xl font-black tracking-tight text-gray-900">
-                      {formatCoinName(market)}
-                    </div>
-                    <div className="text-xs text-gray-400 font-mono tracking-[0.2em] uppercase">
-                      ID {String(item?.id ?? `trade-${index}`).slice(-6)}
-                    </div>
-                  </div>
-                  <div className="shrink-0 rounded-md bg-gray-100 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-gray-600">
-                    {status}
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center gap-2 py-2">
-                  <div className={`text-4xl font-black text-center leading-none ${profitTone}`}>
-                    {profitRate === '-' ? '-' : `${profitRate}%`}
-                  </div>
-                  <div className="text-xl text-center font-semibold text-gray-700">
-                    {result}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
-                  <div className="truncate">
-                    <span className="font-semibold text-gray-500">진입가</span> {entryPrice}
-                  </div>
-                  <div className="truncate">
-                    <span className="font-semibold text-gray-500">청산가</span> {exitPrice}
-                  </div>
-                  <div className="truncate">
-                    <span className="font-semibold text-gray-500">TP1</span> {tp1}
-                  </div>
-                  <div className="truncate">
-                    <span className="font-semibold text-gray-500">SL</span> {sl}
-                  </div>
-                  <div className="col-span-2 truncate">
-                    <span className="font-semibold text-gray-500">종료 시각</span> {closedAt}
-                  </div>
-                </div>
-              </div>
-            );
+            return null;
           })}
         </div>
       )}
@@ -655,7 +578,7 @@ function AppShell({
             </nav>
 
             <div className="min-h-[600px]">
-              {activeTab === 'positions' && <ActionSignalPositionsView positions={positions} onSell={onSell} />}
+              {activeTab === 'positions' && null}
               {activeTab === 'history' && <TradeRecordsView />}
               {activeTab === 'long_term' && <LongTermView />}
               {activeTab === 'settings' && <SettingsPanel />}
