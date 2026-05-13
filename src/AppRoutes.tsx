@@ -155,130 +155,7 @@ function AppShell({
     }
   };
 
-  return (
-    <Layout>
-      <header className="w-full border-b border-gray-200 bg-white/80 px-6 py-8 relative lg:px-8">
-        <div className="relative z-10 flex w-full flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
-            <h1 className="border-l-4 border-gray-900 pl-4 text-4xl font-black leading-none tracking-tight uppercase text-gray-900 md:text-5xl">
-              {text('app_name')}
-            </h1>
-            <div className="flex flex-wrap items-center gap-4 pl-1 text-[10px] font-mono uppercase tracking-widest text-gray-500">
-              <span className="flex items-center gap-1.5">
-                <span className={`h-2 w-2 rounded-full ${safeControl.isInputDisabled ? 'bg-red-500' : 'bg-green-600'}`}></span>
-                {safeControl.isInputDisabled ? text('input_blocked') : text('input_active')}
-              </span>
-              <span className="text-gray-300">|</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setLanguage('ko')}
-                  className={`px-1 transition-colors hover:text-gray-900 ${language === 'ko' ? 'font-bold text-gray-900 underline underline-offset-4' : 'text-gray-400'}`}
-                >
-                  KO
-                </button>
-                <span className="text-gray-300">/</span>
-                <button
-                  onClick={() => setLanguage('en')}
-                  className={`px-1 transition-colors hover:text-gray-900 ${language === 'en' ? 'font-bold text-gray-900 underline underline-offset-4' : 'text-gray-400'}`}
-                >
-                  EN
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-green-600">
-                <Cloud size={14} />
-                {text('system_operational')}
-              </span>
-              <span className="flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-500">
-                <AlertTriangle size={14} />
-                {safeControl.isInputDisabled ? text('input_blocked') : text('input_active')}
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-[1400px] px-10 py-8">
-        <div className="flex w-full gap-12">
-          <aside className="w-[340px] flex-shrink-0 space-y-6">
-            <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <div className="mb-2 flex items-center gap-2">
-                <ShieldCheck size={16} className="text-green-600" />
-                <h2 className="text-xl font-black tracking-tighter uppercase">{text('new_execution')}</h2>
-              </div>
-              {normalizedChildren}
-            </div>
-
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={handleExport}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900"
-              >
-                <Download size={14} />
-                {text('backup')}
-              </button>
-              <label className="relative flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900">
-                <Upload size={14} />
-                {text('restore')}
-                <input type="file" accept=".json" onChange={handleImport} className="absolute inset-0 cursor-pointer opacity-0" />
-              </label>
-              <button
-                onClick={handleWipe}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400 transition-all hover:bg-red-50 hover:text-red-500"
-              >
-                <Trash2 size={14} />
-                {text('wipe')}
-              </button>
-            </div>
-          </aside>
-
-          <main className="flex-1 min-w-0 space-y-6 pr-6 max-w-[960px]">
-            <nav className="no-scrollbar flex items-center gap-8 overflow-x-auto border-b border-gray-200 pb-px">
-              <button
-                onClick={() => setActiveTab('positions')}
-                className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'positions' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                {text('active')}
-                {activeTab === 'positions' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
-              </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'history' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                {text('history')}
-                {activeTab === 'history' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
-              </button>
-              <button
-                onClick={() => setActiveTab('long_term')}
-                className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'long_term' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                {text('long_term')}
-                {activeTab === 'long_term' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`relative whitespace-nowrap pb-4 text-xl font-semibold uppercase tracking-tight transition-all ${activeTab === 'settings' ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                {text('config')}
-                {activeTab === 'settings' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-900/20" />}
-              </button>
-            </nav>
-
-            <div className="min-h-[600px]">
-              {activeTab === 'positions' && null}
-              {activeTab === 'history' && <TradeRecordsView />}
-              {activeTab === 'long_term' && <LongTermView />}
-              {activeTab === 'settings' && <SettingsPanel />}
-            </div>
-          </main>
-        </div>
-      </div>
-    </Layout>
-  );
+  return <div>APPSHELL_ISOLATE</div>;
 }
 
 function NormalMode({
@@ -292,7 +169,7 @@ function NormalMode({
     <BrowserRouter>
       <AppShell positions={positions} onSell={onSell}>
         <Routes>
-          <Route path="/" element={null} />
+          <Route path="/" element={<div>ROUTE_ISOLATE</div>} />
         </Routes>
       </AppShell>
     </BrowserRouter>
