@@ -633,6 +633,8 @@ const writeFallbackSettings = (watchlist: string[], selectedCoin: string) => {
 };
 
 export function PositionForm() {
+  return <div>PF_TOP_RETURN</div>;
+
   // console.log("[PF_TOP_ENTER]");
 
 
