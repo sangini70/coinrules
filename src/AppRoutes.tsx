@@ -216,7 +216,7 @@ export default function AppRoutes() {
   return (
     <React31Boundary>
       <div className="min-h-screen bg-slate-50">
-        <div>APPSHELL_WRAPPER_TEST</div>
+        <PositionForm />
       </div>
     </React31Boundary>
   );
