@@ -2880,6 +2880,7 @@ export function PositionForm() {
 
 
   useEffect(() => {
+    return;
     if (!market) {
       setMarketAnalysis(null);
       return;
