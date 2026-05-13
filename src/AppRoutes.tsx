@@ -62,6 +62,36 @@ class React31Boundary extends Component<{ children: ReactNode }, { hasError: boo
       preview: children,
     });
 
+    if (isValidElement(children as ReactNode)) {
+      const element = children as React.ReactElement<{ children?: ReactNode }>;
+      const elementChildren = element.props?.children;
+
+      console.log('[REACT31_ELEMENT_PROPS]', {
+        type: element.type,
+        propsType: typeof element.props,
+        propsKeys: element.props && typeof element.props === 'object' ? Object.keys(element.props) : [],
+        childrenType: typeof elementChildren,
+        childrenIsArray: Array.isArray(elementChildren),
+        childrenIsValidElement: isValidElement(elementChildren as ReactNode),
+      });
+
+      if (Array.isArray(elementChildren)) {
+        console.log(
+          '[REACT31_ELEMENT_CHILDREN]',
+          elementChildren.map((child, index) => ({
+            index,
+            typeof: typeof child,
+            isValidElement: isValidElement(child as ReactNode),
+            isArray: Array.isArray(child),
+            objectKeys:
+              child && typeof child === 'object' && !Array.isArray(child)
+                ? Object.keys(child as Record<string, unknown>)
+                : [],
+          })),
+        );
+      }
+    }
+
     const isRenderableNode = (value: unknown): value is ReactNode =>
       value == null ||
       typeof value === 'string' ||
