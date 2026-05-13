@@ -639,15 +639,20 @@ export function PositionForm() {
   useEffect(() => {
     setMarketAnalysisAction(null);
   }, []);
+  useEffect(() => {
+    fetchSignalsAction();
+  }, []);
   const storeMarketList = useAppStore((state) => state.marketList);
   const storeSignals = useAppStore((state) => state.signals);
   const setMarketAnalysisAction = useAppStore((state) => state.setMarketAnalysis);
+  const fetchSignalsAction = useAppStore((state) => state.fetchSignalsAction);
   void test;
   void ref;
   void memoTest;
   void storeMarketList;
   void storeSignals;
   void setMarketAnalysisAction;
+  void fetchSignalsAction;
   return <div>PF_TOP_RETURN</div>;
 
   // console.log("[PF_TOP_ENTER]");
