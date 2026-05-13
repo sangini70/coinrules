@@ -338,7 +338,7 @@ export default function AppRoutes() {
 
   return (
     <React31Boundary>
-      {dangerPosition ? null : <NormalMode positions={positions} onSell={handleSell} />}
+      {dangerPosition ? null : null}
     </React31Boundary>
   );
 }
