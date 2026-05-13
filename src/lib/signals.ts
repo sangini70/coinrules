@@ -150,6 +150,14 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
     state = 'OBSERVE';
   }
 
+  console.log('[ENTRY_FLOW]', {
+    stage: 'analyzeSignal',
+    trend: trendReady ? 'up' : 'neutral',
+    volume: 'normal',
+    breakout: breakoutAttempt ? 'bullish_breakout' : 'none',
+    state,
+  });
+
   return {
     trend: trendReady ? 'up' : 'neutral',
     volume: 'normal',
@@ -176,17 +184,30 @@ export function getEntryState({
   highRisk: boolean;
   btcTrend: 'up' | 'neutral';
 }): EntryState {
-  if (fakeout) return 'AVOID';
-  if (highRisk) return 'RISK';
   const score = getSignalScore({ trend, volume, breakout });
   const isBtcUptrend = btcTrend !== 'down';
-  if (score >= 30 && volume && isBtcUptrend) {
-    return 'ENTRY';
-  }
-  if (score >= 20) {
-    return 'OBSERVE';
-  }
-  return 'WAIT';
+  const entryState: EntryState = fakeout
+    ? 'AVOID'
+    : highRisk
+      ? 'RISK'
+      : score >= 30 && volume && isBtcUptrend
+        ? 'ENTRY'
+        : score >= 20
+          ? 'OBSERVE'
+          : 'WAIT';
+
+  console.log('[ENTRY_FLOW]', {
+    score,
+    trend,
+    volume,
+    breakout,
+    btcTrend,
+    fakeout,
+    highRisk,
+    entryState,
+  });
+
+  return entryState;
 }
 
 export function getPrepareState({
@@ -218,6 +239,14 @@ export function getSignalScore({
   if (trend) score += 40;
   if (volume) score += 30;
   if (breakout) score += 30;
+
+  console.log('[ENTRY_FLOW]', {
+    stage: 'getSignalScore',
+    score,
+    trend,
+    volume,
+    breakout,
+  });
 
   return score;
 }

@@ -105,40 +105,18 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
 
   try {
     const requestUrl = buildCandleUrl(targetMarket, count, unit);
-    console.log('[fetchCandles]', 'before fetch', requestUrl);
     const response = await fetch(requestUrl);
-    console.log('[fetchCandles]', 'after fetch', requestUrl);
-    console.log('[fetchCandles]', 'response.ok', response.ok);
-    console.log('[fetchCandles]', 'response.status', response.status);
-    console.log('[fetchCandles]', 'before json', requestUrl);
     const payload = await parsePayload<any[]>(response);
-    console.log('[fetchCandles]', 'after json', requestUrl);
 
     const data = Array.isArray(payload)
       ? payload
       : payload?.data;
 
-    console.log('[fetchCandles]', 'Array.isArray(data)', Array.isArray(data));
-    console.log('[fetchCandles]', 'data.length', Array.isArray(data) ? data.length : -1);
-    console.log(
-      '[fetchCandles]',
-      'data[0].keys',
-      Array.isArray(data) && data[0] && typeof data[0] === 'object' ? Object.keys(data[0]) : [],
-    );
-
     if (!Array.isArray(data) || data.length === 0) {
-      console.warn('Invalid payload structure:', payload);
       return [];
     }
-    console.log('[fetchCandles]', 'final length', data.length);
     return data;
   } catch (error) {
-    console.warn(
-      '[fetchCandles]',
-      'catch',
-      error instanceof Error ? error.name : 'UnknownError',
-      error instanceof Error ? error.message : String(error),
-    );
     return [];
   }
 };

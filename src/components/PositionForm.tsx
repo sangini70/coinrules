@@ -6252,7 +6252,7 @@ useEffect(() => {
 
 
 
-        {isValidElement(authPanel) ? authPanel : null}
+        {false && null}
 
 
 
@@ -6371,7 +6371,7 @@ useEffect(() => {
 
 
     <div className="space-y-6">
-      {false && (isValidElement(authPanel) ? authPanel : null)}
+      {false && null}
 
 
 
@@ -6387,246 +6387,25 @@ useEffect(() => {
 
 
 
-          {false && (
-          <div className="p-4 border rounded">
-            <div className="text-sm text-gray-500">醫낅ぉ ?좏깮</div>
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                value={coinInput}
-                onChange={(e) => setCoinInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const nextCoin = coinInput.trim().toUpperCase();
-                    if (!nextCoin) return;
-                    if (COIN_OPTIONS.includes(`KRW-${nextCoin}`)) {
-                      handleSelectCoin(`KRW-${nextCoin}`);
-                      return;
-                    }
-                    if (isCustomCoin) {
-                      handleSelectCoin(customMarket);
-                    }
-                  }
-                }}
-                placeholder="?? BTC, ETH, SOL"
-                className="flex-1 border rounded px-3 py-2 text-sm"
-              />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {filteredCoins.slice(0, 6).map((coin) => {
-                console.log('[MAP_ITEM]', coin);
-                return (
-                  <button
-                    key={coin}
-                    type="button"
-                    onClick={() => handleSelectCoin(coin)}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                      selectedCoin === coin ? 'border-green-500 text-green-600 bg-green-50' : 'border-gray-300 text-gray-600'
-                    }`}
-                  >
-                    {coin.replace('KRW-', '')}
-                  </button>
-                );
-              })}
-              {isCustomCoin && (
-                <button
-                  type="button"
-                  onClick={() => handleSelectCoin(customMarket)}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                    selectedCoin === customMarket ? 'border-green-500 text-green-600 bg-green-50' : 'border-gray-300 text-gray-600'
-                  }`}
-                >
-                  {customMarket.replace('KRW-', '')}
-                </button>
-              )}
-            </div>
-            <div className="mt-2 text-xs text-gray-500">
-              ?????獄쏅챶留??????壤굿??Β?? {selectedCoin.replace('KRW-', '')}
-            </div>
-          </div>
-          )}
+          {false && null}
 
-          {false && (
-          <div className="p-4 border rounded">
+          {false && null}
 
 
 
-            <div className="text-sm text-gray-500">Watchlist</div>
 
 
 
-            <div className="flex flex-wrap gap-2 mt-2">
 
+          {false && null}
 
 
-              {watchlist.map((symbol) => (
 
 
 
-                <span key={symbol} className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm">
 
 
-
-                  <span>{String(symbol)}</span>
-
-
-
-                  <button
-
-
-
-                    type="button"
-
-
-
-                    onClick={() => removeWatchlistSymbol(symbol)}
-
-
-
-                    className="text-gray-500 hover:text-red-500"
-
-
-
-                    aria-label={`${symbol} delete`}
-
-
-
-                  >
-
-
-
-                    x
-
-
-
-                  </button>
-
-
-
-                </span>
-
-
-
-              ))}
-
-
-
-            </div>
-
-
-
-            <div className="mt-3 flex gap-2">
-
-
-
-              <input
-
-
-
-                type="text"
-
-
-
-                value={watchlistInput}
-
-
-
-                onChange={(e) => setWatchlistInput(e.target.value)}
-
-
-
-                placeholder="?? SHIB, DOT, AVAX"
-
-
-
-                className="flex-1 border rounded px-3 py-2 text-sm"
-
-
-
-              />
-
-
-
-              <button type="button" onClick={addWatchlistSymbol} className="border rounded px-3 py-2 text-sm font-semibold">
-
-
-
-                ??????꾨굴??
-
-
-
-              </button>
-
-
-
-              <button type="button" onClick={resetWatchlist} className="border rounded px-3 py-2 text-sm font-semibold">
-
-
-
-                ??????硫멸킐???
-
-
-              </button>
-
-
-
-            </div>
-
-
-
-          </div>
-          )}
-
-
-
-
-
-
-
-          {false && (
-          <div className="p-4 border rounded">
-            <div className="text-sm text-gray-500">?꾩옱 ?곹깭</div>
-            <div className="text-sm font-semibold">{String(Array.isArray(watchlist) ? watchlist.map((symbol) => {
-              console.log('[MAP_ITEM]', symbol);
-              return String(symbol);
-            }).join(' / ') : '')}</div>
-          </div>
-          )}
-
-
-
-
-
-
-
-          {false && (
-          <div className="p-4 border rounded">
-
-
-
-            <div className="text-sm text-gray-500">吏꾩엯 ?④퀎</div>
-
-
-
-            <div
-              className={`text-xl font-bold ${
-                entryState === 'ENTRY'
-                  ? 'text-green-500'
-                  : entryState === 'RISK'
-                    ? 'text-orange-500'
-                    : entryState === 'AVOID'
-                      ? 'text-red-500'
-                      : 'text-gray-500'
-              }`}
-            >
-              {String(entryState)}
-            </div>
-
-
-
-          </div>
-          )}
+          {false && null}
 
 
 
@@ -6635,16 +6414,37 @@ useEffect(() => {
 
 
           {/* TEMP_ISOLATE_ASIDE_BOTTOM_START
-          {false && (
-          <div className="p-4 border rounded mt-4">
-            <div className="text-xs text-gray-400 mb-1">?轅붽틓????????????????살깙嶺?/div>
-            <div className="text-sm text-gray-500">?轅붽틓???????β뼯援?????덉땃?/div>
-            <div className="text-sm">???? ????거??? {String(explainReason)}</div>
-            <div className="text-sm">???濚밸Ŧ援???????산뭐鶯? {String(explainReason)}</div>
-            <div className="text-sm">???숆강???녿펾筌?? {String(explainReason)}</div>
-            <div className="text-sm">?????살깙嶺? {String(explainReason)}</div>
-          </div>
-          )}
+          {false && null}
+
+
+
+
+
+
+
+          {false && null}
+
+
+
+
+
+
+
+          {false && null}
+
+
+
+
+
+
+          {false && null}
+
+
+
+
+
+
+          {false && null}
 
 
 
@@ -6653,177 +6453,6 @@ useEffect(() => {
 
 
           {false && (
-          <div className="p-4 border rounded mt-4">
-
-
-
-            <div className="text-sm text-gray-500">???????????嶺?/div>
-
-
-
-            <div className={trendReady ? 'text-green-500' : 'text-red-500'}>Trend: {trendReady ? 'OK' : 'NO'}</div>
-
-
-
-            <div className={volumeReady ? 'text-green-500' : 'text-red-500'}>Volume: {volumeReady ? 'OK' : 'NO'}</div>
-
-
-
-            <div className={breakoutReady ? 'text-green-500' : 'text-red-500'}>Breakout: {breakoutReady ? 'OK' : 'NO'}</div>
-
-
-
-          </div>
-          )}
-
-
-
-
-
-
-
-          {false && (
-          <div className="p-4 border rounded mt-4">
-
-
-
-            <div className="text-sm text-gray-500">?轅붽틓???????鶯ㅺ동??????/div>
-
-
-
-            <div className="text-lg font-semibold">{String(prepareState)}</div>
-
-
-
-          </div>
-
-          )}
-
-
-
-
-
-
-          {false && (
-          <div className="p-4 border rounded mt-4">
-
-
-
-            <div className="text-sm text-gray-500">?????援경퓴??????/div>
-
-
-
-            <div className={`text-lg font-semibold ${scoreColor}`}>
-
-
-
-              {String(signalScore)} / 100
-
-
-
-            </div>
-
-
-
-          </div>
-
-          )}
-
-
-
-
-
-
-          {false && (
-          <div className="p-4 border rounded mt-4">
-
-
-
-            <div className="text-sm text-gray-500">ENTRY ?轅붽틓??????⒟?/div>
-
-
-
-            <div className={trendReady ? 'text-green-500' : 'text-red-500'}>
-
-
-
-              Trend: {trendReady ? 'OK' : 'NO'}
-
-
-
-            </div>
-
-
-
-            <div className={volumeReady ? 'text-green-500' : 'text-red-500'}>
-
-
-
-              Volume: {volumeReady ? 'OK' : 'NO'}
-
-
-
-            </div>
-
-
-
-            <div className={breakoutReady ? 'text-green-500' : 'text-red-500'}>
-
-
-
-              Breakout: {breakoutReady ? 'OK' : 'NO'}
-
-
-
-            </div>
-
-
-
-            <div className={signalScore >= 80 ? 'text-green-500' : 'text-red-500'}>
-
-
-
-              Score: {signalScore >= 80 ? 'OK' : 'NO'}
-
-
-
-            </div>
-
-
-
-            <div className={prepareState === 'ENTRY' ? 'text-green-500' : 'text-red-500'}>
-
-
-
-              Stage: {prepareState === 'ENTRY' ? 'OK' : 'NO'}
-
-
-
-            </div>
-
-
-
-            <div className={btcSignal?.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
-
-
-
-              BTC: {btcSignal?.trend === 'up' ? 'OK' : 'NO'}
-
-
-
-            </div>
-
-
-
-          </div>
-          )}
-
-
-
-
-
-
-
           <div className="flex flex-wrap gap-2 border rounded mt-4 p-4">
             <button type="button" className="rounded-full border px-3 py-1 text-xs font-semibold">
               단타 포지션
@@ -6839,6 +6468,7 @@ useEffect(() => {
             </button>
             {activePositions.map((position) => (
               <div key={position.id}>
+                {String(position.type ?? '')}
                 {String(position.coin ?? '')}
                 {String(position.stopLossPrice ?? '')}
                 {String(position.takeProfitPrice1 ?? '')}
@@ -6848,160 +6478,19 @@ useEffect(() => {
                 {String(position.buyPrice ?? '')}
                 {String(position.memo ?? '')}
                 {String(position.isLocked ?? '')}
+                {String(position.actionSignal ?? '')}
               </div>
             ))}
           </div>
-
-
-
-
-
-
-
-          {false && (
-          <div className={`mt-3 p-4 border rounded-lg ${liquidityRisk === 'NO_ENTRY' ? 'bg-status-danger/5 border-status-danger/20' : 'bg-gray-50 border-text-main/10'}`}>
-
-
-
-            <div className="text-sm font-semibold text-gray-700 mb-2">?轅붽틓???곌램鍮????????????/div>
-
-
-
-            <div className="grid grid-cols-2 gap-3 text-xs text-gray-700">
-
-
-
-              <div className="space-y-1">
-
-
-
-                <div className="text-text-muted/60">Estimated Quantity</div>
-
-
-
-                <div className="font-semibold">{hasReferenceData ? String(formatMetric(estimatedQuantity, 6)) : ''}</div>
-
-
-
-              </div>
-
-
-
-              <div className="space-y-1">
-
-
-
-                <div className="text-text-muted/60">5m Average Volume</div>
-
-
-
-                <div className="font-semibold">{hasReferenceData ? String(formatMetric(avgVolume5m, 6)) : ''}</div>
-
-
-
-              </div>
-
-
-
-              <div className="space-y-1">
-
-
-
-                <div className="text-text-muted/60">1m Volume</div>
-
-
-
-                <div className="font-semibold">{hasReferenceData ? String(formatMetric(volume1m, 6)) : ''}</div>
-
-
-
-              </div>
-
-
-
-              <div className="space-y-1">
-
-
-
-                <div className="text-text-muted/60">Final Verdict</div>
-
-
-
-                <div className={`font-semibold ${hasReferenceData ? (liquidityRisk === 'NO_ENTRY' ? 'text-status-danger' : 'text-status-safe') : 'text-text-muted/60'}`}>
-
-
-
-                  {hasReferenceData ? String(liquidityRisk === 'NO_ENTRY' ? 'Entry blocked' : 'Entry allowed') : ''}
-
-
-
-                </div>
-
-
-
-              </div>
-
-
-
-              <div className="space-y-1">
-
-
-
-                <div className="text-text-muted/60">5m Ratio</div>
-
-
-
-                <div className="font-semibold">{hasReferenceData ? String(formatMetric(positionVolumeRatio5m, 4)) : ''}</div>
-
-
-
-              </div>
-
-
-
-              <div className="space-y-1">
-
-
-
-                <div className="text-text-muted/60">1m Ratio</div>
-
-
-
-                <div className="font-semibold">{hasReferenceData ? String(formatMetric(positionVolumeRatio1m, 4)) : ''}</div>
-
-
-
-              </div>
-
-
-
-            </div>
-
-
-
-            {hasReferenceData && liquidityRisk === 'NO_ENTRY' && (
-
-
-
-              <p className="mt-3 text-xs leading-relaxed text-status-danger whitespace-pre-line">
-
-
-
-                {String(liquidityBlockMessage)}
-
           )}
 
 
-              </p>
 
 
 
-            )}
 
 
-
-          </div>
-          )}
+          {false && null}
           TEMP_ISOLATE_ASIDE_BOTTOM_END */}
 
 

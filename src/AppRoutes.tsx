@@ -55,13 +55,31 @@ class React31Boundary extends Component<{ children: ReactNode }, { hasError: boo
       return null;
     }
 
+    console.log('[REACT31_BOUNDARY_CHILDREN]', {
+      typeof: typeof children,
+      isArray: Array.isArray(children),
+      isValidElement: isValidElement(children as ReactNode),
+      preview: children,
+    });
+
+    const isRenderableNode = (value: unknown): value is ReactNode =>
+      value == null ||
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      isValidElement(value as ReactNode);
+
+    if (Array.isArray(children)) {
+      const safeChildren = children.filter(isRenderableNode);
+      return safeChildren.length > 0 ? safeChildren : null;
+    }
+
     if (
       children == null ||
       typeof children === 'string' ||
       typeof children === 'number' ||
       typeof children === 'boolean' ||
-      isValidElement(children) ||
-      Array.isArray(children)
+      isValidElement(children as ReactNode)
     ) {
       return children;
     }
