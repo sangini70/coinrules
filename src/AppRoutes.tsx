@@ -49,11 +49,24 @@ class React31Boundary extends Component<{ children: ReactNode }, { hasError: boo
   }
 
   render() {
+    const { children } = this.props;
+
     if (this.state.hasError) {
       return null;
     }
 
-    return this.props.children;
+    if (
+      children == null ||
+      typeof children === 'string' ||
+      typeof children === 'number' ||
+      typeof children === 'boolean' ||
+      isValidElement(children) ||
+      Array.isArray(children)
+    ) {
+      return children;
+    }
+
+    return null;
   }
 }
 
