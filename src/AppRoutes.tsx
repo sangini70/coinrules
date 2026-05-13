@@ -519,7 +519,7 @@ function AppShell({
                 <ShieldCheck size={16} className="text-green-600" />
                 <h2 className="text-xl font-black tracking-tighter uppercase">{text('new_execution')}</h2>
               </div>
-              {safeChildren}
+              {false && safeChildren}
             </div>
 
             <div className="grid grid-cols-1 gap-2">
