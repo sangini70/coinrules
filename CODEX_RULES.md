@@ -152,8 +152,6 @@ useEffect 내부에서 setState를 호출할 경우,
 
 작업 중 우연히 변경된 파일은 commit 금지.
 
-
-
 ## 12. Recovery Isolation Rule
 
 React 오류 발생 시:  
@@ -170,6 +168,29 @@ React 오류 발생 시:
 - 추측 기반 복원
 
 
+
+## 13. React Child Normalization Rule
+
+children passthrough 금지:
+
+금지:
+
+- return children;
+- <>{children}</>
+- {children}
+
+허용:
+
+- normalizedChildren
+- renderable child filtering 후 출력
+
+필수:
+
+- ReactElement 검사
+- primitive 검사
+- plain object 제거
+
+wrapper/boundary/AppShell에서는 children normalization 없이 passthrough 금지.
 
 
 

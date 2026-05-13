@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useAppStore } from '../store/useAppStore';
 import { fetchTicker } from '../services/upbitService';
-import type { Position } from '../types';
+import type { AppSettings, Position } from '../types';
 
 export type DangerPosition = Position & {
   currentPrice: number;
   profitRate: number;
-  actionSignal: 'SELL' | 'TAKE_PROFIT' | 'HOLD';
+  actionSignal: '손절 실행' | '익절 실행' | '관망';
   isDangerCard: boolean;
 };
 
-export function useDangerPositions(): DangerPosition[] {
-  const activePositions = useAppStore((state) => state.activePositions);
-  const settings = useAppStore((state) => state.settings);
+export function useDangerPositions(
+  activePositions: Position[] | null | undefined,
+  settings: Pick<AppSettings, 'stopLoss' | 'stopLossPercent' | 'takeProfitPercent'> | null | undefined,
+): DangerPosition[] {
   const [positions, setPositions] = useState<DangerPosition[]>([]);
 
   useEffect(() => {
@@ -42,11 +42,11 @@ export function useDangerPositions(): DangerPosition[] {
 
           let actionSignal: DangerPosition['actionSignal'];
           if (profitRate <= stopLoss) {
-            actionSignal = 'SELL';
+            actionSignal = '손절 실행';
           } else if (profitRate >= takeProfit) {
-            actionSignal = 'TAKE_PROFIT';
+            actionSignal = '익절 실행';
           } else {
-            actionSignal = 'HOLD';
+            actionSignal = '관망';
           }
 
           return {
@@ -54,7 +54,7 @@ export function useDangerPositions(): DangerPosition[] {
             currentPrice,
             profitRate,
             actionSignal,
-            isDangerCard: actionSignal === 'SELL',
+            isDangerCard: actionSignal === '손절 실행',
           };
         }),
       );

@@ -1,39 +1,17 @@
-import { Component, isValidElement, useEffect, useRef, useState, type ChangeEvent, type ErrorInfo, type ReactNode } from 'react';
+import { Component, isValidElement, useEffect, useState, type ChangeEvent, type ErrorInfo, type ReactNode } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AlertTriangle, Cloud, Download, ShieldCheck, Trash2, Upload } from 'lucide-react';
 import { Layout } from './components/Layout';
+import { ActionSignalPositionsView } from './components/ActionSignalPositionsView';
+import { DecisionMode } from './components/DecisionMode';
+import { TradeRecordsView } from './components/TradeRecordsView';
+import { useDangerPositions, type DangerPosition } from './hooks/useDangerPositions';
 import { LongTermView } from './components/PositionTabs';
 import { PositionForm } from './components/PositionForm';
 import { SettingsPanel } from './components/SettingsPanel';
 import { DEFAULT_CONTROL, useAppStore } from './store/useAppStore';
-import { fetchTrades } from './services/getTrades';
-import { fetchTicker } from './services/upbitService';
-import type { Position } from './types';
-
-type TradeRecord = {
-  id?: string | number;
-  market?: string;
-  status?: string;
-  result?: string | null;
-  entryPrice?: number | string | null;
-  exitPrice?: number | string | null;
-  profitRate?: number | string | null;
-  closedAt?: string | null;
-  exitTime?: string | null;
-  tp1?: number | string | null;
-  sl?: number | string | null;
-  createdAt?: string | null;
-  time?: number | string | null;
-};
 
 type TabKey = 'positions' | 'history' | 'long_term' | 'settings';
-
-type DangerPosition = Position & {
-  currentPrice: number;
-  profitRate: number;
-  actionSignal: '손절 실행' | '익절 실행' | '관망';
-  isDangerCard: boolean;
-};
 
 // Debug-only boundary to capture React error #31 component stacks.
 class React31Boundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
@@ -118,303 +96,6 @@ class React31Boundary extends Component<{ children: ReactNode }, { hasError: boo
   }
 }
 
-const asString = (value: unknown, fallback = '-') => String(value ?? fallback);
-
-const asNumberText = (value: unknown, digits?: number) => {
-  const numberValue = Number(value);
-  if (!Number.isFinite(numberValue)) return '-';
-  if (typeof digits === 'number') {
-    return numberValue.toLocaleString('ko-KR', {
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-    });
-  }
-  return numberValue.toLocaleString('ko-KR');
-};
-
-const asPercentText = (value: unknown) => {
-  const numberValue = Number(value);
-  if (!Number.isFinite(numberValue)) return '-';
-  return `${numberValue.toLocaleString('ko-KR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}%`;
-};
-
-const parseTradeTime = (trade: TradeRecord) => {
-  if (typeof trade.time === 'number' && Number.isFinite(trade.time)) return trade.time;
-  if (typeof trade.createdAt === 'string' && trade.createdAt) {
-    const parsed = Date.parse(trade.createdAt);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return 0;
-};
-
-const formatCoinName = (coin: string) => String(coin ?? '-').replace('KRW-', '');
-
-const signalTone = (actionSignal: DangerPosition['actionSignal']) => {
-  if (actionSignal === '손절 실행') {
-    return {
-      badge: 'bg-red-100 text-red-700',
-      text: 'text-red-600',
-      button: 'bg-red-700 text-white',
-      card: 'bg-red-50',
-    };
-  }
-
-  if (actionSignal === '익절 실행') {
-    return {
-      badge: 'bg-green-100 text-green-700',
-      text: 'text-green-600',
-      button: 'bg-green-700 text-white',
-      card: 'bg-green-50',
-    };
-  }
-
-  return {
-    badge: 'bg-gray-100 text-gray-600',
-    text: 'text-gray-500',
-    button: 'bg-gray-700 text-white',
-    card: 'bg-gray-50',
-  };
-};
-
-function useDangerPositions() {
-  const activePositions = useAppStore((state) => state.activePositions);
-  const settings = useAppStore((state) => state.settings);
-  const [positions, setPositions] = useState<DangerPosition[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const stopLoss = Number(settings?.stopLoss ?? settings?.stopLossPercent ?? -2);
-    const takeProfit = Number(settings?.takeProfitPercent ?? 3);
-    const safeActivePositions = Array.isArray(activePositions) ? activePositions : [];
-
-    const refresh = async () => {
-      const nextPositions = await Promise.all(
-        safeActivePositions.map(async (position) => {
-          let currentPrice = Number(position.buyPrice ?? 0);
-
-          try {
-            const ticker = await fetchTicker(position.coin || 'KRW-BTC');
-            const tradePrice = Number(ticker?.trade_price);
-            if (Number.isFinite(tradePrice) && tradePrice > 0) {
-              currentPrice = tradePrice;
-            }
-          } catch {
-            // Keep the last safe fallback price.
-          }
-
-          const buyPrice = Number(position.buyPrice ?? 0);
-          const profitRate = buyPrice > 0 && currentPrice > 0 ? ((currentPrice - buyPrice) / buyPrice) * 100 : 0;
-          const actionSignal: DangerPosition['actionSignal'] =
-            profitRate <= stopLoss ? '손절 실행' : profitRate >= takeProfit ? '익절 실행' : '관망';
-
-          return {
-            ...position,
-            currentPrice,
-            profitRate,
-            actionSignal,
-            isDangerCard: actionSignal === '손절 실행',
-          };
-        }),
-      );
-
-      if (!cancelled) {
-        setPositions(nextPositions);
-      }
-    };
-
-    void refresh();
-    const interval = window.setInterval(() => {
-      void refresh();
-    }, 10000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, [activePositions, settings?.stopLoss, settings?.stopLossPercent, settings?.takeProfitPercent]);
-
-  return positions;
-}
-
-function DecisionMode({
-  positions,
-  dangerPosition,
-  onSell,
-}: {
-  positions: DangerPosition[];
-  dangerPosition: DangerPosition;
-  onSell: (position: DangerPosition) => void;
-}) {
-  const executedSellRef = useRef(new Set<string>());
-
-  useEffect(() => {
-    if (navigator.vibrate) {
-      navigator.vibrate([300, 100, 300, 100, 500]);
-    }
-  }, []);
-
-  useEffect(() => {
-    positions.forEach((position) => {
-      if (position.actionSignal === 'SELL' && !executedSellRef.current.has(position.id)) {
-        executedSellRef.current.add(position.id);
-        onSell(position);
-      }
-    });
-  }, [positions, onSell]);
-
-  const signalToneClass =
-    dangerPosition.actionSignal === '손절 실행'
-      ? 'text-red-500'
-      : dangerPosition.actionSignal === '익절 실행'
-        ? 'text-green-500'
-        : 'text-gray-400';
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black">
-      <div className="mb-6 text-6xl font-bold text-white">{formatCoinName(dangerPosition.coin)}</div>
-      <div className={`mb-10 text-center text-8xl font-black ${signalToneClass}`}>
-        {dangerPosition.actionSignal}
-      </div>
-      <div className="mb-10 text-3xl text-gray-300">{asPercentText(dangerPosition.profitRate)}</div>
-      <button className="rounded-xl bg-red-600 px-8 py-4 text-2xl text-white" onClick={() => onSell(dangerPosition)}>
-        즉시 매도
-      </button>
-    </div>
-  );
-}
-
-function ActionSignalPositionsView({
-  positions,
-  onSell,
-}: {
-  positions: DangerPosition[];
-  onSell: (position: DangerPosition) => void;
-}) {
-  const orderedPositions = [...positions].sort((left, right) => {
-    const rank = (signal: DangerPosition['actionSignal']) => {
-      if (signal === '손절 실행') return 0;
-      if (signal === '익절 실행') return 1;
-      return 2;
-    };
-
-    const leftRank = rank(left.actionSignal);
-    const rightRank = rank(right.actionSignal);
-
-    if (leftRank !== rightRank) return leftRank - rightRank;
-    return Number(right.profitRate ?? 0) - Number(left.profitRate ?? 0);
-  });
-
-  const handleSell = (position: DangerPosition) => {
-    onSell(position);
-  };
-
-  if (orderedPositions.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-end justify-between border-b border-gray-200 pb-6">
-          <h2 className="text-3xl font-black tracking-tight text-gray-900">행동 신호</h2>
-          <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em] font-bold">0 positions</span>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-          <p className="text-sm font-semibold text-gray-500">표시할 포지션이 없습니다.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between border-b border-gray-200 pb-6">
-        <h2 className="text-3xl font-black tracking-tight text-gray-900">행동 신호</h2>
-        <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em] font-bold">
-          {orderedPositions.length} positions
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4">
-        {orderedPositions.map((position) => {
-          const tones = signalTone(position.actionSignal);
-          const profitRate = Number(position.profitRate ?? 0);
-          const pnlAmount = (Number(position.currentPrice ?? 0) - Number(position.buyPrice ?? 0)) * Number(position.quantity ?? 0);
-          const pnlTone = pnlAmount > 0 ? 'text-green-500' : pnlAmount < 0 ? 'text-red-500' : 'text-gray-400';
-
-          return null;
-        })}
-      </div>
-    </div>
-  );
-}
-
-function TradeRecordsView() {
-  const [tradeRecords, setTradeRecords] = useState<TradeRecord[]>([]);
-
-  useEffect(() => {
-    let active = true;
-
-    void fetchTrades()
-      .then((data) => {
-        if (!active) return;
-        const normalized = Array.isArray(data)
-          ? data
-              .slice()
-              .sort((left: TradeRecord, right: TradeRecord) => parseTradeTime(right) - parseTradeTime(left))
-          : [];
-        setTradeRecords(normalized);
-      })
-      .catch(() => {
-        if (!active) return;
-        setTradeRecords([]);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between border-b border-gray-200 pb-6">
-        <h2 className="text-3xl font-black tracking-tight text-gray-900">거래 기록</h2>
-        <span className="text-xs font-mono text-gray-400 uppercase tracking-[0.2em] font-bold">
-          {tradeRecords.length} records
-        </span>
-      </div>
-
-      {tradeRecords.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
-          <p className="text-sm font-semibold text-gray-500">거래 기록 없음</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {tradeRecords.map((item, index) => {
-            const status = asString(item?.status);
-            const market = asString(item?.market);
-            const result = asString(item?.result);
-            const profitValue = Number(item?.profitRate);
-            const profitRate = Number.isFinite(profitValue)
-              ? profitValue.toLocaleString('ko-KR', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })
-              : '-';
-            const profitTone = profitValue > 0 ? 'text-green-500' : profitValue < 0 ? 'text-red-500' : 'text-gray-400';
-            const closedAt = asString(item?.closedAt ?? item?.exitTime);
-            const entryPrice = asNumberText(item?.entryPrice);
-            const exitPrice = asNumberText(item?.exitPrice);
-            const tp1 = asNumberText(item?.tp1);
-            const sl = asNumberText(item?.sl);
-
-            return null;
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function AppShell({
   children,
@@ -430,7 +111,17 @@ function AppShell({
   const t = useAppStore((state) => state.t)();
   const safeControl = control ?? DEFAULT_CONTROL;
   const text = (key: Parameters<typeof t>[0]) => String(t(key));
-  const safeChildren = isValidElement(children) ? children : Array.isArray(children) ? children : null;
+  const isRenderableNode = (value: unknown): value is ReactNode =>
+    value == null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    isValidElement(value as ReactNode);
+  const normalizedChildren = Array.isArray(children)
+    ? children.filter(isRenderableNode)
+    : isRenderableNode(children)
+      ? children
+      : null;
 
   const handleExport = () => {
     const data = exportData();
@@ -519,7 +210,7 @@ function AppShell({
                 <ShieldCheck size={16} className="text-green-600" />
                 <h2 className="text-xl font-black tracking-tighter uppercase">{text('new_execution')}</h2>
               </div>
-              {false && safeChildren}
+              {normalizedChildren}
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -578,7 +269,7 @@ function AppShell({
             </nav>
 
             <div className="min-h-[600px]">
-              {activeTab === 'positions' && null}
+              {activeTab === 'positions' && <ActionSignalPositionsView positions={positions} onSell={onSell} />}
               {activeTab === 'history' && <TradeRecordsView />}
               {activeTab === 'long_term' && <LongTermView />}
               {activeTab === 'settings' && <SettingsPanel />}
@@ -609,7 +300,9 @@ function NormalMode({
 }
 
 export default function AppRoutes() {
-  const positions = useDangerPositions();
+  const activePositions = useAppStore((state) => state.activePositions);
+  const settings = useAppStore((state) => state.settings);
+  const positions = useDangerPositions(activePositions, settings);
   const [dangerLock, setDangerLock] = useState(false);
   const [dangerPositions, setDangerPositions] = useState<DangerPosition[]>([]);
   const closePosition = useAppStore((state) => state.closePosition);
