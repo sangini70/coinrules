@@ -292,7 +292,7 @@ function NormalMode({
     <BrowserRouter>
       <AppShell positions={positions} onSell={onSell}>
         <Routes>
-          <Route path="/" element={<PositionForm />} />
+          <Route path="/" element={null} />
         </Routes>
       </AppShell>
     </BrowserRouter>
