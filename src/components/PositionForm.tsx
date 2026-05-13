@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, FormEvent, useRef, isValidElement } from 'react';
+import { useState, useEffect, FormEvent, useRef, isValidElement } from 'react';
 
 
 
@@ -633,7 +633,7 @@ const writeFallbackSettings = (watchlist: string[], selectedCoin: string) => {
 };
 
 export function PositionForm() {
-  console.log("[PF_TOP_ENTER]");
+  // console.log("[PF_TOP_ENTER]");
 
 
 
@@ -674,7 +674,7 @@ export function PositionForm() {
 
 
 
-  const safeSignals = signals ?? {};
+  const safeSignals = {} as Record<string, { trend?: string; volume?: string; breakout?: string; state?: string }>;
 
   const activePositions = useAppStore((state) => state.activePositions);
 
@@ -700,8 +700,8 @@ export function PositionForm() {
 
 
 
-  const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>(null);
-  console.log("[STEP_4]");
+  const [marketAnalysis, setMarketAnalysis] = useState<MarketAnalysis | null>({});
+  // console.log("[STEP_4]");
 
 
 
@@ -733,7 +733,7 @@ export function PositionForm() {
 
 
 
-  });
+});
 
 
 
@@ -797,7 +797,7 @@ export function PositionForm() {
 
 
 
-  });
+});
 
 
 
@@ -998,7 +998,7 @@ export function PositionForm() {
 
 
 
-  });
+});
 
 
 
@@ -1294,7 +1294,7 @@ export function PositionForm() {
           await saveUserSettings(uid, {
             watchlist: [],
             selectedCoin: '',
-          });
+});
 
           if (!isMounted) return;
 
@@ -1322,7 +1322,7 @@ export function PositionForm() {
         setWatchlistStateSource('fallback');
         setWatchlistSettingsLoaded(true);
       })();
-    });
+});
 
     return () => {
 
@@ -1413,7 +1413,7 @@ export function PositionForm() {
         await saveUserSettings(uid, {
           watchlist,
           selectedCoin: formData.coin,
-        });
+});
       } catch (error) {
         console.warn('USER SETTINGS SAVE FAILED', error);
       }
@@ -1448,7 +1448,7 @@ export function PositionForm() {
       await saveUserSettings(uid, {
         watchlist: nextWatchlist,
         selectedCoin: formData.coin,
-      });
+});
     } catch (error) {
       console.warn('USER SETTINGS SAVE FAILED', error);
     }
@@ -2547,7 +2547,7 @@ export function PositionForm() {
 
 
 
-    });
+});
 
 
 
@@ -2562,13 +2562,13 @@ export function PositionForm() {
           : String(reason)
       )
       .join(' / ');
-    console.log('[REACT31_DEBUG]', 'explainReason', typeof explainReason, Array.isArray(explainReason), explainReason);
+    // console.log('[REACT31_DEBUG]', 'explainReason', typeof explainReason, Array.isArray(explainReason), explainReason);
 
     const failReasons = reasons;
-    console.log("[ISO_B]", "failReasons", typeof failReasons, Array.isArray(failReasons), failReasons);
-    console.log('[REACT31_DETAIL]', 'failReasons', JSON.stringify(failReasons, null, 2));
-    console.log('[REACT31_DEBUG]', 'failReasons', typeof failReasons, Array.isArray(failReasons), failReasons);
-    console.log("[SET_REASONS_PAYLOAD]", failReasons);
+    // console.log("[ISO_B]", "failReasons", typeof failReasons, Array.isArray(failReasons), failReasons);
+    // console.log('[REACT31_DETAIL]', 'failReasons', JSON.stringify(failReasons, null, 2));
+    // console.log('[REACT31_DEBUG]', 'failReasons', typeof failReasons, Array.isArray(failReasons), failReasons);
+    // console.log("[SET_REASONS_PAYLOAD]", failReasons);
 
     const prepareState = getPrepareState({
 
@@ -2602,8 +2602,8 @@ export function PositionForm() {
 
 
 
-    });
-    console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
+});
+    // console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
 
 
 
@@ -2611,7 +2611,9 @@ export function PositionForm() {
 
 
 
-    const entryState = getEntryState({
+    const entryState = 'WAIT';
+    // console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
+    // console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
 
 
 
@@ -2619,7 +2621,6 @@ export function PositionForm() {
 
 
 
-      trend: trendActive,
 
 
 
@@ -2627,169 +2628,10 @@ export function PositionForm() {
 
 
 
-      volume: volumeActive,
 
-
-
-
-
-
-
-      breakout: breakoutActive,
-
-
-
-
-
-
-
-      fakeout,
-
-
-
-
-
-
-
-      highRisk,
-
-
-
-
-
-
-
-      btcTrend: btcSignal?.trend ?? 'neutral',
-
-
-
-
-
-
-
-    });
-    console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
-    console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  const entryAnalysis = {
-
-
-
-
-
-
-
-      symbol,
-
-
-
-
-
-
-
-      entryState,
-
-
-
-
-
-
-
-      price,
-
-
-
-
-
-
-
-      currentPrice: price,
-
-
-
-
-
-
-
-      trend: trendActive,
-
-
-
-
-
-
-
-      volume: volumeActive,
-
-
-
-
-
-
-
-      breakout: breakoutActive,
-
-
-
-
-
-
-
-      signalScore,
-
-
-
-
-
-
-
-      prepareState,
-
-
-
-
-
-
-
-    };
-  console.log("[ISO_A]", "entryAnalysis", typeof entryAnalysis, Array.isArray(entryAnalysis), entryAnalysis);
-  console.log('[REACT31_DEBUG]', 'entryAnalysis', typeof entryAnalysis, Array.isArray(entryAnalysis), entryAnalysis);
-
-
-
-
-
-
-
-  };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  const entryAnalysis = null;
+  return null;
+};
 
   const authPanel = null;
   /*
@@ -3875,7 +3717,7 @@ export function PositionForm() {
 
 
 
-            });
+});
 
 
 
@@ -4198,7 +4040,7 @@ export function PositionForm() {
 
 
   const filteredCoins = COIN_OPTIONS.filter(c => c.replace('KRW-', '').toLowerCase().includes(coinInput.toLowerCase()));
-  console.log("[ISO_A]", "filteredCoins", typeof filteredCoins, Array.isArray(filteredCoins), filteredCoins);
+  // console.log("[ISO_A]", "filteredCoins", typeof filteredCoins, Array.isArray(filteredCoins), filteredCoins);
 
 
 
@@ -4249,20 +4091,14 @@ export function PositionForm() {
 
 
   const safeSignal = selectedCoin ? safeSignals?.[selectedCoin] ?? null : null;
-  console.log("[STEP_2]");
-  console.log('[REACT31_DEBUG]', 'safeSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
-  console.log('[REACT31_DEBUG]', 'currentSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
-  console.log('[REACT31_DEBUG]', 'signals[selectedCoin]', typeof (selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), Array.isArray(selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), selectedCoin ? safeSignals?.[selectedCoin] ?? null : null);
-  console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
-  console.log("[STEP_3]");
-  console.log("[STEP_3]");
-  const currentSignal = safeSignal ?? {
-    state: 'OBSERVE' as const,
-    trend: 'neutral' as const,
-    volume: 'normal' as const,
-    breakout: 'none' as const,
-    updatedAt: new Date(0).toISOString(),
-  };
+  // console.log("[STEP_2]");
+  // console.log('[REACT31_DEBUG]', 'safeSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
+  // console.log('[REACT31_DEBUG]', 'currentSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
+  // console.log('[REACT31_DEBUG]', 'signals[selectedCoin]', typeof (selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), Array.isArray(selectedCoin ? safeSignals?.[selectedCoin] ?? null : null), selectedCoin ? safeSignals?.[selectedCoin] ?? null : null);
+  // console.log('[REACT31_DEBUG]', 'marketAnalysis', typeof marketAnalysis, Array.isArray(marketAnalysis), marketAnalysis);
+  // console.log("[STEP_3]");
+  // console.log("[STEP_3]");
+  const currentSignal = null;
 
 
 
@@ -4690,9 +4526,9 @@ export function PositionForm() {
 
   const liquidityBlockMessage =
     '?????????????????밸쫫??? ?耀붾굝梨루땟???????關?쒎첎?嫄????????堉온?????⑥ル??????븐뼐????????????곸죩.\n?????獄쏅챶留??????⑥ル????????????耀붾굝?????????????곕츥??????轅붽틓??影?놁쟼???';
-  console.log('[REACT31_DETAIL]', 'liquidityRiskMessage', JSON.stringify(liquidityBlockMessage, null, 2));
-  console.log("[ISO_B]", "liquidityBlockMessage", typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
-  console.log('[REACT31_DEBUG]', 'liquidityRiskMessage', typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
+  // console.log('[REACT31_DETAIL]', 'liquidityRiskMessage', JSON.stringify(liquidityBlockMessage, null, 2));
+  // console.log("[ISO_B]", "liquidityBlockMessage", typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
+  // console.log('[REACT31_DEBUG]', 'liquidityRiskMessage', typeof liquidityBlockMessage, Array.isArray(liquidityBlockMessage), liquidityBlockMessage);
 
 const blockEntry = (message: string) => {
 
@@ -4994,7 +4830,7 @@ const blockEntry = (message: string) => {
 
 
 
-    });
+});
 
 
 
@@ -5298,65 +5134,9 @@ const blockEntry = (message: string) => {
 
 
 
-    const entryState = getEntryState({
-
-
-
-
-
-
-
-      trend: trendActive,
-
-
-
-
-
-
-
-      volume: volumeActive,
-
-
-
-
-
-
-
-      breakout: breakoutActive,
-
-
-
-
-
-
-
-      fakeout,
-
-
-
-
-
-
-
-      highRisk,
-
-
-
-
-
-
-
-      btcTrend: btcSignal?.trend ?? 'neutral',
-
-
-
-
-
-
-
-    });
-    console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
-    console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
+    const entryState = 'WAIT';
+    // console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
+    // console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
 
 
 
@@ -5431,10 +5211,10 @@ const blockEntry = (message: string) => {
             : entryState === 'OBSERVE'
               ? ['Trend developing', 'Monitor for follow-through']
               : ['????????????????', '?????????????'];
-    console.log('[REACT31_DETAIL]', 'reasons', JSON.stringify(reasons, null, 2));
-    console.log("[ISO_A]", "reasons", typeof reasons, Array.isArray(reasons), reasons);
-    console.log("[REASONS_RUNTIME]", reasons);
-    console.log("[REASONS_TYPE]", typeof reasons, Array.isArray(reasons), reasons?.[0]);
+    // console.log('[REACT31_DETAIL]', 'reasons', JSON.stringify(reasons, null, 2));
+    // console.log("[ISO_A]", "reasons", typeof reasons, Array.isArray(reasons), reasons);
+    // console.log("[REASONS_RUNTIME]", reasons);
+    // console.log("[REASONS_TYPE]", typeof reasons, Array.isArray(reasons), reasons?.[0]);
 
     const prepareState = getPrepareState({
 
@@ -5468,8 +5248,8 @@ const blockEntry = (message: string) => {
 
 
 
-    });
-    console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
+});
+    // console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
 
 
 
@@ -5772,7 +5552,7 @@ useEffect(() => {
 
 
 
-          const result = await evaluateEmailSignal(symbol);
+          const result = null;
 
 
 
@@ -5884,7 +5664,7 @@ useEffect(() => {
 
 
 
-          });
+});
 
 
 
@@ -6116,7 +5896,7 @@ useEffect(() => {
 
 
 
-        });
+});
 
 
 
@@ -6338,33 +6118,33 @@ useEffect(() => {
 
   const renderDebugValue = (name: string, value: unknown) => {
     const isObjectLike = typeof value === 'object' && value !== null;
-    console.log('[RENDER_DEBUG]', name, {
-      typeof: typeof value,
-      isArray: Array.isArray(value),
-      isValidElement: isValidElement(value as React.ReactElement),
-      keys: isObjectLike ? Object.keys(value as Record<string, unknown>).length : 0,
-      preview: value,
-    });
-  };
-
-  false && renderDebugValue('selectedCoin', selectedCoin);
-  false && renderDebugValue('safeSignal', safeSignal);
-  false && renderDebugValue('currentSignal', safeSignal);
-  false && renderDebugValue('marketAnalysis', marketAnalysis);
-  false && renderDebugValue('prepareState', prepareState);
-  false && renderDebugValue('reasons', reasons);
-  false && renderDebugValue('failReasons', failReasons);
-  false && renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
-  false && renderDebugValue('entryState', entryState);
-  false && renderDebugValue('authPanel', authPanel);
-  console.log('[ENTRY_STATE_TYPE]', typeof entryState, entryState);
-  const failReasonsText = '';
-  console.log("[CHK] reasons", reasons);
-  console.log("[CHK] failReasons", failReasons);
-  console.log("[CHK] liquidityRiskMessage", liquidityBlockMessage);
-  console.log("[CHK] entryState", entryState);
-  console.log("[CHK] authPanel", authPanel);
-  console.log("[PF_BEFORE_RETURN]");
-
-  return <div>PF_ISOLATE</div>;
+    // console.log('[RENDER_DEBUG]', name, {
+//       typeof: typeof value,
+//       isArray: Array.isArray(value),
+//       isValidElement: isValidElement(value as React.ReactElement),
+//       keys: isObjectLike ? Object.keys(value as Record<string, unknown>).length : 0,
+//       preview: value,
+    //     });
+};
+//
+false && renderDebugValue('selectedCoin', selectedCoin);
+false && renderDebugValue('safeSignal', safeSignal);
+false && renderDebugValue('currentSignal', safeSignal);
+false && renderDebugValue('marketAnalysis', marketAnalysis);
+false && renderDebugValue('prepareState', prepareState);
+false && renderDebugValue('reasons', reasons);
+false && renderDebugValue('failReasons', failReasons);
+false && renderDebugValue('liquidityRiskMessage', liquidityBlockMessage);
+false && renderDebugValue('entryState', entryState);
+false && renderDebugValue('authPanel', authPanel);
+  // console.log('[ENTRY_STATE_TYPE]', typeof entryState, entryState);
+const failReasonsText = '';
+  // console.log("[CHK] reasons", reasons);
+  // console.log("[CHK] failReasons", failReasons);
+  // console.log("[CHK] liquidityRiskMessage", liquidityBlockMessage);
+  // console.log("[CHK] entryState", entryState);
+  // console.log("[CHK] authPanel", authPanel);
+  // console.log("[PF_BEFORE_RETURN]");
+//
+return <div>PF_ISOLATE</div>;
 }
