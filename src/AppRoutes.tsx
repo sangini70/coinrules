@@ -7,7 +7,6 @@ import { DecisionMode } from './components/DecisionMode';
 import { TradeRecordsView } from './components/TradeRecordsView';
 import { useDangerPositions, type DangerPosition } from './hooks/useDangerPositions';
 import { LongTermView } from './components/PositionTabs';
-import { PositionForm } from './components/PositionForm';
 import { SettingsPanel } from './components/SettingsPanel';
 import { DEFAULT_CONTROL, useAppStore } from './store/useAppStore';
 
@@ -216,7 +215,7 @@ export default function AppRoutes() {
   return (
     <React31Boundary>
       <div className="min-h-screen bg-slate-50">
-        <PositionForm />
+        <div>APP_ROUTE_ISOLATE</div>
       </div>
     </React31Boundary>
   );
