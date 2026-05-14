@@ -215,9 +215,7 @@ export default function AppRoutes() {
 
   return (
     <React31Boundary>
-      <div className="min-h-screen bg-slate-50">
-        <PositionForm />
-      </div>
+      <div>ROUTES_ISOLATE</div>
     </React31Boundary>
   );
 }
