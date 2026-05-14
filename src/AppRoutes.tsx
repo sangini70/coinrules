@@ -213,9 +213,5 @@ export default function AppRoutes() {
 
   const dangerPosition = positions.find((position) => position.isDangerCard) ?? null;
 
-  return (
-    <React31Boundary>
-      <div>ROUTES_ISOLATE</div>
-    </React31Boundary>
-  );
+  return <div>APPROUTES_FULL_ISOLATE</div>;
 }
