@@ -2938,7 +2938,6 @@ export function PositionForm() {
 
 
     setMarketAnalysis(null);
-    return;
 
 
 
@@ -3275,6 +3274,8 @@ export function PositionForm() {
 
 
           ));
+
+          return;
 
 
 
