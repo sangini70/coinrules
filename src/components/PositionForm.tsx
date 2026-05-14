@@ -14,22 +14,6 @@ import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 
 
 
-import { useAppStore } from '../store/useAppStore';
-
-
-
-
-
-
-
-import { DEFAULT_CONTROL, DEFAULT_SETTINGS } from '../store/useAppStore';
-
-
-
-
-
-
-
 import { auth, googleAuthProvider } from '../lib/firebase';
 
 
@@ -637,6 +621,7 @@ export function PositionForm() {
   const ref = useRef(null);
   const memoTest = useMemo(() => 'MEMO_OK', []);
   useEffect(() => {
+    return;
     setMarketAnalysisAction(null);
   }, []);
   useEffect(() => {
@@ -646,20 +631,19 @@ export function PositionForm() {
     console.log("POLLING_EFFECT_ENTER");
 
     console.log("POLLING_INTERVAL_CREATE");
-    const interval = window.setInterval(() => {
-      console.log("POLLING_TICK");
-      void fetchSignalsAction();
-    }, 6000);
+    const interval = null;
 
     return () => {
       console.log("POLLING_EFFECT_CLEANUP");
-      window.clearInterval(interval);
+      if (interval) {
+        window.clearInterval(interval);
+      }
     };
   }, []);
-  const storeMarketList = useAppStore((state) => state.marketList);
-  const storeSignals = useAppStore((state) => state.signals);
-  const setMarketAnalysisAction = useAppStore((state) => state.setMarketAnalysis);
-  const fetchSignalsAction = useAppStore((state) => state.fetchSignalsAction);
+  const storeMarketList = [];
+  const storeSignals = null;
+  const setMarketAnalysisAction = () => {};
+  const fetchSignalsAction = () => {};
   void test;
   void ref;
   void memoTest;
@@ -667,7 +651,7 @@ export function PositionForm() {
   void storeSignals;
   void setMarketAnalysisAction;
   void fetchSignalsAction;
-  return <div>PF_TOP_RETURN</div>;
+  return <div>PF_FULL_ISOLATE</div>;
 
   // console.log("[PF_TOP_ENTER]");
 
@@ -677,8 +661,14 @@ export function PositionForm() {
 
 
 
-  const { settings, signals, control, clearMarketState, addPosition, isCoinInCooldown, getCooldownRemaining } = useAppStore();
-  const tFromStore = useAppStore((state) => state.t);
+  const settings = null;
+  const signals = null;
+  const control = null;
+  const clearMarketState = () => {};
+  const addPosition = () => {};
+  const isCoinInCooldown = () => false;
+  const getCooldownRemaining = () => 0;
+  const tFromStore = null;
 
 
 
@@ -712,7 +702,7 @@ export function PositionForm() {
 
   const safeSignals = {} as Record<string, { trend?: string; volume?: string; breakout?: string; state?: string }>;
 
-  const activePositions = useAppStore((state) => state.activePositions);
+  const activePositions = [];
 
 
 
@@ -2606,39 +2596,7 @@ export function PositionForm() {
     // console.log('[REACT31_DEBUG]', 'failReasons', typeof failReasons, Array.isArray(failReasons), failReasons);
     // console.log("[SET_REASONS_PAYLOAD]", failReasons);
 
-    const prepareState = getPrepareState({
-
-
-
-
-
-
-
-      trend: trendActive,
-
-
-
-
-
-
-
-      volume: volumeActive,
-
-
-
-
-
-
-
-      breakout: breakoutActive,
-
-
-
-
-
-
-
-});
+    const prepareState = null;
     // console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
 
 
@@ -2916,6 +2874,7 @@ export function PositionForm() {
 
 
   useEffect(() => {
+    return;
     if (!market) {
       setMarketAnalysis(null);
       return;
@@ -3274,14 +3233,6 @@ export function PositionForm() {
 
 
           ));
-
-          return;
-
-
-
-
-
-
 
 
 
@@ -3730,6 +3681,8 @@ export function PositionForm() {
 
 
 
+
+            return;
 
             setMarketAnalysis((prevAnalysis) => {
 
@@ -6068,10 +6021,6 @@ useEffect(() => {
 
 
       <div className="space-y-6">
-
-
-
-        {false && null}
 
 
 
