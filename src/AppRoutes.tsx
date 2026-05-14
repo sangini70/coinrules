@@ -216,7 +216,7 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<div>ROUTE_ONLY</div>} />
+        <Route path="/" element={<div className="min-h-screen bg-slate-50"><PositionForm /></div>} />
       </Routes>
     </BrowserRouter>
   );
