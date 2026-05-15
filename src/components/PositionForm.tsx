@@ -6140,15 +6140,7 @@ return (
       <div className="text-xs text-emerald-500">{String(hasReferenceData)}</div>
     ) : null}
     <div className="text-xs text-blue-400">{String(Object.keys(safeSignals).length)}</div>
-    <div className="rounded border border-zinc-700 p-2">
-      {Object.entries(safeSignals)
-        .slice(0, 3)
-        .map(([symbol, signal]) => (
-          <div key={symbol} className="text-xs text-yellow-400">
-            {String(signal?.state ?? '')}
-          </div>
-        ))}
-    </div>
+    {null}
     <div className="rounded border border-blue-700 p-2">
       <div className="text-xs text-blue-400">
         {String(marketAnalysis?.isUpTrend ?? '')}
