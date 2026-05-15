@@ -2611,7 +2611,14 @@ export function PositionForm() {
 
 
 
-    const entryState = 'WAIT';
+    const entryState = getEntryState({
+      trend: trendActive,
+      volume: volumeActive,
+      breakout: breakoutActive,
+      fakeout,
+      highRisk,
+      btcTrend: btcSignal?.trend === 'up' ? 'up' : 'neutral',
+    });
     // console.log('[REACT31_DEBUG]', 'entryState', typeof entryState, Array.isArray(entryState), entryState);
     // console.log('[REACT31_DEBUG]', 'actionSignal', typeof entryState, Array.isArray(entryState), entryState);
 
@@ -2880,7 +2887,6 @@ export function PositionForm() {
 
 
   useEffect(() => {
-    return;
     if (!market) {
       setMarketAnalysis(null);
       return;
@@ -3687,8 +3693,6 @@ export function PositionForm() {
 
 
 
-
-            return;
 
             setMarketAnalysis((prevAnalysis) => {
 
@@ -5213,39 +5217,7 @@ const blockEntry = (message: string) => {
     // console.log("[REASONS_RUNTIME]", reasons);
     // console.log("[REASONS_TYPE]", typeof reasons, Array.isArray(reasons), reasons?.[0]);
 
-    const prepareState = getPrepareState({
-
-
-
-
-
-
-
-      trend: trendActive,
-
-
-
-
-
-
-
-      volume: volumeActive,
-
-
-
-
-
-
-
-      breakout: breakoutActive,
-
-
-
-
-
-
-
-});
+    const prepareState = null;
     // console.log('[REACT31_DEBUG]', 'prepareState', typeof prepareState, Array.isArray(prepareState), prepareState);
 
 
@@ -5550,7 +5522,7 @@ useEffect(() => {
 
 
 
-          const result = null;
+          const result = await evaluateEmailSignal(symbol);
 
 
 
@@ -6142,5 +6114,23 @@ const failReasonsText = '';
   // console.log("[CHK] authPanel", authPanel);
   // console.log("[PF_BEFORE_RETURN]");
 //
-return <div>PF_ISOLATE</div>;
+console.log("[PF_RENDER_SNAPSHOT]", {
+  selectedCoinType: typeof selectedCoin,
+  entryStateType: typeof entryState,
+  prepareStateType: typeof prepareState,
+  marketAnalysisType: typeof marketAnalysis,
+  marketAnalysisKeys:
+    marketAnalysis && typeof marketAnalysis === 'object'
+      ? Object.keys(marketAnalysis as Record<string, unknown>)
+      : [],
+  safeSignalType: typeof safeSignal,
+  safeSignalKeys:
+    safeSignal && typeof safeSignal === 'object'
+      ? Object.keys(safeSignal as Record<string, unknown>)
+      : [],
+  safeSignalStateType: typeof safeSignal?.state,
+  activePositionsIsArray: Array.isArray(activePositions),
+  activePositionsLength: activePositions.length,
+});
+return <div>{safeSignal?.state ?? ''}</div>;
 }
