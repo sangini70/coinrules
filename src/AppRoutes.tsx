@@ -216,7 +216,7 @@ export default function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<div>ROUTE_ISOLATE</div>} />
+        <Route path="/" element={<PositionForm />} />
       </Routes>
     </BrowserRouter>
   );
