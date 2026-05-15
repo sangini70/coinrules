@@ -4092,6 +4092,7 @@ export function PositionForm() {
 
 
   const safeSignal = selectedCoin ? safeSignals?.[selectedCoin] ?? null : null;
+  const selectedSignal = selectedCoin ? safeSignals[selectedCoin] : null;
   // console.log("[STEP_2]");
   // console.log('[REACT31_DEBUG]', 'safeSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
   // console.log('[REACT31_DEBUG]', 'currentSignal', typeof safeSignal, Array.isArray(safeSignal), safeSignal);
@@ -6132,5 +6133,92 @@ console.log("[PF_RENDER_SNAPSHOT]", {
   activePositionsIsArray: Array.isArray(activePositions),
   activePositionsLength: activePositions.length,
 });
-return <div>{safeSignal?.state ?? ''}</div>;
+return (
+  <div className="space-y-6">
+    {authUserInfo ? (
+      <div className="text-sm font-semibold">{String(authUserInfo.email ?? '')}</div>
+    ) : null}
+    {selectedCoin ? (
+      <div className="text-xs text-gray-500">{String(selectedCoin)}</div>
+    ) : null}
+    <div className="text-xs text-gray-500">{String(watchlist.length)}</div>
+    {hasReferenceData ? (
+      <div className="text-xs text-emerald-500">{String(hasReferenceData)}</div>
+    ) : null}
+    <div className="text-xs text-blue-400">{String(Object.keys(safeSignals).length)}</div>
+    <div className="rounded border border-zinc-700 p-2">
+      {Object.entries(safeSignals)
+        .slice(0, 3)
+        .map(([symbol, signal]) => (
+          <div key={symbol} className="text-xs text-yellow-400">
+            {String(signal?.state ?? '')}
+          </div>
+        ))}
+    </div>
+    <div className="rounded border border-blue-700 p-2">
+      <div className="text-xs text-blue-400">
+        {String(marketAnalysis?.isUpTrend ?? '')}
+      </div>
+    </div>
+    <div className="rounded border border-lime-700 p-2">
+      {activePositions
+        .slice(0, 1)
+        .map((position, index) => (
+          <div key={String(position?.coin ?? index)} className="text-xs text-lime-400">
+            {String(position?.coin ?? '')}
+          </div>
+        ))}
+    </div>
+    <div className="rounded border border-fuchsia-700 p-2">
+      {watchlist
+        .slice(0, 1)
+        .map((coin, index) => (
+          <div key={String(coin ?? index)} className="text-xs text-fuchsia-400">
+            {String(coin ?? '')}
+          </div>
+        ))}
+    </div>
+    <div className="text-xs text-sky-400">{String(activePositions.length)}</div>
+    <div className="text-xs text-orange-400">{String(selectedSignal?.state ?? '')}</div>
+    <div className="text-xs text-purple-400">{String(selectedSignal?.trend ?? '')}</div>
+    <div className="text-xs text-cyan-400">{String(selectedSignal?.breakout ?? '')}</div>
+    <div className="text-xs text-pink-400">{String(selectedSignal?.volume ?? '')}</div>
+    <div className="text-xs text-indigo-400">{String(selectedSignal?.volume ?? '')}</div>
+    <div className="text-xs text-cyan-400">{String(selectedSignal?.breakout ?? '')}</div>
+    <div className="rounded border border-violet-700 p-2">
+      <div className="space-y-1 text-xs text-violet-400">
+        <div className="text-gray-500">STATE</div>
+        <div>{String(selectedSignal?.state ?? '')}</div>
+        <div>{String(selectedSignal?.trend ?? '')}</div>
+        <div>{String(selectedSignal?.volume ?? '')}</div>
+        {selectedSignal?.breakout ? <div>{String(selectedSignal?.breakout)}</div> : null}
+      </div>
+    </div>
+    {selectedSignal ? (
+      <div className="rounded border border-slate-700 p-2">
+        <div className="text-xs text-slate-400">{String(selectedSignal?.volume ?? '')}</div>
+      </div>
+    ) : null}
+    <div className="rounded border border-zinc-700 p-2">
+      <div>{String(selectedSignal?.state ?? '')}</div>
+      <div>{String(selectedSignal?.trend ?? '')}</div>
+    </div>
+    <div className="text-xs text-rose-400">{String(selectedSignal?.trend ?? '')}</div>
+    <div className="space-y-1 text-xs text-teal-400">
+      {Object.keys(safeSignals)
+        .slice(0, 1)
+        .map((key) => {
+          const item = safeSignals[key];
+
+          return (
+            <div key={key} className="space-y-1">
+              <div>{String(item?.state ?? '')}</div>
+              <div>{String(item?.trend ?? '')}</div>
+              <div>{String(item?.volume ?? '')}</div>
+            </div>
+          );
+        })}
+    </div>
+  </div>
+);
 }
