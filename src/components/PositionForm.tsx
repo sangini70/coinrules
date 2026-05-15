@@ -651,7 +651,13 @@ export function PositionForm() {
   void storeSignals;
   void setMarketAnalysisAction;
   void fetchSignalsAction;
-  return <div>PF_FULL_ISOLATE</div>;
+  return (
+    <div className="space-y-6">
+      <div className="p-8 border border-status-danger/50 bg-status-danger/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-700">
+        {false && null}
+      </div>
+    </div>
+  );
 
   // console.log("[PF_TOP_ENTER]");
 
@@ -6013,6 +6019,8 @@ useEffect(() => {
 
 
   if (isInputBlocked) {
+    const blockedLimit = String(t('blocked_limit'));
+    const blockedTitle = String(t('blocked_tilt'));
 
 
 
@@ -6068,11 +6076,11 @@ useEffect(() => {
 
 
 
-                ? String(t('blocked_limit'))
+                ? blockedLimit
 
 
 
-                : String(t('blocked_tilt'))}
+                : blockedTitle}
 
 
 
