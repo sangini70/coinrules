@@ -6188,11 +6188,7 @@ return (
         {selectedSignal?.breakout ? <div>{String(selectedSignal?.breakout)}</div> : null}
       </div>
     </div>
-    {selectedSignal ? (
-      <div className="rounded border border-slate-700 p-2">
-        <div className="text-xs text-slate-400">{String(selectedSignal?.volume ?? '')}</div>
-      </div>
-    ) : null}
+    {null}
     <div className="rounded border border-zinc-700 p-2">
       <div>{String(selectedSignal?.state ?? '')}</div>
       <div>{String(selectedSignal?.trend ?? '')}</div>
