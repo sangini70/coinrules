@@ -213,11 +213,5 @@ export default function AppRoutes() {
 
   const dangerPosition = positions.find((position) => position.isDangerCard) ?? null;
 
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<div>APPROUTES_ISOLATE</div>} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <div>APPROUTES_ISOLATE</div>;
 }
