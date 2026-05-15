@@ -6141,29 +6141,9 @@ return (
     ) : null}
     <div className="text-xs text-blue-400">{String(Object.keys(safeSignals).length)}</div>
     {null}
-    <div className="rounded border border-blue-700 p-2">
-      <div className="text-xs text-blue-400">
-        {String(marketAnalysis?.isUpTrend ?? '')}
-      </div>
-    </div>
-    <div className="rounded border border-lime-700 p-2">
-      {activePositions
-        .slice(0, 1)
-        .map((position, index) => (
-          <div key={String(position?.coin ?? index)} className="text-xs text-lime-400">
-            {String(position?.coin ?? '')}
-          </div>
-        ))}
-    </div>
-    <div className="rounded border border-fuchsia-700 p-2">
-      {watchlist
-        .slice(0, 1)
-        .map((coin, index) => (
-          <div key={String(coin ?? index)} className="text-xs text-fuchsia-400">
-            {String(coin ?? '')}
-          </div>
-        ))}
-    </div>
+    {null}
+    {null}
+    {null}
     <div className="text-xs text-sky-400">{String(activePositions.length)}</div>
     <div className="text-xs text-orange-400">{String(selectedSignal?.state ?? '')}</div>
     <div className="text-xs text-purple-400">{String(selectedSignal?.trend ?? '')}</div>
