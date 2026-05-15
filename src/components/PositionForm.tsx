@@ -60,6 +60,7 @@ import { getExplain } from '../lib/explain';
 
 
 import { getEntryState, getPrepareState, getSignalScore } from '../lib/signals';
+import { useAppStore } from '../store/useAppStore';
 
 
 
@@ -620,6 +621,7 @@ export function PositionForm() {
   const [test] = useState('OK');
   const ref = useRef(null);
   const memoTest = useMemo(() => 'MEMO_OK', []);
+  const storeSignals = useAppStore((state) => state.signals);
   useEffect(() => {
     return;
     setMarketAnalysisAction(null);
@@ -641,23 +643,15 @@ export function PositionForm() {
     };
   }, []);
   const storeMarketList = [];
-  const storeSignals = null;
-  const setMarketAnalysisAction = () => {};
-  const fetchSignalsAction = () => {};
+  const setMarketAnalysisAction = useAppStore.getState().setMarketAnalysis;
+  const fetchSignalsAction = useAppStore.getState().fetchSignals;
   void test;
   void ref;
   void memoTest;
-  void storeMarketList;
   void storeSignals;
+  void storeMarketList;
   void setMarketAnalysisAction;
   void fetchSignalsAction;
-  return (
-    <div className="space-y-6">
-      <div className="p-8 border border-status-danger/50 bg-status-danger/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-700">
-        {false && null}
-      </div>
-    </div>
-  );
 
   // console.log("[PF_TOP_ENTER]");
 
@@ -668,7 +662,7 @@ export function PositionForm() {
 
 
   const settings = null;
-  const signals = null;
+  const signals = storeSignals;
   const control = null;
   const clearMarketState = () => {};
   const addPosition = () => {};
@@ -706,7 +700,7 @@ export function PositionForm() {
 
 
 
-  const safeSignals = {} as Record<string, { trend?: string; volume?: string; breakout?: string; state?: string }>;
+  const safeSignals = signals ?? {};
 
   const activePositions = [];
 
