@@ -1,3 +1,11 @@
+import { useEffect, useState } from 'react';
+
 export function PositionForm() {
-  return <div>POSITIONFORM_STAGE1</div>;
+  const [stage, setStage] = useState('POSITIONFORM_STAGE2');
+
+  useEffect(() => {
+    setStage('POSITIONFORM_STAGE3');
+  }, []);
+
+  return <div>{stage}</div>;
 }
