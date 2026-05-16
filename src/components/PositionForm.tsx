@@ -99,17 +99,17 @@ export default function PositionForm() {
       <div className="mt-4">FIRST_SIGNAL_KEY_{String(firstSignalKey)}</div>
       <div className="mt-6 rounded-xl border p-4">
         <div className="text-lg font-bold">?醫륁깈 ?遺용튋</div>
-        <div className="mt-2">?꾨뗄?? {String(firstSignalKey)}</div>
-        <div>?怨밴묶: {String(firstSignal?.state)}</div>
-        <div>揶쏄퉮?? {firstSignal?.updatedAt ? String(firstSignal.updatedAt).slice(11, 19) : "-"}</div>
-        <div>椰꾧퀡??? {firstSignal?.volume ? String(firstSignal.volume) : "-"}</div>
+        <div className="mt-2">코인: {String(firstSignalKey)}</div>
+        <div>상태: {String(firstSignal?.state)}</div>
+        <div>갱신: {firstSignal?.updatedAt ? String(firstSignal.updatedAt).slice(11, 19) : "-"}</div>
+        <div>거래량: {firstSignal?.volume ? String(firstSignal.volume) : "-"}</div>
         <div>추세: {firstSignal?.trend ? String(firstSignal.trend) : "-"}</div>
-        <div>?뚰뙆: {firstSignal?.breakout ? String(firstSignal.breakout) : "-"}</div>
-        <div>筌띾뜆?? {firstSignal?.market ? String(firstSignal.market) : "-"}</div>
+        <div>돌파: {firstSignal?.breakout ? String(firstSignal.breakout) : "-"}</div>
+        <div>마켓: {firstSignal?.market ? String(firstSignal.market) : "-"}</div>
         <div>?怨밴묶: {firstSignal?.state ? String(firstSignal.state) : "-"}</div>
-        <div>???: {firstSignal?.reason ? String(firstSignal.reason) : "-"}</div>
-        <div>?癒?땾: {firstSignal?.score !== undefined ? String(firstSignal.score) : "-"}</div>
-        <div>??る? {firstSignal?.action ? String(firstSignal.action) : "-"}</div>
+        <div>사유: {firstSignal?.reason ? String(firstSignal.reason) : "-"}</div>
+        <div>점수: {firstSignal?.score !== undefined ? String(firstSignal.score) : "-"}</div>
+        <div>행동: {firstSignal?.action ? String(firstSignal.action) : "-"}</div>
       </div>
     </div>
   );
