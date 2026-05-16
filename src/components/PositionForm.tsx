@@ -50,6 +50,8 @@ export default function PositionForm() {
       ? firstSignal.reasons.map((item) => typeof item)
       : [],
   );
+  console.log("[FIRST_SIGNAL_KEYS]", firstSignal ? Object.keys(firstSignal) : []);
+  console.log("[FIRST_SIGNAL_RAW]", firstSignal);
 
   return (
     <div className="p-4">
