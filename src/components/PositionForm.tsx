@@ -20,9 +20,15 @@ export default function PositionForm() {
   console.log("[STORE_OK]", testValue);
   console.log("[SIGNALS_RAW]", storeSignals);
   console.log("[SIGNALS_KEYS]", Object.keys(storeSignals || {}));
+  console.log("[STORE_DEBUG] storeSignals", storeSignals);
+
   const signalKeys = Object.keys(storeSignals || {});
   const firstSignalKey = signalKeys[0];
+
   console.log("[FIRST_SIGNAL_KEY]", firstSignalKey);
+  console.log("[STORE_DEBUG] signalsKeys", signalKeys);
+  console.log("[STORE_DEBUG] firstSignalKey", firstSignalKey);
+  console.log("[STORE_DEBUG] firstSignal", firstSignalKey ? storeSignals[firstSignalKey] : undefined);
 
   if (!firstSignalKey) {
     return (
@@ -35,21 +41,42 @@ export default function PositionForm() {
   const firstSignal = storeSignals[firstSignalKey];
 
   console.log("[FIRST_SIGNAL]", firstSignal);
-  const firstSignalType = firstSignal?.type;
-  const firstSignalEntries = Object.entries(firstSignal || {});
-  const entryKeys = firstSignalEntries.map(([key]) => key);
-  const firstEntryValue = firstSignalEntries[0]?.[1];
-
-  console.log("[FIRST_SIGNAL_TYPE]", firstSignalType);
-  console.log("[FIRST_SIGNAL_ENTRIES]", firstSignalEntries);
-  console.log("[ENTRY_KEYS]", entryKeys);
-  console.log("[FIRST_ENTRY_VALUE]", firstEntryValue);
+  console.log("[SIGNALS_DEBUG] signals", storeSignals);
+  console.log("[SIGNALS_DEBUG] firstSignal", firstSignal);
+  console.log("[SIGNALS_DEBUG] firstSignal keys", Object.keys(firstSignal || {}));
+  console.log("[SIGNALS_DEBUG] firstSignal types", {
+    state: typeof firstSignal?.state,
+    trend: typeof firstSignal?.trend,
+    market: typeof firstSignal?.market,
+    action: typeof firstSignal?.action,
+    score: typeof firstSignal?.score,
+    reason: typeof firstSignal?.reason,
+    volume: typeof firstSignal?.volume,
+    breakout: typeof firstSignal?.breakout,
+    updatedAt: typeof firstSignal?.updatedAt,
+  });
+  console.log("[REASONS_DEBUG] reasons", firstSignal?.reasons);
+  console.log("[REASONS_DEBUG] reasons type", typeof firstSignal?.reasons);
   console.log(
-    "[REASONS_ITEM_TYPES]",
+    "[REASONS_DEBUG] reasons item types",
     Array.isArray(firstSignal?.reasons)
-      ? firstSignal.reasons.map((item) => typeof item)
-      : [],
+      ? firstSignal.reasons.map((item) => ({
+          type: typeof item,
+          value: item,
+        }))
+      : "not-array",
   );
+  if (Array.isArray(firstSignal?.reasons)) {
+    firstSignal.reasons.forEach((item, index) => {
+      console.log("[REASONS_ITEM_DEBUG]", {
+        index,
+        type: typeof item,
+        isArray: Array.isArray(item),
+        keys: item && typeof item === "object" ? Object.keys(item) : [],
+        value: item,
+      });
+    });
+  }
   console.log("[FIRST_SIGNAL_KEYS]", firstSignal ? Object.keys(firstSignal) : []);
   console.log("[FIRST_SIGNAL_RAW]", firstSignal);
 
@@ -63,20 +90,27 @@ export default function PositionForm() {
       <div className="mt-4">STORE_SELECTOR_OK</div>
       <div className="mt-4">SIGNALS_SELECTOR_OK</div>
       <div className="mt-4 rounded border p-2">
-        SIGNAL_SUMMARY_{String(firstSignalType)}
+        SIGNAL_STATE_{String(firstSignal?.state)}
       </div>
-      <div className="mt-4">SIGNAL_MARKET_{String(firstSignal?.market)}</div>
-      <div className="mt-4">SIGNAL_ACTION_{String(firstSignal?.action)}</div>
-      <div className="mt-4">SIGNAL_SCORE_{String(firstSignal?.score)}</div>
-      <div className="mt-4">SIGNAL_REASON_{String(firstSignal?.reason)}</div>
-      <div className="mt-4">
-        SIGNAL_REASONS_COUNT_
-        {Array.isArray(firstSignal?.reasons) ? firstSignal.reasons.length : 0}
-      </div>
+      <div className="mt-4">SIGNAL_TREND_{String(firstSignal?.trend)}</div>
+      <div className="mt-4">SIGNAL_VOLUME_{String(firstSignal?.volume)}</div>
+      <div className="mt-4">SIGNAL_BREAKOUT_{String(firstSignal?.breakout)}</div>
+      <div className="mt-4">SIGNAL_UPDATED_AT_{String(firstSignal?.updatedAt)}</div>
       <div className="mt-4">FIRST_SIGNAL_KEY_{String(firstSignalKey)}</div>
-      <div className="mt-4">FIRST_SIGNAL_TYPE_{String(firstSignalType)}</div>
-      <div className="mt-4">ENTRY_KEYS_COUNT_{entryKeys.length}</div>
-      <div className="mt-4">FIRST_ENTRY_VALUE_TYPE_{typeof firstEntryValue}</div>
+      <div className="mt-6 rounded-xl border p-4">
+        <div className="text-lg font-bold">?醫륁깈 ?遺용튋</div>
+        <div className="mt-2">?꾨뗄?? {String(firstSignalKey)}</div>
+        <div>?怨밴묶: {String(firstSignal?.state)}</div>
+        <div>揶쏄퉮?? {firstSignal?.updatedAt ? String(firstSignal.updatedAt).slice(11, 19) : "-"}</div>
+        <div>椰꾧퀡??? {firstSignal?.volume ? String(firstSignal.volume) : "-"}</div>
+        <div>추세: {firstSignal?.trend ? String(firstSignal.trend) : "-"}</div>
+        <div>?뚰뙆: {firstSignal?.breakout ? String(firstSignal.breakout) : "-"}</div>
+        <div>筌띾뜆?? {firstSignal?.market ? String(firstSignal.market) : "-"}</div>
+        <div>?怨밴묶: {firstSignal?.state ? String(firstSignal.state) : "-"}</div>
+        <div>???: {firstSignal?.reason ? String(firstSignal.reason) : "-"}</div>
+        <div>?癒?땾: {firstSignal?.score !== undefined ? String(firstSignal.score) : "-"}</div>
+        <div>??る? {firstSignal?.action ? String(firstSignal.action) : "-"}</div>
+      </div>
     </div>
   );
 }

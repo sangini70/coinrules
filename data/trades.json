@@ -40,11 +40,12 @@
     "tp1": 121643689.99999999,
     "tp2": 123441380,
     "sl": 117449080,
-    "status": "OPEN",
-    "closedAt": null,
-    "exitPrice": null,
-    "exitTime": null,
-    "result": null
+    "status": "CLOSED",
+    "closedAt": "2026-05-16T06:35:05.337Z",
+    "exitPrice": 117441000,
+    "exitTime": "2026-05-16T06:35:05.337Z",
+    "result": "LOSS",
+    "profitRate": -2.00674198554812
   },
   {
     "id": "trade-1777983772053-10dzbs",
