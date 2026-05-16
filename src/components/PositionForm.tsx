@@ -5,6 +5,7 @@ export function PositionForm() {
   const [stage, setStage] = useState('POSITIONFORM_STAGE2');
   const storeSignals = useAppStore((state) => state.signals);
   const entries = Object.entries(storeSignals ?? {}).slice(0, 3);
+  console.log("[ENTRIES_SHAPE]", entries);
 
   useEffect(() => {
     setStage('POSITIONFORM_STAGE3');
