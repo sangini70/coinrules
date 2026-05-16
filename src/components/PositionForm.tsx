@@ -19,6 +19,7 @@ export default function PositionForm() {
   console.log("[POSITIONFORM_RENDER]");
   console.log("[STORE_OK]", testValue);
   console.log("[SIGNALS_RAW]", storeSignals);
+  console.log("[SIGNALS_KEYS]", Object.keys(storeSignals || {}));
 
   return (
     <div className="p-4">
