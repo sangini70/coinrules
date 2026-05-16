@@ -248,6 +248,19 @@ export const useAppStore = create<AppStore>()(
                 rawSignal,
                 safeSignal,
               });
+              console.log('[FETCH_BEFORE_SET]', {
+                targetCoin,
+                safeSignal,
+              });
+              set((state) => ({
+                ...state,
+                signals: {
+                  ...state.signals,
+                  [targetCoin]: safeSignal,
+                },
+              }));
+              console.log('[FETCH_AFTER_REAL_SET]');
+              return;
               const { signalBuffer } = get();
               const buffer = signalBuffer[targetCoin] || [];
               const newBuffer = [...buffer, safeSignal].slice(-3);
