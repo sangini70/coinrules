@@ -1,3 +1,6 @@
+import AppRoutes from "./AppRoutes";
+
 export default function App() {
-  return <div>APP_ROOT_ISOLATE</div>;
+  console.log("[APP_RENDER]");
+  return <AppRoutes />;
 }

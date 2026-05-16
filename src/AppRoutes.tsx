@@ -1,3 +1,7 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppShell from "./components/AppShell";
+
 export default function AppRoutes() {
-  return <div>APPROUTES_ISOLATE</div>;
+  console.log("[APPROUTES_RENDER]");
+  return <AppShell />;
 }
