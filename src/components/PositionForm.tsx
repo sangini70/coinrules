@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 export function PositionForm() {
   const [stage, setStage] = useState('POSITIONFORM_STAGE2');
   const storeSignals = useAppStore((state) => state.signals);
+  console.log("[SIGNALS_RAW]", storeSignals);
   const entries = Object.entries(storeSignals ?? {}).slice(0, 3);
   console.log("[ENTRIES_SHAPE]", entries);
 
