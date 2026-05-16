@@ -115,6 +115,10 @@ export const fetchCandles = async (market: string, count: number = 20, unit: num
     if (!Array.isArray(data) || data.length === 0) {
       return [];
     }
+    console.log('[UPBIT_RAW_RESPONSE_COUNT]', {
+      market: targetMarket,
+      count: data.length,
+    });
     return data;
   } catch (error) {
     return [];

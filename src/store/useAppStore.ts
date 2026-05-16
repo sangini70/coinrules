@@ -205,6 +205,7 @@ export const useAppStore = create<AppStore>()(
           return;
         }
         const targetCoins = Array.from(new Set([...MONITORED_COINS, targetCoin]));
+        console.log('[FETCH_SIGNALS_START]', { targetCoin, targetCoins });
 
         try {
           await Promise.all(
@@ -223,6 +224,11 @@ export const useAppStore = create<AppStore>()(
                   oneMinuteCandles.length > 0 &&
                   fiveMinuteCandles.length > 0
                 ) {
+                  console.log('[UPBIT_RAW_COUNTS]', {
+                    targetCoin,
+                    oneMinuteCount: oneMinuteCandles.length,
+                    fiveMinuteCount: fiveMinuteCandles.length,
+                  });
                   rawSignal = analyzeSignal(oneMinuteCandles, fiveMinuteCandles);
                 }
               } catch (e) {
@@ -232,10 +238,16 @@ export const useAppStore = create<AppStore>()(
               }
 
               if (!rawSignal) {
+                console.log('[SIGNALS_SKIP_NO_RAW]', targetCoin);
                 return;
               }
 
               const safeSignal = createSafeSignal(rawSignal);
+              console.log('[TRADING_RULES_RESULT]', {
+                targetCoin,
+                rawSignal,
+                safeSignal,
+              });
               const { signalBuffer } = get();
               const buffer = signalBuffer[targetCoin] || [];
               const newBuffer = [...buffer, safeSignal].slice(-3);
@@ -276,6 +288,12 @@ export const useAppStore = create<AppStore>()(
                   return {};
                 }
 
+                console.log('[SIGNALS_SET_BEFORE]', {
+                  targetCoin,
+                  prevSignalKeys: Object.keys(state.signals ?? {}),
+                  nextBufferLength: newBuffer.length,
+                });
+
                 return {
                   signalBuffer: { ...state.signalBuffer, [targetCoin]: newBuffer },
                   signals: {
@@ -283,6 +301,12 @@ export const useAppStore = create<AppStore>()(
                     [targetCoin]: safeSignal,
                   },
                 };
+              });
+
+              console.log('[SIGNALS_AFTER_BUILD]', {
+                targetCoin,
+                signalsKeys: Object.keys(get().signals ?? {}),
+                signal: get().signals?.[targetCoin],
               });
             }),
           );
@@ -300,7 +324,14 @@ export const useAppStore = create<AppStore>()(
             }
           });
           if (changed) {
+            console.log('[SIGNALS_CLEANUP_BEFORE_SET]', {
+              signalsKeys: Object.keys(signals ?? {}),
+              cleanedSignalsKeys: Object.keys(cleanedSignals ?? {}),
+            });
             set({ signals: cleanedSignals });
+            console.log('[SIGNALS_CLEANUP_AFTER_SET]', {
+              signalsKeys: Object.keys(get().signals ?? {}),
+            });
           }
         }
       },

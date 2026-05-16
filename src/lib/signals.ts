@@ -157,6 +157,14 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
     breakout: breakoutAttempt ? 'bullish_breakout' : 'none',
     state,
   });
+  console.log('[TRADING_RULES_RESULT]', {
+    oneMinuteCount: oneMinuteCandles.length,
+    fiveMinuteCount: fiveMinuteCandles.length,
+    trendReady,
+    momentumReady,
+    breakoutAttempt,
+    state,
+  });
 
   return {
     trend: trendReady ? 'up' : 'neutral',

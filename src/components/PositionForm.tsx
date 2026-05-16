@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchCandles, fetchTicker } from '../services/upbitService';
 import { getEntryState, getSignalScore } from '../lib/signals';
+import { useAppStore } from '../store/useAppStore';
 
 const MARKET_ANALYSIS_CANDLE_COUNT = 24;
 const TREND_LOOKBACK = 5;
@@ -18,8 +19,16 @@ const normalizeWatchlistSymbol = (value: string) =>
 
 export function PositionForm() {
   const [stage, setStage] = useState('POSITIONFORM_STAGE2');
-  const storeSignals = {};
+  const storeSignals = useAppStore((state) => state.signals);
   console.log('[SIGNALS_RAW]', storeSignals);
+  console.log(
+    '[SIGNALS_KEYS]',
+    Object.keys(storeSignals ?? {})
+  );
+  console.log(
+    '[FIRST_SIGNAL]',
+    Object.values(storeSignals ?? {})[0]
+  );
 
   const btcSignal = storeSignals?.['KRW-BTC'] ?? null;
 
@@ -206,15 +215,11 @@ export function PositionForm() {
     setStage('POSITIONFORM_STAGE3');
   }, []);
 
+  useEffect(() => {
+    void useAppStore.getState().fetchSignals('KRW-BTC');
+  }, []);
+
   console.log(storeSignals);
-  console.log(
-    '[SIGNALS_KEYS]',
-    Object.keys(storeSignals ?? {})
-  );
-  console.log(
-    '[FIRST_SIGNAL]',
-    Object.values(storeSignals ?? {})[0]
-  );
 
   return (
     <div>
