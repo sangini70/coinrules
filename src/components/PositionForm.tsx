@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 export function PositionForm() {
   const [stage, setStage] = useState('POSITIONFORM_STAGE2');
   const storeSignals = useAppStore((state) => state.signals);
+  const entries = Object.entries(storeSignals ?? {}).slice(0, 3);
 
   useEffect(() => {
     setStage('POSITIONFORM_STAGE3');
@@ -11,5 +12,13 @@ export function PositionForm() {
 
   console.log(storeSignals);
 
-  return <div>{JSON.stringify(storeSignals ?? null)}</div>;
+  return (
+    <div>
+      {entries.map(([key, signal]) => (
+        <div key={key}>
+          {String(signal?.state)} {" | "} {String(signal?.trend)} {" | "} {String(signal?.volume)} {" | "} {String(signal?.breakout)}
+        </div>
+      ))}
+    </div>
+  );
 }
