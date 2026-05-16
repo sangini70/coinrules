@@ -11,5 +11,5 @@ export function PositionForm() {
 
   console.log(storeSignals);
 
-  return <div>{stage}</div>;
+  return <div>{JSON.stringify(storeSignals ?? null)}</div>;
 }
