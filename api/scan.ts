@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { buildEntryEmail, sendMail } from './_mail';
+import { sendMail } from './_mail';
 import { getEntryState, getPrepareState, getSignalScore } from '../src/lib/signals';
 
 const WATCHLIST = ['BTC', 'ETH', 'XRP', 'SOL', 'ADA', 'DOGE', 'SHIB', 'STEEM', 'AXL', 'IP'];
@@ -87,6 +87,44 @@ const fetchCandles = async (origin: string, symbol: string, count: number, unit:
     `/api/upbit/candles?market=${encodeURIComponent(`KRW-${symbol}`)}&unit=${encodeURIComponent(unit)}&count=${encodeURIComponent(count)}`,
   );
   return Array.isArray(payload.data) ? payload.data : [];
+};
+
+const buildEntryEmail = (entry: ScanResult) => {
+  const coin = `KRW-${entry.symbol}`;
+  const subject = `[CoinRules ENTRY Signal] ${coin}`;
+  const text = [
+    '[CoinRules ENTRY Signal]',
+    '',
+    `코인: ${coin}`,
+    `상태: ${entry.entryState}`,
+    '',
+    '근거:',
+    `- ${entry.volume ? '거래량 증가' : '거래량 미확인'}`,
+    `- ${entry.trend ? '상승 추세' : '추세 미확인'}`,
+    `- ${entry.breakout ? '돌파 확인' : '돌파 미확인'}`,
+    '',
+    '현재 가격:',
+    String(entry.price),
+    '',
+    '행동:',
+    '앱에서 현재 신호 분석 확인',
+  ].join('\n');
+
+  const html = [
+    '<div>',
+    '<p><strong>[CoinRules ENTRY Signal]</strong></p>',
+    `<p><strong>코인:</strong> ${coin}</p>`,
+    `<p><strong>상태:</strong> ${entry.entryState}</p>`,
+    '<p><strong>근거:</strong></p>',
+    `<p>- ${entry.volume ? '거래량 증가' : '거래량 미확인'}</p>`,
+    `<p>- ${entry.trend ? '상승 추세' : '추세 미확인'}</p>`,
+    `<p>- ${entry.breakout ? '돌파 확인' : '돌파 미확인'}</p>`,
+    `<p><strong>현재 가격:</strong> ${String(entry.price)}</p>`,
+    '<p><strong>행동:</strong> 앱에서 현재 신호 분석 확인</p>',
+    '</div>',
+  ].join('');
+
+  return { subject, text, html };
 };
 
 const analyzeMarket = async (origin: string, symbol: string, btcTrend: 'up' | 'neutral'): Promise<ScanResult | null> => {
@@ -226,8 +264,23 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const bestEntry = entryCandidates[0] ?? null;
 
     if (bestEntry) {
+      console.log('[ENTRY_EMAIL_TRIGGER]', {
+        symbol: bestEntry.symbol,
+        entryState: bestEntry.entryState,
+        signalScore: bestEntry.signalScore,
+        price: bestEntry.price,
+      });
       const { subject, text, html } = buildEntryEmail(bestEntry);
       await sendMail(subject, text, html);
+      console.log('[ENTRY_EMAIL_SENT]', {
+        symbol: bestEntry.symbol,
+        entryState: bestEntry.entryState,
+        signalScore: bestEntry.signalScore,
+      });
+    } else {
+      console.log('[ENTRY_EMAIL_SKIPPED]', {
+        reason: 'no entry candidate',
+      });
     }
 
     return response.status(200).json({
