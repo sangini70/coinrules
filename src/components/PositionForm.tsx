@@ -7,6 +7,16 @@ export default function PositionForm() {
   const [entryVisualActive, setEntryVisualActive] = useState(false);
   const [buyVisualActive, setBuyVisualActive] = useState(false);
   const [sellVisualActive, setSellVisualActive] = useState(false);
+  const [selectedCoin, setSelectedCoin] = useState<string | null>(null);
+  const [virtualPosition, setVirtualPosition] = useState<{
+    coin: string | null;
+    entryPrice: number | null;
+    status: "NONE" | "LONG";
+  }>({
+    coin: null,
+    entryPrice: null,
+    status: "NONE",
+  });
   const testValue = useAppStore((state) => state);
   const storeSignals = useAppStore((state) => state.signals);
   const fetchSignals = useAppStore((state) => state.fetchSignals);
@@ -26,6 +36,7 @@ export default function PositionForm() {
 
   const signalKeys = Object.keys(storeSignals || {});
   const firstSignalKey = signalKeys[0];
+  const selectedCoinKey = selectedCoin && signalKeys.includes(selectedCoin) ? selectedCoin : firstSignalKey;
 
   console.log("[FIRST_SIGNAL_KEY]", firstSignalKey);
 
@@ -37,11 +48,13 @@ export default function PositionForm() {
     );
   }
 
-  const firstSignal = storeSignals[firstSignalKey];
+  const firstSignal = storeSignals[selectedCoinKey];
 
   console.log("[FIRST_SIGNAL]", firstSignal);
   console.log("[FIRST_SIGNAL_PRICE]", {
+    selectedCoin,
     firstSignalKey,
+    selectedCoinKey,
     currentPrice: firstSignal?.currentPrice,
     updatedAt: firstSignal?.updatedAt,
     signalsKeysLength: signalKeys.length,
@@ -54,7 +67,7 @@ export default function PositionForm() {
         <div className="min-w-0 space-y-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">종목 선택</div>
           <div className="break-words text-2xl font-black tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
-            {firstSignalKey.replace(/^KRW-/, "")}
+            {selectedCoinKey.replace(/^KRW-/, "")}
           </div>
           <div className="text-sm font-semibold leading-tight tracking-tight text-gray-700 sm:text-base">현재 가격: {String(firstSignal?.currentPrice ?? "-")}</div>
         </div>
@@ -64,7 +77,7 @@ export default function PositionForm() {
             상태: {String(firstSignal?.state)}
           </span>
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-white/90 px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm sm:px-3 sm:text-sm">
-            마켓: {String(firstSignalKey)}
+            마켓: {String(selectedCoinKey)}
           </span>
           <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-medium text-sky-700 shadow-sm sm:px-3 sm:text-sm">
             추세: {String(firstSignal?.trend)}
@@ -74,7 +87,26 @@ export default function PositionForm() {
 
       <section className="rounded-3xl border border-gray-200 bg-gray-50/90 p-3.5 shadow-sm ring-1 ring-gray-100 sm:p-5">
         <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">Watchlist</div>
-        <div className="mt-2 break-words text-[13px] font-semibold leading-5 tracking-tight text-gray-900 sm:mt-2.5 sm:text-base sm:leading-6">{signalKeys.join(" / ")}</div>
+        <div className="mt-2 flex flex-wrap gap-2 sm:mt-2.5">
+          {signalKeys.map((coin) => {
+            const isSelected = selectedCoinKey === coin;
+
+            return (
+              <button
+                key={coin}
+                type="button"
+                className={`inline-flex cursor-pointer items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition-all duration-200 sm:text-sm ${
+                  isSelected
+                    ? "border-slate-900 bg-slate-900 text-white shadow-sm ring-1 ring-slate-900"
+                    : "border-gray-200 bg-white text-gray-600 hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200"
+                }`}
+                onClick={() => setSelectedCoin(coin)}
+              >
+                {coin.replace(/^KRW-/, "")}
+              </button>
+            );
+          })}
+        </div>
       </section>
 
       <section className="rounded-3xl border border-gray-200 bg-white p-3.5 shadow-[0_10px_35px_rgba(15,23,42,0.06)] ring-1 ring-gray-100 sm:p-5">
@@ -111,7 +143,14 @@ export default function PositionForm() {
           <button
             type="button"
             className={`inline-flex cursor-pointer items-center rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 sm:text-sm ${buyVisualActive ? "border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100" : "border-gray-200 bg-white text-gray-600 hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"}`}
-            onClick={() => setBuyVisualActive((current) => !current)}
+            onClick={() => {
+              setBuyVisualActive((current) => !current);
+              setVirtualPosition({
+                coin: selectedCoinKey,
+                entryPrice: firstSignal?.currentPrice ?? null,
+                status: "LONG",
+              });
+            }}
           >
             BUY
           </button>
@@ -139,7 +178,7 @@ export default function PositionForm() {
 
         <div className="grid gap-2 p-3.5 sm:grid-cols-2 sm:gap-3 sm:p-5">
           <div className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-gray-800 shadow-sm sm:col-span-2 sm:text-sm sm:leading-6">
-            코인: {String(firstSignalKey)}
+            코인: {String(selectedCoinKey)}
           </div>
           <div className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-gray-800 shadow-sm sm:text-sm sm:leading-6">
             상태: {String(firstSignal?.state)}
@@ -170,6 +209,34 @@ export default function PositionForm() {
           </div>
           <div className="rounded-2xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-gray-800 shadow-sm sm:col-span-2 sm:text-sm sm:leading-6">
             행동: {firstSignal?.action ? String(firstSignal.action) : "-"}
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_10px_35px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
+        <header className="border-b border-slate-100 bg-slate-50/80 px-3.5 py-3 sm:px-5 sm:py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-500 sm:text-[11px]">read-only virtual position</div>
+          <div className="mt-0.5 text-base font-bold tracking-tight text-slate-900 sm:text-xl">가상 포지션 상태</div>
+        </header>
+
+        <div className="grid gap-2 p-3.5 sm:grid-cols-2 sm:gap-3 sm:p-5">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:col-span-2 sm:text-sm sm:leading-6">
+            선택 코인: {String(virtualPosition.coin ?? selectedCoinKey)}
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
+            포지션: {virtualPosition.status}
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
+            진입가: {virtualPosition.entryPrice !== null ? String(virtualPosition.entryPrice) : "-"}
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
+            현재 수익률: -
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
+            최근 결과: -
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:col-span-2 sm:text-sm sm:leading-6">
+            누적 승률: -
           </div>
         </div>
       </section>
