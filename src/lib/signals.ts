@@ -1,4 +1,5 @@
 import { ObservationSignal } from '../types';
+import { SHORT_TERM_ENTRY_THRESHOLD_SCORE } from './tradingRules';
 
 declare module '../types' {
   interface ObservationSignal {
@@ -133,14 +134,23 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
     currentFiveMinuteClose >= ema9;
   const strongBreakout = breakoutReady && (volumeIncreasing || macdPositive);
   const pullbackDepthValid = currentFiveMinuteClose <= ema9 * 1.01;
-  const strongPullback = pullbackReady && momentumReady && trendReady && pullbackDepthValid;
+  const strongPullback = pullbackReady && momentumReady && trendReady && volumeIncreasing && pullbackDepthValid;
   const timingTrigger = strongBreakout || strongPullback;
   const currentPrice = latestClose > 0 ? latestClose : currentFiveMinuteClose;
+  const signalScore = getSignalScore({
+    trend: trendReady,
+    volume: volumeIncreasing,
+    breakout: breakoutReady,
+  });
   const entryReady =
     breakoutReady &&
     pullbackReady &&
     macdPositiveCross &&
-    currentPrice <= ema9 * 1.01;
+    trendReady &&
+    momentumReady &&
+    volumeIncreasing &&
+    currentPrice <= ema9 * 1.005 &&
+    signalScore >= SHORT_TERM_ENTRY_THRESHOLD_SCORE;
   const breakoutFailed = breakoutAttempt && !breakoutReady;
 
   let state: ObservationSignal['state'] = 'WAIT';
@@ -149,11 +159,7 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
     state = 'RISK';
   } else if (entryReady) {
     state = 'ENTRY';
-  } else if (timingTrigger) {
-    state = 'PREPARE';
-  } else if ((breakoutReady || pullbackReady) && macdPositiveCross) {
-    state = 'CAUTION';
-  } else if (trendReady || momentumReady || macdPositive) {
+  } else if (timingTrigger || trendReady || momentumReady || macdPositive || breakoutReady || pullbackReady) {
     state = 'OBSERVE';
   }
 
@@ -169,7 +175,10 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
     fiveMinuteCount: fiveMinuteCandles.length,
     trendReady,
     momentumReady,
+    volumeIncreasing,
     breakoutAttempt,
+    signalScore,
+    entryReady,
     state,
   });
 
@@ -204,9 +213,9 @@ export function getEntryState({
   const isBtcUptrend = btcTrend !== 'down';
   const entryState: EntryState = fakeout
     ? 'AVOID'
-    : highRisk
+    : highRisk || !isBtcUptrend
       ? 'RISK'
-      : score >= 30 && volume && isBtcUptrend
+      : score >= SHORT_TERM_ENTRY_THRESHOLD_SCORE && volume
         ? 'ENTRY'
         : score >= 20
           ? 'OBSERVE'
@@ -220,6 +229,7 @@ export function getEntryState({
     btcTrend,
     fakeout,
     highRisk,
+    threshold: SHORT_TERM_ENTRY_THRESHOLD_SCORE,
     entryState,
   });
 
@@ -235,9 +245,8 @@ export function getPrepareState({
   volume: boolean;
   breakout: boolean;
 }) {
-  if (trend && !volume) return 'PREPARE';
-  if (trend && volume && !breakout) return 'READY';
   if (trend && volume && breakout) return 'ENTRY';
+  if (trend || volume || breakout) return 'OBSERVE';
   return 'WAIT';
 }
 
