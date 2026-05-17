@@ -11,12 +11,33 @@ export default function PositionForm() {
   const [virtualPosition, setVirtualPosition] = useState<{
     coin: string | null;
     entryPrice: number | null;
+    exitPrice: number | null;
+    pnlPercent: number | null;
+    recentResult: string | null;
     status: "NONE" | "LONG";
   }>({
     coin: null,
     entryPrice: null,
+    exitPrice: null,
+    pnlPercent: null,
+    recentResult: null,
     status: "NONE",
   });
+  const [tradeHistory, setTradeHistory] = useState<
+    Array<{
+      coin: string;
+      entryPrice: number;
+      exitPrice: number;
+      pnlPercent: number;
+      result: "WIN" | "LOSS";
+      enteredAt: string;
+      exitedAt: string;
+      signalState: string;
+      trend: string;
+      volume: string;
+      breakout: string;
+    }>
+  >([]);
   const testValue = useAppStore((state) => state);
   const storeSignals = useAppStore((state) => state.signals);
   const fetchSignals = useAppStore((state) => state.fetchSignals);
@@ -37,6 +58,9 @@ export default function PositionForm() {
   const signalKeys = Object.keys(storeSignals || {});
   const firstSignalKey = signalKeys[0];
   const selectedCoinKey = selectedCoin && signalKeys.includes(selectedCoin) ? selectedCoin : firstSignalKey;
+  const totalTrades = tradeHistory.length;
+  const winTrades = tradeHistory.filter((item) => item.result === "WIN").length;
+  const winRatePercent = totalTrades > 0 ? (winTrades / totalTrades) * 100 : null;
 
   console.log("[FIRST_SIGNAL_KEY]", firstSignalKey);
 
@@ -148,6 +172,9 @@ export default function PositionForm() {
               setVirtualPosition({
                 coin: selectedCoinKey,
                 entryPrice: firstSignal?.currentPrice ?? null,
+                exitPrice: null,
+                pnlPercent: null,
+                recentResult: null,
                 status: "LONG",
               });
             }}
@@ -160,7 +187,49 @@ export default function PositionForm() {
           <button
             type="button"
             className={`inline-flex cursor-pointer items-center rounded-full border px-4 py-2 text-xs font-semibold transition-all duration-200 sm:text-sm ${sellVisualActive ? "border-rose-300 bg-rose-50 text-rose-700 shadow-sm ring-1 ring-rose-100" : "border-gray-200 bg-white text-gray-600 hover:-translate-y-0.5 hover:bg-gray-50 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-rose-200"}`}
-            onClick={() => setSellVisualActive((current) => !current)}
+            onClick={() => {
+              setSellVisualActive((current) => !current);
+
+              if (virtualPosition.status !== "LONG" || virtualPosition.entryPrice === null) {
+                return;
+              }
+
+              const exitPrice = firstSignal?.currentPrice;
+              if (typeof exitPrice !== "number" || !Number.isFinite(exitPrice)) {
+                return;
+              }
+
+              const pnlPercent = ((exitPrice - virtualPosition.entryPrice) / virtualPosition.entryPrice) * 100;
+              const normalizedPnl = Number.isFinite(pnlPercent) ? pnlPercent : null;
+              const formattedPnl = normalizedPnl === null ? "-" : `${normalizedPnl >= 0 ? "+" : ""}${normalizedPnl.toFixed(2)}%`;
+              const result = normalizedPnl !== null && normalizedPnl >= 0 ? "WIN" : "LOSS";
+              const now = new Date().toISOString();
+
+              setVirtualPosition({
+                coin: null,
+                entryPrice: null,
+                exitPrice,
+                pnlPercent: normalizedPnl,
+                recentResult: `${result} ${formattedPnl}`,
+                status: "NONE",
+              });
+              setTradeHistory((current) => [
+                ...current,
+                {
+                  coin: String(virtualPosition.coin ?? selectedCoinKey),
+                  entryPrice: virtualPosition.entryPrice,
+                  exitPrice,
+                  pnlPercent: normalizedPnl ?? 0,
+                  result,
+                  enteredAt: now,
+                  exitedAt: now,
+                  signalState: String(firstSignal?.state ?? "-"),
+                  trend: String(firstSignal?.trend ?? "-"),
+                  volume: String(firstSignal?.volume ?? "-"),
+                  breakout: String(firstSignal?.breakout ?? "-"),
+                },
+              ]);
+            }}
           >
             SELL
           </button>
@@ -227,16 +296,19 @@ export default function PositionForm() {
             포지션: {virtualPosition.status}
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
-            진입가: {virtualPosition.entryPrice !== null ? String(virtualPosition.entryPrice) : "-"}
+            진입가: {virtualPosition.status === "LONG" && virtualPosition.entryPrice !== null ? String(virtualPosition.entryPrice) : "-"}
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
-            현재 수익률: -
+            현재 수익률: {virtualPosition.pnlPercent !== null ? `${virtualPosition.pnlPercent >= 0 ? "+" : ""}${virtualPosition.pnlPercent.toFixed(2)}%` : "-"}
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:text-sm sm:leading-6">
-            최근 결과: -
+            최근 결과: {virtualPosition.recentResult ?? "-"}
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:col-span-2 sm:text-sm sm:leading-6">
-            누적 승률: -
+            누적 거래 수: {totalTrades}
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-[13px] font-semibold leading-5 text-slate-800 shadow-sm sm:col-span-2 sm:text-sm sm:leading-6">
+            누적 승률: {winRatePercent !== null && Number.isFinite(winRatePercent) ? `${winRatePercent.toFixed(1)}%` : "-"}
           </div>
         </div>
       </section>
