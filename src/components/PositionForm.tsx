@@ -110,7 +110,7 @@ export default function PositionForm() {
       </section>
 
       <section className="rounded-3xl border border-gray-200 bg-gray-50/90 p-3.5 shadow-sm ring-1 ring-gray-100 sm:p-5">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">Watchlist</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">감시 코인</div>
         <div className="mt-2 flex flex-wrap gap-2 sm:mt-2.5">
           {signalKeys.map((coin) => {
             const isSelected = selectedCoinKey === coin;
@@ -134,7 +134,7 @@ export default function PositionForm() {
       </section>
 
       <section className="rounded-3xl border border-gray-200 bg-white p-3.5 shadow-[0_10px_35px_rgba(15,23,42,0.06)] ring-1 ring-gray-100 sm:p-5">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">Interaction shell</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">가상 매매 실행</div>
         <div className="mt-2.5 flex flex-wrap gap-2">
           <button
             type="button"
@@ -148,7 +148,7 @@ export default function PositionForm() {
             className="inline-flex cursor-not-allowed items-center rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-400 transition duration-200 sm:text-sm"
             disabled
           >
-            DISABLED SHELL
+            비활성 상태
           </button>
         </div>
         <div className="mt-3.5 flex flex-wrap items-center gap-2.5 sm:mt-4 sm:gap-3">
@@ -241,7 +241,7 @@ export default function PositionForm() {
 
       <section className="mt-5 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)] ring-1 ring-gray-100 divide-y divide-gray-100 sm:mt-6">
         <header className="border-b border-gray-100 bg-gray-50/60 px-3.5 py-3 sm:px-5 sm:py-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">read-only signal info</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-gray-500 sm:text-[11px]">현재 신호 분석</div>
           <div className="mt-0.5 text-base font-bold tracking-tight text-gray-900 sm:text-xl">실시간 신호 요약</div>
         </header>
 
@@ -284,7 +284,7 @@ export default function PositionForm() {
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_10px_35px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
         <header className="border-b border-slate-100 bg-slate-50/80 px-3.5 py-3 sm:px-5 sm:py-4">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-500 sm:text-[11px]">read-only virtual position</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-500 sm:text-[11px]">가상 포지션 상태</div>
           <div className="mt-0.5 text-base font-bold tracking-tight text-slate-900 sm:text-xl">가상 포지션 상태</div>
         </header>
 
