@@ -40,6 +40,12 @@ export default function PositionForm() {
   const firstSignal = storeSignals[firstSignalKey];
 
   console.log("[FIRST_SIGNAL]", firstSignal);
+  console.log("[FIRST_SIGNAL_PRICE]", {
+    firstSignalKey,
+    currentPrice: firstSignal?.currentPrice,
+    updatedAt: firstSignal?.updatedAt,
+    signalsKeysLength: signalKeys.length,
+  });
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-7">
@@ -49,7 +55,7 @@ export default function PositionForm() {
           <div className="text-3xl font-black tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
             {firstSignalKey.replace(/^KRW-/, "")}
           </div>
-          <div className="text-sm font-medium tracking-tight text-gray-500">현재 가격: -</div>
+          <div className="text-sm font-medium tracking-tight text-gray-500">현재 가격: {String(firstSignal?.currentPrice ?? "-")}</div>
         </div>
 
         <div className="flex flex-wrap gap-2 md:justify-end">
@@ -57,7 +63,7 @@ export default function PositionForm() {
             상태: {String(firstSignal?.state)}
           </span>
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-sm text-gray-600 shadow-sm">
-            마켓: {String(firstSignal?.market)}
+            마켓: {String(firstSignalKey)}
           </span>
           <span className="inline-flex items-center rounded-full border border-gray-200 bg-white/80 px-3 py-1.5 text-sm text-gray-600 shadow-sm">
             추세: {String(firstSignal?.trend)}

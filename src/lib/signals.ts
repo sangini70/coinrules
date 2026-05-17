@@ -1,5 +1,11 @@
 import { ObservationSignal } from '../types';
 
+declare module '../types' {
+  interface ObservationSignal {
+    currentPrice?: number;
+  }
+}
+
 interface Candle {
   market: string;
   candle_date_time_utc: string;
@@ -79,6 +85,7 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
       breakout: 'none',
       state: 'WAIT',
       updatedAt: new Date().toISOString(),
+      currentPrice: 0,
     };
   }
 
@@ -172,6 +179,7 @@ export function analyzeSignal(oneMinuteCandles: Candle[], fiveMinuteCandles: Can
     breakout: breakoutAttempt ? 'bullish_breakout' : 'none',
     state,
     updatedAt: new Date().toISOString(),
+    currentPrice,
   };
 }
 
