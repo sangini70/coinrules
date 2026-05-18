@@ -87,8 +87,41 @@ production 배포 전 필수:
 - npm run build
 - git diff --check
 - git status --short
-- 로컬 preview 또는 production DevTools console 확인
+- production DevTools console 확인 우선
+- 필요 시 로컬 preview는 보조 확인으로 사용
 - React31 / 흰 화면 / object child 에러 없을 때만 push
+
+## 7-1. my_gstack Operational Skill Rule
+
+이 프로젝트는 AI_OPERATIONS.md를 통해 외부 운영체계인 my_gstack를 참조한다.
+
+작업 성격에 따라 관련 skill system을 추가로 확인한다.
+
+### production / browser 확인 작업
+
+아래 문서를 우선 참조한다.
+
+- skills/browser-operations/SKILL.md
+- skills/browser-operations/BROWSER_RUNTIME_SYSTEM.md
+- skills/browser-operations/PLAYWRIGHT_EXECUTION_RULES.md
+- skills/browser-operations/UI_RECON_PIPELINE.md
+- skills/browser-operations/VISUAL_VALIDATION_SYSTEM.md
+- skills/browser-operations/CONSOLE_DEBUG_PIPELINE.md
+- skills/browser-operations/PRODUCTION_VERIFICATION.md
+
+### frontend / UI 작업
+
+아래 문서를 우선 참조한다.
+
+- skills/frontend-operations/SKILL.md
+
+원칙:
+
+- 로컬 localhost 결과만으로 production 정상 판단 금지
+- production console 확인 우선
+- 실제 rendering 확인 우선
+- screenshot / console / network 등 observable evidence 우선
+- 추측 기반 UI 안정성 판단 금지
 
 ## 8. ErrorBoundary Debug Rule
 
@@ -103,71 +136,90 @@ ErrorBoundary에는 가능하면 아래 정보를 남긴다.
 
 ## 9. React Error Prevention Rule
 
-React 오류는 사후 추적 대상이 아니라 사전 차단 대상이다.  
+React 오류는 사후 추적 대상이 아니라 사전 차단 대상이다.
 
-모든 JSX 수정 전 반드시 확인한다.  
+모든 JSX 수정 전 반드시 확인한다.
 
-1. JSX child에 object/array 가능성이 있는 값 금지  
-2. useEffect dependency에 렌더마다 새로 생성되는 array/object 금지  
-3. useEffect 내부 setState는 기존 값과 비교 후 변경 시에만 실행  
-4. Zustand selector는 새 object/array를 직접 반환하지 않는다  
-5. map 렌더는 key와 primitive 출력 여부를 먼저 확인한다  
-6. PositionForm.tsx에 대형 JSX 추가 금지  
-7. 동적 렌더 추가 시 build 전 코드 검색으로 raw child 후보 확인  
+1. JSX child에 object/array 가능성이 있는 값 금지
+2. useEffect dependency에 렌더마다 새로 생성되는 array/object 금지
+3. useEffect 내부 setState는 기존 값과 비교 후 변경 시에만 실행
+4. Zustand selector는 새 object/array를 직접 반환하지 않는다
+5. map 렌더는 key와 primitive 출력 여부를 먼저 확인한다
+6. PositionForm.tsx에 대형 JSX 추가 금지
+7. 동적 렌더 추가 시 build 전 코드 검색으로 raw child 후보 확인
 
-금지:  
+금지:
 
-- 추측으로 JSX 복원  
-- “일단 optional chaining 추가”  
-- “일단 helper 추가”  
-- “일단 전체 복원”  
+- 추측으로 JSX 복원
+- “일단 optional chaining 추가”
+- “일단 helper 추가”
+- “일단 전체 복원”
 - 렌더 중 state/store 변경
 
 ## 10. useEffect Safety
 
-useEffect dependency에는 렌더마다 새로 생성되는 값 사용 금지.  
+useEffect dependency에는 렌더마다 새로 생성되는 값 사용 금지.
 
-주의 대상:  
+주의 대상:
 
-- Object.entries(...)  
-- Object.values(...)  
-- Object.keys(...)  
-- array.map(...)  
-- array.filter(...)  
-- inline object  
-- inline array  
+- Object.entries(...)
+- Object.values(...)
+- Object.keys(...)
+- array.map(...)
+- array.filter(...)
+- inline object
+- inline array
 
-useEffect 내부에서 setState를 호출할 경우,  
+useEffect 내부에서 setState를 호출할 경우,
 기존 state와 비교 후 실제 변경이 있을 때만 setState 한다.
 
 ## 11. Commit Scope Rule
 
-한 작업의 commit에는 실제 수정 대상 파일만 포함한다.  
+한 작업의 commit에는 실제 수정 대상 파일만 포함한다.
 
-예:  
+예:
 
-- AppRoutes 수정 작업이면 AppRoutes.tsx만 add  
-- PositionForm 수정 작업이면 PositionForm.tsx만 add  
-- CODEX_RULES.md는 별도 작업일 때만 commit  
+- AppRoutes 수정 작업이면 AppRoutes.tsx만 add
+- PositionForm 수정 작업이면 PositionForm.tsx만 add
+- CODEX_RULES.md는 별도 작업일 때만 commit
 
 작업 중 우연히 변경된 파일은 commit 금지.
 
 ## 12. Recovery Isolation Rule
 
-React 오류 발생 시:  
+React 오류 발생 시:
 
-- 먼저 return null 또는 최소 정적 JSX로 안전지대 확보  
-- 원인 확인 전 전체 JSX 복원 금지  
-- 한 번에 하나의 블록만 복원  
-- build + production console 확인 후 다음 블록 진행  
+- 먼저 return null 또는 최소 정적 JSX로 안전지대 확보
+- 원인 확인 전 전체 JSX 복원 금지
+- 한 번에 하나의 블록만 복원
+- build + production console 확인 후 다음 블록 진행
 
-금지:  
+금지:
 
-- 여러 후보 동시 수정  
-- 대량 복원  
+- 여러 후보 동시 수정
+- 대량 복원
 - 추측 기반 복원
 
 
+
+React31 오류 추적 시:
+전체 return 차단부터 하지 말고,
+먼저 JSX child 후보(object/array),
+map/Object.entries 렌더,
+conditional branch,
+production console stack을 확인한다.
+
+isolate는 최소 단위로만 진행한다.
+
+우선순위:
+
+1. object direct render
+2. array render
+3. Object.entries/map
+4. derived object access
+5. conditional subtree
+6. large JSX section
+7. full return isolate (마지막 수단)
 
 ## 13. React Child Normalization Rule
 
@@ -191,8 +243,6 @@ children passthrough 금지:
 - plain object 제거
 
 wrapper/boundary/AppShell에서는 children normalization 없이 passthrough 금지.
-
-
 
 ## 절대 원칙
 
